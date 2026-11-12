@@ -71,7 +71,7 @@ Section 27 of `temp/authz-new-srs.md`, unchanged in meaning. Each is answered by
 | OQ-55 | How do synchronized group memberships interact with manual ones? | A group has one source: manual or synchronized, never both | Milestone 13 |
 | OQ-56 | What is the lifecycle of a service account? | Registered by an administrator, enabled or disabled, never signs in interactively | Milestone 12 |
 | OQ-57 | How do disabled or deleted identities affect their assignments? | Disabled: assignments kept and ignored. Erased: removed, as today | Milestone 9 |
-| OQ-58 | Full tenant isolation in the initial release, or only its boundaries? | Boundaries only (today's state) until slice 14 | Milestone 16 |
+| OQ-58 | Full tenant isolation in the initial release, or only its boundaries? | Boundaries only (today's state) until milestone 16 | Milestone 16 |
 | OQ-59 | Which cross-tenant administrative capabilities are permitted? | None without an explicit platform-level grant | Milestone 16 |
 | OQ-60 | How does tenant-level configuration interact with application-level configuration? | The application defines; a tenant may only narrow | Milestone 16 |
 | OQ-61 | Which changes need administrative approval? | Configurable; default none, with granting the administrator role suggested | Milestone 15 |
