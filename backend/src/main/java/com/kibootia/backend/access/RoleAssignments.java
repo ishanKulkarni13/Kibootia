@@ -16,7 +16,11 @@ import java.util.UUID;
  */
 public interface RoleAssignments {
 
-	/** Every permission the user holds through their roles; for the administrator role, every declared permission. */
+	/**
+	 * Every permission the user holds through their roles; for the administrator role, every declared flat permission.
+	 * A policy-decided permission held in any place is included, as a hint for the interface: a decision about a record
+	 * is made by the decision point, never from this list.
+	 */
 	Set<String> permissionsOf(UUID userId);
 
 	/** The user's roles, built-in ones first. */
@@ -24,6 +28,9 @@ public interface RoleAssignments {
 
 	/** The roles of several users at once, for a list screen. A user with no role is absent from the map. */
 	Map<UUID, List<RoleSummary>> rolesOf(Collection<UUID> userIds);
+
+	/** Whether the user holds the built-in administrator role. */
+	boolean holdsAdministratorRole(UUID userId);
 
 	/** Gives a new profile the built-in {@code user} role. Does nothing when the user already holds it. */
 	void assignDefaultRole(UUID userId);
@@ -39,6 +46,12 @@ public interface RoleAssignments {
 	 * checked the bootstrap setting and the user's verified email address.
 	 */
 	boolean grantFirstAdministrator(UUID userId);
+
+	/**
+	 * Whether anyone holds the administrator role, signed in or not. It tells startup whether the bootstrap administrator
+	 * is still needed (Timetia ADR 0006).
+	 */
+	boolean hasAdministrator();
 
 	/**
 	 * Refuses with 409 {@code access.last_administrator} when the user is an administrator and the only one who can

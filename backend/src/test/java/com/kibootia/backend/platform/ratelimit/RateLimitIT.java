@@ -16,6 +16,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * does not affect another's.
  */
 @SpringBootTest(properties = { "kibootia.identity.bootstrap-admin-email=" + AdminApiTest.ADMIN_EMAIL,
+		"kibootia.identity.bootstrap-invite.enabled=false",
 		"kibootia.rate-limit.limits.invitations.capacity=2", "kibootia.rate-limit.limits.invitations.period=PT1H",
 		"kibootia.rate-limit.limits.verification-resend.capacity=1",
 		"kibootia.rate-limit.limits.verification-resend.period=PT1H", "kibootia.rate-limit.limits.admin-actions.capacity=3",
@@ -37,6 +38,11 @@ class RateLimitIT extends AdminApiTest {
 			.andExpect(header().exists("Retry-After"))
 			.andExpect(header().string("Retry-After", org.hamcrest.Matchers.matchesPattern("[1-9][0-9]*")))
 			.andExpect(jsonPath("$.code").value("platform.rate_limited"));
+
+		org.assertj.core.api.Assertions.assertThat(count("select count(*) from audit_entry "
+				+ "where action = 'security.rate-limit.exceeded' and changes like '%invitations%'"))
+			.as("the refusal is recorded as a security event")
+			.isEqualTo(1);
 
 		post(user(ALICE), "/api/v1/users", "{\"email\":\"four@kibootia.test\"}").andExpect(status().isCreated());
 		org.assertj.core.api.Assertions.assertThat(this.keycloak.countCalls("createUser")).as("a refused invitation creates nothing")

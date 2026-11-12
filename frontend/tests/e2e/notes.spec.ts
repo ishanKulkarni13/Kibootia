@@ -50,7 +50,7 @@ async function api(page: Page, method: string, path: string, body?: unknown) {
     async ({ method, path, body }) => {
       const response = await fetch(path, {
         method,
-        headers: { "x-kibootia-request": "1", ...(body === undefined ? {} : { "content-type": "application/json" }) },
+        headers: { "x-timetia-request": "1", ...(body === undefined ? {} : { "content-type": "application/json" }) },
         body: body === undefined ? undefined : JSON.stringify(body),
       });
       const text = await response.text();
@@ -151,7 +151,7 @@ test("a picture is kept whole in proportion, replaced by another, refused when i
   const direct = await user.evaluate(async (id) => {
     const form = new FormData();
     form.append("file", new Blob(["<?php echo 1;"], { type: "image/png" }), "evil.png");
-    const response = await fetch(`/api/v1/notes/${id}/attachment`, { method: "PUT", headers: { "x-kibootia-request": "1" }, body: form });
+    const response = await fetch(`/api/v1/notes/${id}/attachment`, { method: "PUT", headers: { "x-timetia-request": "1" }, body: form });
     return { status: response.status, code: ((await response.json()) as { code: string }).code };
   }, noteId);
   expect(direct).toEqual({ status: 415, code: "files.unsupported_type" });
@@ -255,13 +255,16 @@ test("an administrator sees everyone's notes, deletes the user's note and restor
   await admin.goto("/notes");
   await admin.getByLabel("Show").click();
   await admin.getByRole("option", { name: "Everyone's notes" }).click();
-  await admin.getByLabel("Search").fill(STAMP);
+  // Search for each note by its title: the stamp alone also matches the 21 notes of the paging story, and the list pages at 20.
+  await admin.getByLabel("Search").fill(title("Admin only"));
   await admin.getByRole("button", { name: "Search" }).click();
   await expect(admin.getByRole("columnheader", { name: "Written by" })).toBeVisible();
+  await expect(rows(admin).filter({ hasText: title("Admin only") }).getByText("You", { exact: true })).toBeVisible();
+  await admin.getByLabel("Search").fill(title("Weekend plan"));
+  await admin.getByRole("button", { name: "Search" }).click();
   const row = rows(admin).filter({ hasText: title("Weekend plan") });
   await expect(row).toHaveCount(1);
   await expect(row.getByText(/^User /)).toBeVisible();
-  await expect(rows(admin).filter({ hasText: title("Admin only") }).getByText("You", { exact: true })).toBeVisible();
   await expectNoAccessibilityViolations(admin);
 
   await row.getByRole("link", { name: title("Weekend plan") }).click();

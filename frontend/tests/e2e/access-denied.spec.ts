@@ -20,7 +20,7 @@ test("an ordinary user sees no administration, is told so, and the API refuses t
 
   // Asked directly, with the right CSRF header, the API says no, and says it is a permission problem.
   const answers = await page.evaluate(async () => {
-    const headers = { "x-kibootia-request": "1", "content-type": "application/json" };
+    const headers = { "x-timetia-request": "1", "content-type": "application/json" };
     const call = async (method: string, path: string, body?: string) => {
       const response = await fetch(path, { method, headers, body });
       return { status: response.status, code: ((await response.json()) as { code: string }).code };
@@ -29,7 +29,7 @@ test("an ordinary user sees no administration, is told so, and the API refuses t
       users: await call("GET", "/api/v1/users"),
       roles: await call("GET", "/api/v1/roles"),
       audit: await call("GET", "/api/v1/audit-entries"),
-      invite: await call("POST", "/api/v1/users", JSON.stringify({ email: "nobody@kibootia.test" })),
+      invite: await call("POST", "/api/v1/users", JSON.stringify({ email: "nobody@timetia.test" })),
     };
   });
   for (const answer of Object.values(answers)) {

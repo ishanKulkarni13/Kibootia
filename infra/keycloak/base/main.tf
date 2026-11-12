@@ -1,17 +1,18 @@
-# Shared base of the Kibootia realm (ADR 0045). Overlays add environment-specific content: demo users locally,
-# nothing in production. Authorization roles live in Kibootia's database, not here (ADR 0025).
+# Shared base of the Timetia realm (ADR 0045). Overlays add environment-specific content: demo users locally,
+# nothing in production. Authorization roles live in Timetia's database, not here (ADR 0025).
 
-resource "keycloak_realm" "kibootia" {
+resource "keycloak_realm" "timetia" {
   realm        = var.realm_name
   enabled      = true
-  display_name = "Kibootia"
+  display_name = "Timetia"
 
   ssl_required = var.ssl_required
 
-  registration_allowed     = true
+  # People arrive by invitation, and later by import: nobody can create their own account (Timetia ADR 0005).
+  registration_allowed     = false
   login_with_email_allowed = true
   duplicate_emails_allowed = false
-  # Kibootia enforces email verification itself through the email_verified claim (ADR 0041).
+  # Timetia enforces email verification itself through the email_verified claim (ADR 0041).
   verify_email = false
 
   # Short-lived access tokens; refresh tokens rotate and tolerate one reuse for concurrent requests.
@@ -54,10 +55,104 @@ resource "keycloak_realm" "kibootia" {
 }
 
 # The Next.js server: confidential client, Authorization Code with PKCE. No web origins, so no CORS (ADR 0008).
+# Who a person is, as far as Timetia is concerned, is their email address: the application copies it from the token into the
+# profile at every request, and an import gives roles to the profile that holds an address. So a person must not be able to
+# change their own address or username, or they could take the address of someone about to be imported (or the bootstrap
+# address) and receive that person's roles. Only an administrator, which here means the application's service account and
+# the realm's operators, edits them. Names stay editable by the person, because the invitation asks for them.
+# Everything else is Keycloak's default user profile, written out because this resource replaces the whole definition.
+resource "keycloak_realm_user_profile" "timetia" {
+  realm_id = keycloak_realm.timetia.id
+
+  attribute {
+    name         = "username"
+    display_name = "$${username}"
+
+    permissions {
+      view = ["admin", "user"]
+      edit = ["admin"]
+    }
+
+    validator {
+      name   = "length"
+      config = { min = "3", max = "255" }
+    }
+    validator {
+      name = "username-prohibited-characters"
+    }
+    validator {
+      name = "up-username-not-idn-homograph"
+    }
+  }
+
+  attribute {
+    name               = "email"
+    display_name       = "$${email}"
+    required_for_roles = ["user"]
+
+    permissions {
+      view = ["admin", "user"]
+      edit = ["admin"]
+    }
+
+    validator {
+      name = "email"
+    }
+    validator {
+      name   = "length"
+      config = { max = "255" }
+    }
+  }
+
+  attribute {
+    name               = "firstName"
+    display_name       = "$${firstName}"
+    required_for_roles = ["user"]
+
+    permissions {
+      view = ["admin", "user"]
+      edit = ["admin", "user"]
+    }
+
+    validator {
+      name   = "length"
+      config = { max = "255" }
+    }
+    validator {
+      name = "person-name-prohibited-characters"
+    }
+  }
+
+  attribute {
+    name               = "lastName"
+    display_name       = "$${lastName}"
+    required_for_roles = ["user"]
+
+    permissions {
+      view = ["admin", "user"]
+      edit = ["admin", "user"]
+    }
+
+    validator {
+      name   = "length"
+      config = { max = "255" }
+    }
+    validator {
+      name = "person-name-prohibited-characters"
+    }
+  }
+
+  group {
+    name                = "user-metadata"
+    display_header      = "User metadata"
+    display_description = "Attributes, which refer to user metadata"
+  }
+}
+
 resource "keycloak_openid_client" "web" {
-  realm_id  = keycloak_realm.kibootia.id
-  client_id = "kibootia-web"
-  name      = "Kibootia web (Next.js)"
+  realm_id  = keycloak_realm.timetia.id
+  client_id = "timetia-web"
+  name      = "Timetia web (Next.js)"
   enabled   = true
 
   access_type                  = "CONFIDENTIAL"
@@ -77,9 +172,9 @@ resource "keycloak_openid_client" "web" {
 
 # Access tokens issued to the web client carry the audience the Spring resource server requires.
 resource "keycloak_openid_audience_protocol_mapper" "api_audience" {
-  realm_id  = keycloak_realm.kibootia.id
+  realm_id  = keycloak_realm.timetia.id
   client_id = keycloak_openid_client.web.id
-  name      = "kibootia-api-audience"
+  name      = "timetia-api-audience"
 
   included_custom_audience = var.api_audience
   add_to_access_token      = true
@@ -87,11 +182,11 @@ resource "keycloak_openid_audience_protocol_mapper" "api_audience" {
 }
 
 # Least-privilege administration client for the user lifecycle (ADR 0025). Realm-management roles only, never
-# realm-admin. Its tokens carry no kibootia-api audience, and the API rejects service-account tokens anyway.
+# realm-admin. Its tokens carry no timetia-api audience, and the API rejects service-account tokens anyway.
 resource "keycloak_openid_client" "admin" {
-  realm_id  = keycloak_realm.kibootia.id
-  client_id = "kibootia-admin"
-  name      = "Kibootia administration (service account)"
+  realm_id  = keycloak_realm.timetia.id
+  client_id = "timetia-admin"
+  name      = "Timetia administration (service account)"
   enabled   = true
 
   access_type                  = "CONFIDENTIAL"
@@ -106,7 +201,7 @@ resource "keycloak_openid_client" "admin" {
 # kc-admin-api scope adds it; a client created here does not have it unless it is made a default scope. The list is the
 # default set plus that scope; the resource owns the whole set.
 resource "keycloak_openid_client_default_scopes" "admin" {
-  realm_id  = keycloak_realm.kibootia.id
+  realm_id  = keycloak_realm.timetia.id
   client_id = keycloak_openid_client.admin.id
   default_scopes = [
     "profile",
@@ -120,13 +215,13 @@ resource "keycloak_openid_client_default_scopes" "admin" {
 }
 
 data "keycloak_openid_client" "realm_management" {
-  realm_id  = keycloak_realm.kibootia.id
+  realm_id  = keycloak_realm.timetia.id
   client_id = "realm-management"
 }
 
 resource "keycloak_openid_client_service_account_role" "admin" {
   for_each                = toset(["view-users", "query-users", "manage-users"])
-  realm_id                = keycloak_realm.kibootia.id
+  realm_id                = keycloak_realm.timetia.id
   service_account_user_id = keycloak_openid_client.admin.service_account_user_id
   client_id               = data.keycloak_openid_client.realm_management.id
   role                    = each.value

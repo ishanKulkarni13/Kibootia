@@ -10,7 +10,7 @@ async function signIn(page: Page, returnPath = "/") {
   await page.goto(returnPath === "/" ? "/" : returnPath);
   if (returnPath === "/") await page.getByRole("link", { name: "Sign in" }).click();
   // Keycloak's own login page, on its public address.
-  await expect(page).toHaveURL(/localhost:8180\/realms\/kibootia\//);
+  await expect(page).toHaveURL(/localhost:8180\/realms\/timetia\//);
   await page.locator("#username").fill(DEMO_USERNAME);
   await page.locator("#password").fill(demoPassword!);
   await page.locator("#kc-login").click();
@@ -27,7 +27,7 @@ test.describe("signing in through the Next.js server", () => {
     // Rendered by the server from a direct call to Spring.
     const server = page.getByTestId("me-server");
     await expect(server.locator('[data-field="username"]')).toHaveText("demo");
-    await expect(server.locator('[data-field="email"]')).toHaveText("demo@kibootia.localhost");
+    await expect(server.locator('[data-field="email"]')).toHaveText("demo@timetia.localhost");
     await expect(server.locator('[data-field="emailVerified"]')).toHaveText("yes");
 
     // Fetched by the browser through /api/v1/me, with the token added by the server.
@@ -36,13 +36,13 @@ test.describe("signing in through the Next.js server", () => {
     await expect(browser.locator('[data-field="id"]')).toHaveText(await server.locator('[data-field="id"]').innerText());
 
     // The browser never holds a token: the session lives in HttpOnly cookies only.
-    const cookies = (await context.cookies()).filter((cookie) => cookie.name.startsWith("kibootia_session"));
+    const cookies = (await context.cookies()).filter((cookie) => cookie.name.startsWith("timetia_session"));
     expect(cookies.length).toBeGreaterThan(0);
     for (const cookie of cookies) {
       expect(cookie.httpOnly).toBe(true);
       expect(cookie.sameSite).toBe("Lax");
     }
-    expect(await page.evaluate(() => document.cookie)).not.toContain("kibootia_session");
+    expect(await page.evaluate(() => document.cookie)).not.toContain("timetia_session");
     expect(await page.content()).not.toMatch(/eyJ[A-Za-z0-9_-]{10,}\./);
 
     await page.getByRole("button", { name: "Sign out" }).click();
@@ -50,12 +50,12 @@ test.describe("signing in through the Next.js server", () => {
 
     // The Keycloak session ended too: visiting a protected page asks for credentials again.
     await page.goto("/me");
-    await expect(page).toHaveURL(/localhost:8180\/realms\/kibootia\//);
+    await expect(page).toHaveURL(/localhost:8180\/realms\/timetia\//);
   });
 
   test("sends a signed-out visitor to sign in and back to the page they asked for", async ({ page }) => {
     await page.goto("/me");
-    await expect(page).toHaveURL(/localhost:8180\/realms\/kibootia\//);
+    await expect(page).toHaveURL(/localhost:8180\/realms\/timetia\//);
     await page.locator("#username").fill(DEMO_USERNAME);
     await page.locator("#password").fill(demoPassword!);
     await page.locator("#kc-login").click();

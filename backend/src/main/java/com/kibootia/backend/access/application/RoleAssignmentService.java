@@ -96,6 +96,7 @@ public class RoleAssignmentService implements RoleAssignments {
 		this.rateLimiter.acquire(RateLimitCategory.ADMIN_ACTIONS);
 		requireExistingUser(userId);
 		Map<UUID, Role> wanted = rolesById(roleIds);
+		requireUnscoped(wanted.values());
 		Set<UUID> current = this.roles.roleIdsOf(userId);
 		Role admin = this.builtIns.admin();
 
@@ -107,6 +108,7 @@ public class RoleAssignmentService implements RoleAssignments {
 		if (added.contains(admin.id())) {
 			requireAdministrator();
 		}
+		requireGrantable(added.stream().map(wanted::get).toList());
 		if (removed.contains(admin.id())) {
 			ensureNotLastAdministrator(userId);
 		}
@@ -132,9 +134,14 @@ public class RoleAssignmentService implements RoleAssignments {
 	@NoAuthorization("callers authorize; a user reads their own permissions and an administrator reads another's")
 	public Set<String> permissionsOf(UUID userId) {
 		Set<String> permissions = new TreeSet<>();
-		for (Role role : this.roles.findAll(this.roles.roleIdsOf(userId))) {
+		Set<UUID> held = new LinkedHashSet<>(this.roles.roleIdsOf(userId));
+		this.roles.scopedAssignmentsOf(userId).forEach((assignment) -> held.add(assignment.roleId()));
+		for (Role role : this.roles.findAll(held)) {
 			if (role.builtIn() == Role.BuiltIn.ADMIN) {
-				this.registry.all().forEach((permission) -> permissions.add(permission.name()));
+				this.registry.all()
+					.stream()
+					.filter((permission) -> !permission.policyDecided())
+					.forEach((permission) -> permissions.add(permission.name()));
 			}
 			else {
 				role.permissions().stream().filter(this.registry::isRegistered).forEach(permissions::add);
@@ -166,6 +173,13 @@ public class RoleAssignmentService implements RoleAssignments {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
+	@NoAuthorization("callers authorize; a safeguard that asks whether an account is an administrator's")
+	public boolean holdsAdministratorRole(UUID userId) {
+		return isAdministrator(userId);
+	}
+
+	@Override
 	@Transactional(propagation = Propagation.MANDATORY)
 	@NoAuthorization("the request gate gives every new profile the user role before any use case runs")
 	public void assignDefaultRole(UUID userId) {
@@ -183,10 +197,12 @@ public class RoleAssignmentService implements RoleAssignments {
 		}
 		this.authorization.require(AccessPermissions.ASSIGN_ROLES);
 		Map<UUID, Role> wanted = rolesById(new LinkedHashSet<>(roleIds));
+		requireUnscoped(wanted.values());
 		Role admin = this.builtIns.admin();
 		if (wanted.containsKey(admin.id())) {
 			requireAdministrator();
 		}
+		requireGrantable(wanted.values());
 		Set<UUID> current = this.roles.roleIdsOf(userId);
 		UUID actor = this.authorization.currentUserId();
 		for (Role role : wanted.values()) {
@@ -208,6 +224,15 @@ public class RoleAssignmentService implements RoleAssignments {
 		}
 		this.roles.assign(userId, admin.id(), userId);
 		return true;
+	}
+
+	@Override
+	// Not read-only: on a fresh database the built-in roles may not exist yet, and asking for the administrator role
+	// creates it (BuiltInRoles heals itself), which is a write.
+	@Transactional
+	@NoAuthorization("startup: decides whether the bootstrap administrator is still needed; reveals only a yes or no")
+	public boolean hasAdministrator() {
+		return !this.roles.holdersOf(this.builtIns.admin().id()).isEmpty();
 	}
 
 	@Override
@@ -251,6 +276,45 @@ public class RoleAssignmentService implements RoleAssignments {
 		if (!this.roles.roleIdsOf(caller).contains(this.builtIns.admin().id())) {
 			throw new AccessDeniedException("Only an administrator can give the administrator role");
 		}
+	}
+
+	/**
+	 * Giving a role gives its permissions, so the giver must hold each of them, as when a role is edited ({@code
+	 * RoleService}). Otherwise assigning roles would be a way to gain permissions, including by giving oneself a role. An
+	 * administrator holds every permission and may give any role.
+	 */
+	private void requireGrantable(Collection<Role> given) {
+		if (isAdministrator(this.authorization.currentUserId())) {
+			return;
+		}
+		for (Role role : given) {
+			for (String permission : role.permissions()) {
+				if (this.registry.isRegistered(permission)) {
+					this.authorization.require(permission);
+				}
+			}
+		}
+	}
+
+	/**
+	 * A role with a scope type is assigned within a place, through the scoped-role endpoint; it cannot be given here,
+	 * where it would have no place (Timetia ADR 0004).
+	 */
+	private static void requireUnscoped(Collection<Role> given) {
+		List<ApiFieldError> errors = new ArrayList<>();
+		for (Role role : given) {
+			if (role.isScoped()) {
+				errors.add(new ApiFieldError("roleIds", "scope_required",
+						"'" + role.name() + "' is assigned within a scope; use the scoped roles of the user"));
+			}
+		}
+		if (!errors.isEmpty()) {
+			throw ApiException.invalid(ProblemCodes.VALIDATION_FAILED, "The request contains invalid fields.", errors);
+		}
+	}
+
+	private boolean isAdministrator(UUID userId) {
+		return this.roles.roleIdsOf(userId).contains(this.builtIns.admin().id());
 	}
 
 	private Map<UUID, Role> rolesById(Set<UUID> ids) {
