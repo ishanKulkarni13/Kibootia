@@ -24,16 +24,16 @@ What follows:
 
 - **ADR 0009 is superseded.** Authorization is no longer "role-based first, attribute-based not initially required". Role-based, attribute-based, relationship-based and scope-based authorization are all in scope.
 - **Three non-goals are withdrawn:** a shipped policy engine, an organization-management interface with a tenant-management subsystem, and machine-to-machine API clients. Whether an external engine ships is decided in [ADR 0056](0056-authorization-evaluation-engine.md); withdrawing the non-goal only removes the prohibition.
-- **Parts of three accepted ADRs will be replaced by later ADRs**, each written when its slice starts. Until then the accepted text stays in force:
+- **Parts of three accepted ADRs will be replaced by later ADRs**, each written when its phase starts. Until then the accepted text stays in force:
   - [ADR 0027](0027-central-authorization-decision-point.md): the port and the central decision point stay; the shape of the contract is replaced by [ADR 0055](0055-authorization-decision-contract.md), and "OPA as a recipe" is revisited by ADR 0056.
   - [ADR 0044](0044-authorization-enforcement-conventions.md): checks on use cases and the architecture rule stay; the three-value scope, the rejection of machine clients and the permission-name convention for ownership are replaced.
-  - [ADR 0028](0028-tenant-ready-schema.md): the tenant-ready schema stays; "no live tenant resolution, no tenant management" is replaced in the multi-tenancy slice.
+  - [ADR 0028](0028-tenant-ready-schema.md): the tenant-ready schema stays; "no live tenant resolution, no tenant management" is replaced in the multi-tenancy phase (milestone 16).
 - **Authorization stays an in-process module** of the application, reached through the Java contract in `platform.authorization`. It is not a network service. The contract is kept as plain data (a request, a decision, a filter description), so an HTTP front can be added later without redesign.
 - **Delivery is in phases**, in the order of the [authorization roadmap](../product/roadmap/authorization-roadmap.md), and every phase ends in a state that builds, starts, migrates and passes its tests. Commitment to the scope is not a commitment to a date, and no phase starts before its ADRs are accepted.
 - **Three rules protect the foundation while the scope grows:**
   1. Nothing of Timetia's or indent-edi's domain enters foundation code. Their scenarios live in test fixtures ([reference scenarios](../product/requirements/authorization/reference-scenarios.md)).
   2. Every capability beyond today's baseline (roles, permissions, ownership) has a switch and a CI row proving the application starts without it ([ADR 0024](0024-package-modules-with-infrastructure-toggles.md)).
-  3. Behavior that is verified today stays verified through every slice: deny by default, checks on use cases, lists filtered in the database, and a revocation that applies on the next request.
+  3. Behavior that is verified today stays verified through every phase: deny by default, checks on use cases, lists filtered in the database, and a revocation that applies on the next request.
 
 ## Alternatives considered
 
