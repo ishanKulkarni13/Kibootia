@@ -20,3 +20,7 @@ The project is built through seven ordered milestones, each a vertical slice: ev
 | [milestone-4-files.md](milestone-4-files.md) | Object storage and the avatar flow |
 | [milestone-5-example-feature.md](milestone-5-example-feature.md) | The deletable example feature (Notes, with a picture and screens), removal recipes and the module-removal matrix |
 | [milestone-6-production-readiness.md](milestone-6-production-readiness.md) | Reference deployment, production guards, first recipes, first release |
+| [authorization-roadmap.md](authorization-roadmap.md) | The slices (milestones 7 to 15) that deliver the [authorization requirements](../requirements/authorization/README.md). Draft, awaiting the owner's confirmation |
+| [milestone-7-authorization-contract.md](milestone-7-authorization-contract.md) | The first authorization slice: the decision contract and domain model, with behavior unchanged. Draft |
+
+Milestones 0 to 6 are the plan the owner set on 2026-10-28. Milestones 7 onward were proposed by the authorization review of 2026-11-11 and depend on draft [ADR 0053](../../decisions/0053-adopt-authorization-requirements.md). Whether milestone 7 comes before milestone 6 is undecided (OQ-85 in [open questions](../../decisions/open-questions.md)).
