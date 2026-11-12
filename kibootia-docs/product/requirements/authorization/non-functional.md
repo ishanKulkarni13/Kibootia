@@ -41,7 +41,7 @@ None of the rows above can be tested as written, because none has a number. Unti
 
 ## Acceptance criteria
 
-The system is functionally aligned with these requirements when all of the following hold. Each line is checked by automated tests in the slice that delivers it ([authorization roadmap](../../roadmap/authorization-roadmap.md)), and counts only when it is verified in CI ([verification standard](../../../engineering/testing/verification-standard.md)).
+The system is functionally aligned with these requirements when all of the following hold. Each line is checked by automated tests in the phase that delivers it ([authorization roadmap](../../roadmap/authorization-roadmap.md)), and counts only when it is verified in CI ([verification standard](../../../engineering/testing/verification-standard.md)).
 
 ### Authorization model
 

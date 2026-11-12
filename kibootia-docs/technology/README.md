@@ -45,7 +45,6 @@ None recorded yet. A combination is recorded here only after a passing CI run co
 | OpenTofu with the Keycloak provider | core | selected; run as a one-shot container | Realm configuration as code | [0045](../decisions/0045-keycloak-operations.md) |
 | Spring Security resource server | core | selected | Token validation and request protection | [0007](../decisions/0007-spring-security-resource-server.md), [0008](../decisions/0008-audience-validation-and-deny-by-default.md) |
 | Central authorization decision point (Java policies) | core | selected | Permission, ownership and contextual checks | [0027](../decisions/0027-central-authorization-decision-point.md) |
-| Common Expression Language (`dev.cel`, Google's Java library) | optional | candidate (draft decision; alternative: Cedar) | Administrator-written conditions on grants, in a language that cannot run arbitrary code | [0056](../decisions/0056-authorization-evaluation-engine.md) (draft) |
 | MySQL 8.4 | core | selected | Relational storage | [0011](../decisions/0011-mysql-jpa-hibernate-persistence.md) |
 | Spring Data JPA, Hibernate | core | selected | Persistence | [0011](../decisions/0011-mysql-jpa-hibernate-persistence.md) |
 | Flyway | core | selected | Schema migrations | [0012](../decisions/0012-flyway-managed-schema-evolution.md) |
@@ -102,6 +101,9 @@ Live multi-tenancy and service principals move from future to planned when draft
 | Auth.js | Joined Better Auth on 2025-09-22; security patches only ([0026](../decisions/0026-nextjs-bff-session.md)) |
 | Better Auth | Keeps its own user and session tables, duplicating Keycloak ([0026](../decisions/0026-nextjs-bff-session.md)) |
 | Kafka | RabbitMQ fits typical application workloads better; Kafka suits high-volume streaming ([0031](../decisions/0031-transactional-outbox-and-locked-jobs.md)) |
+| Common Expression Language (`dev.cel`) for administrator-written conditions | Not needed now: conditions are named conditions written in Java ([0054](../decisions/0054-authorization-domain-model.md), owner decision of 2026-11-11). The first candidate if administrators ever need to type conditions; Cedar is the alternative ([0056](../decisions/0056-authorization-evaluation-engine.md), draft) |
+| OpenFGA, SpiceDB or Cerbos as the default authorization store | Proposed not to be the default: a second copy of the data or an extra service, and list queries that cannot be filtered in the database. Recipe candidates, decided by a measured comparison ([0056](../decisions/0056-authorization-evaluation-engine.md), draft) |
+| Casbin, Keycloak Authorization Services, Spring Security ACL | A second definition of the model; ties authorization to the identity provider; per-object lists only ([0056](../decisions/0056-authorization-evaluation-engine.md), draft) |
 | OPA as a default component | Extra service, duplicate rules, outage denies everything ([0027](../decisions/0027-central-authorization-decision-point.md)) |
 | Redis as a default component | Not needed for sessions or rate limiting at the start ([0026](../decisions/0026-nextjs-bff-session.md)) |
 | Spring Cloud Vault | Couples the application to Vault ([0032](../decisions/0032-secrets-from-environment-and-files.md)) |

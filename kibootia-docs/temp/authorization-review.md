@@ -10,7 +10,9 @@
 
 A review of Kibootia's authorization code and documents against two requirements drafts in this folder, `authz-new-srs.md` (primary) and `authz-srs.md` (older). Its results are the permanent [authorization requirements](../product/requirements/authorization/README.md), four draft ADRs ([0053](../decisions/0053-adopt-authorization-requirements.md) to [0056](../decisions/0056-authorization-evaluation-engine.md)) and the [authorization roadmap](../product/roadmap/authorization-roadmap.md). This document holds the reasoning that has no other home.
 
-**How it was done.** The backend, the frontend, the infrastructure, the CI workflow, all 52 ADRs and the permanent documents were read. CI status was checked with the GitHub CLI. No build and no test was run for this review. The Timetia and indent-edi repositories are not part of this repository and were not inspected; what is said about them comes from the drafts.
+**Revision note (2026-11-12).** The first version of this review was written before the reference applications were read and before the full review brief arrived. It has since been corrected: Timetia and indent-edi were read, and indent-edi turned out to have a provisional permission matrix, which the first version said did not exist. The owner reconfirmed full commitment on 2026-11-11, decided that conditions are named conditions and that evaluation stays in-house pending measurement, and said that no integration with either application is planned and that Kibootia has no forks or users. The roadmap was reshaped from nine slices into eleven phases (milestones 7 to 17) as a result. The security and engineering-quality findings are in a companion, the [security review](authorization-security-review.md).
+
+**How it was done.** The backend, the frontend, the infrastructure, the CI workflow, all 52 ADRs and the permanent documents were read. CI status was checked with the GitHub CLI. No build and no test was run for this review. The reference applications were read in a second pass (see the revision note above): Timetia from the `docs` branch of its repository and indent-edi from its `docs/` folder and permission matrix, both read only; the sources and what was not read are listed in the [reference scenarios](../product/requirements/authorization/reference-scenarios.md#sources).
 
 ## 1. Verdict
 
@@ -18,7 +20,7 @@ A review of Kibootia's authorization code and documents against two requirements
 2. **It covers a small part of the new requirements.** Of 51 requirements, 4 are fully met, 21 partly, 25 not at all, 1 is deferred by the requirement itself.
 3. **The gap is mostly in three shapes, not in missing features.** The decision returns a boolean; scope is an enum of three values encoded in permission names; an assignment is only "user holds role". Almost every unmet requirement runs into one of the three. Changing those shapes once, first, is the core of the plan.
 4. **The requirements are a good draft with real defects**: two requirements referenced but never defined, no measurable number anywhere, thirty open questions, and a few places where they would pull a workflow engine into the foundation.
-5. **The commitment is large.** Nine slices against six milestones built so far, for two applications whose permission rules are not confirmed. The owner chose full commitment knowingly; the roadmap is ordered so the slices with a consumer come first.
+5. **The commitment is large.** Eleven phases against six milestones built so far. Timetia and indent-edi exercise the first five; the later six (service principals, groups, delegation, governance, multi-tenancy, caching) have no reference scenario. The owner chose full commitment knowingly; the roadmap puts the phases with a consumer first.
 
 ## 2. Terms used in this review
 
@@ -171,7 +173,7 @@ Only the milestone 5 status was corrected in this round. The rest is listed so i
 9. **AUTH-025 bundles** add an indirection between role and permission. Worth it only when several roles share a large set.
 10. **AUTH-017: tenant and department are different things.** A tenant isolates data. A department limits permissions inside one tenant. The drafts list both under "organizational isolation".
 11. **"Without modifying Kibootia's core"** needs a meaning in a model where the application owns a copy of all the code. Recommended: without editing the foundation's modules, so that merging a new release does not conflict.
-12. **The reference validation is hypothetical.** indent-edi has no permission matrix, and section 24 of the newer draft says so. Multi-tenancy is "optional" for both applications yet is a whole slice.
+12. **The reference validation was partly wrong.** The drafts say indent-edi has no permission matrix; it has a provisional one (five roles, seven actions, scopes none, own, department and all). They describe Timetia from memory; its documents show seven roles, department, division and batch scopes, relationships, and a rule that distinguishes theory from lab lectures. Multi-tenancy is "optional" for both applications yet is a whole phase. Both applications also show that a record can lie in several scopes at once, which the drafts do not say.
 
 ### Conflicts with accepted decisions
 
@@ -179,7 +181,7 @@ Only the milestone 5 status was corrected in this round. The rest is listed so i
 |---|---|---|
 | AUTH-003, 005, 006 | ADR 0009: attribute engine not an initial requirement | Draft ADR 0053 supersedes 0009 |
 | AUTH-018, 035 | ADR 0044: machine clients refused | Replaced in milestone 7 |
-| AUTH-017 | ADR 0028: no live tenancy, no tenant management | Replaced in the tenancy slice |
+| AUTH-017 | ADR 0028: no live tenancy, no tenant management | Replaced in the multi-tenancy phase (milestone 16) |
 | AUTH-032 | ADR 0044, ADR 0050: no cache | No conflict if the cache stays conditional on measurement |
 | AUTH-037 | ADR 0023: no published libraries | Open (OQ-88) |
 | Any shipped engine | Goals and non-goals; ADR 0027 | Non-goal withdrawn by draft 0053; engine decided by draft 0056 |
@@ -198,14 +200,14 @@ The full comparison is in draft [ADR 0056](../decisions/0056-authorization-evalu
 
 | Risk | Why it matters | Mitigation in the plan |
 |---|---|---|
-| Building for consumers that do not exist yet | Generic features designed without a real user tend to be wrong in detail | Scenario tests per slice; slices without a consumer last |
+| Building for consumers that do not exist yet | Generic features designed without a real user tend to be wrong in detail | Scenario tests per phase; phases without a consumer last |
 | The foundation absorbing business logic | Reviewer counting, deadlines and approvals are one step from a workflow engine | Review notes on AUTH-013, 029, 045; the responsibility table |
-| The contract changing after forks exist | Every fork merges the break | Milestone 7 before the first release tag (OQ-85) |
-| The permission migration changing access silently | The one step where a bug gives or removes access for real users | Before-and-after equivalence test in milestone 7 |
+| The contract changing after forks exist | Every fork merges the break | None exist yet (owner, 2026-11-11); milestones 7 and 8 proposed before the first release tag (OQ-85) |
+| The permission migration changing access silently | The one step where a bug gives or removes access for real users | Before-and-after equivalence test in milestone 8, where the stored permissions change |
 | In-house relationship queries being slow or wrong | Recursive SQL over groups and hierarchies | Measured evaluation in ADR 0056; OpenFGA as the recorded fallback |
 | Complexity for small applications | Every fork inherits every capability | A switch and a CI row per capability; the baseline is today's behavior |
 | Scope outrunning verification | Milestone 5's browser tests have still not run in CI | OQ-86; "verified" keeps meaning a named CI run |
-| One maintainer | Nine slices, each the size of the largest milestone so far | Stated in ADR 0053 and the roadmap; the order allows stopping after any slice with a working system |
+| One maintainer | Eleven phases, several the size of the largest milestone so far | Stated in ADR 0053 and the roadmap; every phase ends in a usable state, so work can stop after any of them |
 
 ## 10. What the owner needs to decide
 
@@ -215,7 +217,7 @@ In order of what blocks what. All are in [open questions](../decisions/open-ques
 2. Milestone 7 before or after milestone 6 (OQ-85).
 3. Confirm drafts 0054 and 0055, the model and the contract (OQ-82, OQ-83). Milestone 7 cannot start without them.
 4. Approve or reject the nine proposed requirements, AUTH-041 to AUTH-049 (OQ-80).
-5. Run the engine evaluation and decide draft 0056 (OQ-84). Needed before slice 8.
+5. Run the engine measurement and decide draft 0056 (OQ-84). Needed before milestone 9.
 6. Set the first numbers (OQ-70 to OQ-73).
 7. Run the end-to-end tests in CI for milestone 5 (OQ-86).
-8. The thirty questions carried over from the drafts (OQ-50 to OQ-79), each needed only by the slice named beside it.
+8. The questions carried over from the drafts (OQ-50 to OQ-73), each needed only by the phase named beside it.

@@ -65,6 +65,6 @@ A paragraph that starts with **Review note** is a recommendation from the 2026-1
 | AUTH-051 given to collection-level authorization | It was an unnumbered section (11.3), "established through AUTH-014"; it is delivered and tested separately from field-level access |
 | AUTH-045 placed with time-bound authorization | It was a chapter of its own |
 | Status labels reduced to the five above | See the table |
-| The 30 open questions of the newer draft moved to [open questions](../../../decisions/open-questions.md) as OQ-50 to OQ-79, except six that are indent-edi's own business questions (removed; the answers belong in its repository) | One home for undecided items |
+| The 30 open questions of the newer draft moved to [open questions](../../../decisions/open-questions.md) as OQ-50 to OQ-73, except six that are indent-edi's own business questions (removed; the answers belong in its repository) | One home for undecided items |
 | The scope classification (section 26 of the newer draft) replaced by the [authorization roadmap](../../roadmap/authorization-roadmap.md) | Delivery order belongs to the roadmap |
 | The reference scenarios rewritten from the applications' own documents | The drafts described them from memory |
