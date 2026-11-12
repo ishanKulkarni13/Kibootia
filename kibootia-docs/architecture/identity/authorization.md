@@ -4,11 +4,13 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-10
+- **Last updated:** 2026-11-11
 
 > **Implementation:** the decision point, annotations and scopes are verified (CI run 42605511477, 2026-11-09). Stored roles, the editable role model, email verification and the safeguards are verified (CI run 42780048416, 2026-11-10).
 
 Decisions: [ADR 0009](../../decisions/0009-role-based-authorization-first.md), [ADR 0025](../../decisions/0025-identity-and-authorization-data-split.md), [ADR 0027](../../decisions/0027-central-authorization-decision-point.md), [ADR 0041](../../decisions/0041-user-lifecycle-and-account-model.md), [ADR 0044](../../decisions/0044-authorization-enforcement-conventions.md).
+
+This document describes authorization **as it is built today**. What it must become is in the [authorization requirements](../../product/requirements/authorization/README.md); how far the code is from them is in their [traceability](../../product/requirements/authorization/traceability.md); the proposed changes to the model and to the contract below are draft [ADR 0054](../../decisions/0054-authorization-domain-model.md) and draft [ADR 0055](../../decisions/0055-authorization-decision-contract.md). Nothing below changes until those are accepted and built.
 
 ## Principles (owner decisions)
 
