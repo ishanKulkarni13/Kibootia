@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-08
+- **Last updated:** 2026-11-11
 
 > **Implementation:** not applicable (vision). The starter is at the very beginning; see [implementation status](roadmap/implementation-status.md).
 
@@ -45,6 +45,8 @@ A developer starts a new application and inherits clear package conventions, exp
 ## Where it may go later
 
 Possible future capabilities are application notifications, interface translations, machine-to-machine clients, search, caching, feature flags, live multi-tenancy with organization management, a shipped policy engine and a shipped message broker. These are possibilities, not commitments, and are added only when a concrete requirement appears. Several are planned as documented recipes; see the [technology catalogue](../technology/README.md).
+
+Authorization is the exception since 2026-11-11: the owner has committed to a full set of [authorization requirements](requirements/authorization/README.md), which brings machine-to-machine clients, live multi-tenancy and possibly a policy engine into scope. The decision is recorded in draft [ADR 0053](../decisions/0053-adopt-authorization-requirements.md) and the order of delivery in the [authorization roadmap](roadmap/authorization-roadmap.md).
 
 ## Related
 

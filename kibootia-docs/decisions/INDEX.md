@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-10
+- **Last updated:** 2026-11-11
 
 > **Implementation:** not applicable (index).
 
@@ -66,5 +66,9 @@ Accepted does not mean implemented: see [implementation status](../product/roadm
 | 0050 | Milestone 3 implementation decisions | platform | accepted | 2026-11-10 | [0050](0050-milestone-3-implementation-decisions.md) |
 | 0051 | Milestone 4 implementation decisions | platform | accepted | 2026-11-10 | [0051](0051-milestone-4-implementation-decisions.md) |
 | 0052 | Milestone 5 implementation decisions | platform | accepted | 2026-11-11 | [0052](0052-milestone-5-implementation-decisions.md) |
+| 0053 | Adopt the authorization requirements as committed scope | platform | draft (on acceptance supersedes 0009) | 2026-11-11 | [0053](0053-adopt-authorization-requirements.md) |
+| 0054 | Authorization domain model | platform | draft | 2026-11-11 | [0054](0054-authorization-domain-model.md) |
+| 0055 | Authorization decision contract, version 2 | platform | draft | 2026-11-11 | [0055](0055-authorization-decision-contract.md) |
+| 0056 | Authorization evaluation engine | platform | draft | 2026-11-11 | [0056](0056-authorization-evaluation-engine.md) |
 
 Module-scoped ADRs will be listed here too once modules exist.

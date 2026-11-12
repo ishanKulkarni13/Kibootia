@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-10
+- **Last updated:** 2026-11-11
 
 > **Implementation:** not applicable (catalogue). Whether a technology is planned, observed or verified is **not** recorded here; see [implementation status](../product/roadmap/implementation-status.md).
 
@@ -45,6 +45,7 @@ None recorded yet. A combination is recorded here only after a passing CI run co
 | OpenTofu with the Keycloak provider | core | selected; run as a one-shot container | Realm configuration as code | [0045](../decisions/0045-keycloak-operations.md) |
 | Spring Security resource server | core | selected | Token validation and request protection | [0007](../decisions/0007-spring-security-resource-server.md), [0008](../decisions/0008-audience-validation-and-deny-by-default.md) |
 | Central authorization decision point (Java policies) | core | selected | Permission, ownership and contextual checks | [0027](../decisions/0027-central-authorization-decision-point.md) |
+| Common Expression Language (`dev.cel`, Google's Java library) | optional | candidate (draft decision; alternative: Cedar) | Administrator-written conditions on grants, in a language that cannot run arbitrary code | [0056](../decisions/0056-authorization-evaluation-engine.md) (draft) |
 | MySQL 8.4 | core | selected | Relational storage | [0011](../decisions/0011-mysql-jpa-hibernate-persistence.md) |
 | Spring Data JPA, Hibernate | core | selected | Persistence | [0011](../decisions/0011-mysql-jpa-hibernate-persistence.md) |
 | Flyway | core | selected | Schema migrations | [0012](../decisions/0012-flyway-managed-schema-evolution.md) |
@@ -75,7 +76,7 @@ The [recipes/](../recipes/README.md) area exists since milestone 5 ([ADR 0036](.
 
 | Recipe | Tier | Why a recipe and not a module |
 |---|---|---|
-| OPA policy engine behind the decision point | recipe | Two rule sets must be kept in sync; most applications do not need it ([0027](../decisions/0027-central-authorization-decision-point.md)) |
+| OPA policy engine behind the decision point | recipe | Two rule sets must be kept in sync; most applications do not need it ([0027](../decisions/0027-central-authorization-decision-point.md)). Draft [0056](../decisions/0056-authorization-evaluation-engine.md) proposes to widen this to "an external engine behind the decision point", with OpenFGA and Cerbos as the first candidates |
 | Vault Agent for secret delivery | recipe | Vault is recommended, not mandatory ([0032](../decisions/0032-secrets-from-environment-and-files.md)) |
 | RabbitMQ message broker | recipe | The outbox covers durable events without a broker ([0031](../decisions/0031-transactional-outbox-and-locked-jobs.md)) |
 | Self-hosted S3 with SeaweedFS | recipe | Managed S3 is the first production recommendation ([0029](../decisions/0029-s3-object-storage-contract.md)) |
@@ -87,6 +88,8 @@ The [recipes/](../recipes/README.md) area exists since milestone 5 ([ADR 0036](.
 ## Future
 
 Live multi-tenancy with organization management ([0028](../decisions/0028-tenant-ready-schema.md)), Kubernetes deployment ([0037](../decisions/0037-single-server-compose-reference-deployment.md)), search and caching, application notifications and a backend mail module, service principals for machine clients ([0044](../decisions/0044-authorization-enforcement-conventions.md)), interface translations.
+
+Live multi-tenancy and service principals move from future to planned when draft [0053](../decisions/0053-adopt-authorization-requirements.md) is accepted; their place in the order is in the [authorization roadmap](../product/roadmap/authorization-roadmap.md).
 
 ## Considered and not selected
 

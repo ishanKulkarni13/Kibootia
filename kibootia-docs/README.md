@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-10
+- **Last updated:** 2026-11-11
 
 > **Implementation:** not applicable (index).
 
@@ -21,7 +21,7 @@ Every document says whether it describes a decision, a requirement, a plan, obse
 | Area | What it holds |
 |---|---|
 | [meta/](meta/README.md) | [Documentation standards](meta/documentation-standards.md), how docs are kept current, plus templates |
-| [product/](product/README.md) | Vision, goals and non-goals, milestones, implementation status |
+| [product/](product/README.md) | Vision, goals and non-goals, [requirements](product/requirements/README.md), milestones, implementation status |
 | [shared/](shared/README.md) | Glossary of terms used across documents |
 | [architecture/](architecture/README.md) | System design: boundaries, identity, data, API, communication |
 | [technology/](technology/README.md) | Technology catalogue: tier, selection and reasoning, including technologies not selected |
@@ -37,8 +37,9 @@ Every document says whether it describes a decision, a requirement, a plan, obse
 - Wondering what works today: [implementation status](product/roadmap/implementation-status.md).
 - Why something is the way it is: [ADR index](decisions/INDEX.md).
 - What is still undecided: [open questions](decisions/open-questions.md).
+- What authorization must become, and how far the code is: [authorization requirements](product/requirements/authorization/README.md) and their [traceability](product/requirements/authorization/traceability.md).
 - Whether implementation can start: [implementation readiness review](temp/kibootia-implementation-readiness.md).
 
 ## Non-authoritative material
 
-`temp/` holds working material: [`kibootia-project-definition.md`](temp/kibootia-project-definition.md) is the source of the first version of these docs (marked historical), [`kibootia-ideation-decisions.md`](temp/kibootia-ideation-decisions.md) is the brief that started the 2026-10-28 interview, [`kibootia-decision-log.md`](temp/kibootia-decision-log.md) records the decisions of both interview rounds, and [`kibootia-implementation-readiness.md`](temp/kibootia-implementation-readiness.md) assesses whether implementation planning can start. None is part of the permanent set or kept in step with changes. When one of them and a document here disagree, the document here, together with the ADRs, wins. The project definition predates those decisions; its exclusions of object storage, a full observability stack and user administration no longer apply.
+`temp/` holds working material: [`kibootia-project-definition.md`](temp/kibootia-project-definition.md) is the source of the first version of these docs (marked historical), [`kibootia-ideation-decisions.md`](temp/kibootia-ideation-decisions.md) is the brief that started the 2026-10-28 interview, [`kibootia-decision-log.md`](temp/kibootia-decision-log.md) records the decisions of both interview rounds, and [`kibootia-implementation-readiness.md`](temp/kibootia-implementation-readiness.md) assesses whether implementation planning can start. [`milestone-5-handover.md`](temp/milestone-5-handover.md) is a session handover note. [`authz-srs.md`](temp/authz-srs.md) and [`authz-new-srs.md`](temp/authz-new-srs.md) are the two drafts from which the [authorization requirements](product/requirements/authorization/README.md) were derived, and [`authorization-review.md`](temp/authorization-review.md) is the review of 2026-11-11 that derived them. None is part of the permanent set or kept in step with changes. When one of them and a document here disagree, the document here, together with the ADRs, wins. The project definition predates those decisions; its exclusions of object storage, a full observability stack and user administration no longer apply.

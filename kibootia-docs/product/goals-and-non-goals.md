@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-08
+- **Last updated:** 2026-11-11
 
 > **Implementation:** not applicable (scope statement). Progress per capability: [implementation status](roadmap/implementation-status.md).
 
@@ -58,6 +58,8 @@ Not part of the foundation, and not initial requirements:
 - machine-to-machine API clients ([ADR 0044](../decisions/0044-authorization-enforcement-conventions.md)).
 
 Each may be reconsidered when a concrete requirement appears, through a new ADR.
+
+**Under reconsideration (2026-11-11).** The owner has decided to commit to the full [authorization requirements](requirements/authorization/README.md). Draft [ADR 0053](../decisions/0053-adopt-authorization-requirements.md) withdraws three of the non-goals above: a shipped policy engine, an organization-management UI with a tenant-management subsystem, and machine-to-machine API clients. The list is edited when that ADR is accepted; until then it stands as written.
 
 ## What changed on 2026-10-28
 
