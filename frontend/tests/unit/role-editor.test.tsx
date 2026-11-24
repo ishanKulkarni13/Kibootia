@@ -43,9 +43,9 @@ function role(overrides: Record<string, unknown> = {}) {
   };
 }
 
-function api(current: ReturnType<typeof role>, onSave?: (call: Call) => Response) {
+function api(current: ReturnType<typeof role>, onSave?: (call: Call) => Response, denyGrantsEnabled = false) {
   return stubApi((call) => {
-    if (call.path === "/api/v1/permissions") return json(catalogue);
+    if (call.path === "/api/v1/permissions") return json({ ...catalogue, denyGrantsEnabled });
     if (call.method === "GET") return json(current);
     return onSave ? onSave(call) : json({ ...current, version: current.version + 1 });
   });
@@ -210,5 +210,92 @@ describe("the role editor", () => {
 
     expect(await screen.findByText(/Use letters, digits, spaces/)).toBeInTheDocument();
     expect(stub.calls.some((call) => call.method === "PUT")).toBe(false);
+  });
+});
+
+describe("deny grants in the role editor (ADR 0065)", () => {
+  const deny = (action: string) => ({ action, reach: "all", effect: "DENY" });
+
+  beforeEach(() => {
+    success.mockClear();
+    push.mockClear();
+  });
+
+  it("offers a deny tick for each permission only while deny grants are switched on", async () => {
+    api(role(), undefined, true);
+    renderScreen(<RoleEditor roleId="r-1" />, manager());
+    await screen.findByRole("heading", { name: "Reviewers" });
+
+    expect(screen.getByRole("checkbox", { name: "Deny: View roles" })).toBeInTheDocument();
+    expect(screen.getAllByRole("checkbox", { name: /^Deny: / })).toHaveLength(permissions.length);
+  });
+
+  it("offers none while they are switched off", async () => {
+    api(role(), undefined, false);
+    renderScreen(<RoleEditor roleId="r-1" />, manager());
+    await screen.findByRole("heading", { name: "Reviewers" });
+
+    expect(screen.queryByRole("checkbox", { name: /^Deny: / })).not.toBeInTheDocument();
+  });
+
+  it("denies a permission for every record when the tick is set and the role is saved", async () => {
+    const stub = api(role(), undefined, true);
+    renderScreen(<RoleEditor roleId="r-1" />, manager());
+    await screen.findByRole("heading", { name: "Reviewers" });
+
+    await userEvent.click(screen.getByRole("checkbox", { name: "Deny: View widgets" }));
+    await userEvent.click(screen.getByRole("button", { name: "Save role" }));
+
+    await waitFor(() => expect(success).toHaveBeenCalled());
+    const grants = (stub.calls.find((call) => call.method === "PUT")?.body as { grants: Grants }).grants;
+    expect(grants).toContainEqual(deny("widgets.widgets.view"));
+    expect(grants).toContainEqual(all("access.roles.view"));
+  });
+
+  it("shows a deny the role already has as set, and drops it when the tick is cleared", async () => {
+    const stub = api(role({ grants: [all("access.roles.view"), deny("access.roles.manage")] }), undefined, true);
+    renderScreen(<RoleEditor roleId="r-1" />, manager());
+    await screen.findByRole("heading", { name: "Reviewers" });
+    const tick = screen.getByRole("checkbox", { name: "Deny: Create, change and delete roles" });
+    expect(tick).toBeChecked();
+
+    await userEvent.click(tick);
+    await userEvent.click(screen.getByRole("button", { name: "Save role" }));
+
+    await waitFor(() => expect(success).toHaveBeenCalled());
+    const grants = (stub.calls.find((call) => call.method === "PUT")?.body as { grants: Grants }).grants;
+    expect(grants.filter((grant) => grant.effect === "DENY")).toEqual([]);
+  });
+
+  it("does not let an editor deny a permission they do not hold themselves", async () => {
+    api(role(), undefined, true);
+    renderScreen(<RoleEditor roleId="r-1" />, manager());
+    await screen.findByRole("heading", { name: "Reviewers" });
+
+    expect(screen.getByRole("checkbox", { name: "Deny: Invite users by email" })).toBeDisabled();
+    expect(screen.getByRole("checkbox", { name: "Deny: View roles" })).toBeEnabled();
+  });
+
+  it("lets someone who may only view roles see what is denied, but not change it", async () => {
+    api(role({ grants: [deny("access.roles.manage")] }), undefined, true);
+    renderScreen(<RoleEditor roleId="r-1" />, meWith(["access.roles.view"]));
+    await screen.findByRole("heading", { name: "Reviewers" });
+
+    const tick = screen.getByRole("checkbox", { name: "Deny: Create, change and delete roles" });
+    expect(tick).toBeChecked();
+    expect(tick).toBeDisabled();
+  });
+
+  it("with deny grants switched off, still keeps the ones a role has and says it cannot change them", async () => {
+    const stub = api(role({ grants: [all("access.roles.view"), deny("identity.users.invite")] }), undefined, false);
+    renderScreen(<RoleEditor roleId="r-1" />, manager());
+    await screen.findByRole("heading", { name: "Reviewers" });
+
+    expect(screen.getByText(/switched off, so they cannot be changed here/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Save role" }));
+
+    await waitFor(() => expect(success).toHaveBeenCalled());
+    const grants = (stub.calls.find((call) => call.method === "PUT")?.body as { grants: Grants }).grants;
+    expect(grants).toContainEqual(deny("identity.users.invite"));
   });
 });
