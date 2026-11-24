@@ -76,7 +76,7 @@ class RoleForeignKeysIT extends AdminApiTest {
 	@Test
 	@DisplayName("a permission of a role that does not exist is refused")
 	void permissionOfAnUnknownRoleIsRefused() {
-		assertThatThrownBy(() -> permit(UUID.randomUUID(), "notes.notes.view"))
+		assertThatThrownBy(() -> permit(UUID.randomUUID(), "example.things.view"))
 			.isInstanceOf(DataIntegrityViolationException.class);
 	}
 
@@ -85,7 +85,7 @@ class RoleForeignKeysIT extends AdminApiTest {
 	void aRoleInUseCannotBeRemoved() {
 		UUID editor = role("Editor");
 		assign(ALICE, editor);
-		permit(editor, "notes.notes.view");
+		permit(editor, "example.things.view");
 
 		assertThatThrownBy(() -> this.jdbc.update("delete from role where id = ?", UuidBytes.toBytes(editor)))
 			.isInstanceOf(DataIntegrityViolationException.class);
@@ -106,9 +106,9 @@ class RoleForeignKeysIT extends AdminApiTest {
 			UUID gone = UUID.randomUUID();
 			assign(ALICE, editor);
 			assign(BOB, gone);
-			permit(editor, "notes.notes.view");
-			permit(gone, "notes.notes.view");
-			permit(gone, "notes.notes.update");
+			permit(editor, "example.things.view");
+			permit(gone, "example.things.view");
+			permit(gone, "example.things.update");
 
 			runMigration();
 
