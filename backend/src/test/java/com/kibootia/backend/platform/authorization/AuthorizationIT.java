@@ -1,13 +1,20 @@
 package com.kibootia.backend.platform.authorization;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
@@ -24,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.kibootia.backend.GrantedPermissions;
 import com.kibootia.backend.TestcontainersConfiguration;
+import com.kibootia.backend.platform.errors.ApiException;
 import com.kibootia.backend.platform.tenancy.TenantContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,13 +45,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * Authorization through the real context: {@code @RequiresPermission} enforced by method security, the decision point
- * from the {@code access} module, record checks, scopes, the system caller and the 403 the API returns. Each protected
- * operation has an allowed and a denied case (verification standard).
+ * from the {@code access} module, record checks, access filters, module rules, decision records, the system principal
+ * and the 403 the API returns. Each protected operation has an allowed and a denied case (verification standard).
  */
 @SpringBootTest
 @AutoConfigureMockMvc
 @Import({ TestcontainersConfiguration.class, GrantedPermissions.class, AuthorizationIT.Declares.class,
-		AuthorizationIT.ProbeService.class, AuthorizationIT.ProbeController.class })
+		AuthorizationIT.ProbeService.class, AuthorizationIT.ProbeController.class, AuthorizationIT.LockedItems.class })
+@ExtendWith(OutputCaptureExtension.class)
 class AuthorizationIT {
 
 	static final UUID ALICE = UUID.fromString("11111111-1111-7111-8111-111111111111");
@@ -51,6 +60,11 @@ class AuthorizationIT {
 	static final UUID BOB = UUID.fromString("22222222-2222-7222-8222-222222222222");
 
 	static final UUID OTHER_TENANT = UUID.fromString("00000000-0000-7000-8000-0000000000bb");
+
+	/** An item the module rule below always refuses to change. */
+	static final UUID LOCKED = UUID.fromString("0190a5c0-0000-7000-8000-00000000100c");
+
+	static final String ITEM = "probe.item";
 
 	static final String READ = "probe.items.read";
 
@@ -60,7 +74,16 @@ class AuthorizationIT {
 
 	static final String PURGE = "probe.items.purge";
 
-	record Item(UUID ownerId, UUID tenantId) implements Owned, TenantBound {
+	record Item(UUID id, UUID ownerId, UUID tenantId) implements Resource {
+
+		Item(UUID ownerId, UUID tenantId) {
+			this(UUID.randomUUID(), ownerId, tenantId);
+		}
+
+		@Override
+		public ResourceRef resourceRef() {
+			return ResourceRef.of(ITEM, this.id, this.tenantId).ownedBy(this.ownerId);
+		}
 
 	}
 
@@ -72,7 +95,28 @@ class AuthorizationIT {
 			return List.of(Permission.forEveryUser(READ, "Read items"),
 					Permission.forEveryUser(UPDATE, "Change own items"),
 					Permission.restricted(UPDATE_ANY, "Change anyone's items"),
-					Permission.restricted(PURGE, "Purge items"));
+					Permission.restricted(PURGE, "Purge items").asSensitive());
+		}
+
+	}
+
+	/** A module rule: a locked item cannot be changed, whatever the grants say. */
+	@Component
+	static class LockedItems implements ResourceRule {
+
+		@Override
+		public String name() {
+			return "probe.locked-items";
+		}
+
+		@Override
+		public boolean appliesTo(String resourceType, String action) {
+			return ITEM.equals(resourceType) && UPDATE.equals(action);
+		}
+
+		@Override
+		public Optional<String> objection(Principal principal, String action, ResourceRef resource) {
+			return LOCKED.equals(resource.id()) ? Optional.of("the item is locked") : Optional.empty();
 		}
 
 	}
@@ -101,12 +145,16 @@ class AuthorizationIT {
 			return "updated";
 		}
 
-		public Scope scopeOfUpdates() {
-			return this.authorization.requireScope(UPDATE);
+		public AccessFilter filterOfUpdates() {
+			return this.authorization.requireFilter(UPDATE);
 		}
 
-		public Scope scopeOfPurges() {
-			return this.authorization.requireScope(PURGE);
+		public AccessFilter filterOfPurges() {
+			return this.authorization.requireFilter(PURGE);
+		}
+
+		public Item openItem(Optional<Item> item) {
+			return this.authorization.requireVisible(UPDATE, item, () -> ApiException.notFound("probe.not_found", "No item"));
 		}
 
 		@NoAuthorization("returns nothing about anyone")
@@ -151,6 +199,9 @@ class AuthorizationIT {
 	@Autowired
 	MockMvc mvc;
 
+	@Autowired
+	MeterRegistry meters;
+
 	@AfterEach
 	void clear() {
 		SecurityContextHolder.clearContext();
@@ -170,11 +221,25 @@ class AuthorizationIT {
 		return TenantContext.callAs(TenantContext.DEFAULT_TENANT, work);
 	}
 
+	private double counted(String outcome, String reason, String action) {
+		Counter counter = this.meters.find(DecisionRecorder.METRIC)
+			.tag("outcome", outcome)
+			.tag("reason", reason)
+			.tag("action", action)
+			.counter();
+		return (counter == null) ? 0 : counter.count();
+	}
+
+	private static List<String> decisionRecords(CapturedOutput output) {
+		return output.getAll().lines().filter((line) -> line.contains(DecisionRecorder.LOGGER)).toList();
+	}
+
+	// --- the checks, unchanged from contract version 1 ---------------------------------------------------------------
+
 	@Test
 	@DisplayName("a permission the user role holds is allowed")
 	void allowedPermission() {
 		signInAs(ALICE);
-
 		assertThat(inTenant(service::read)).isEqualTo("read");
 	}
 
@@ -182,7 +247,6 @@ class AuthorizationIT {
 	@DisplayName("a permission nobody was granted is denied")
 	void deniedPermission() {
 		signInAs(ALICE);
-
 		assertThatThrownBy(() -> inTenant(service::purge)).isInstanceOf(AccessDeniedException.class);
 	}
 
@@ -190,7 +254,6 @@ class AuthorizationIT {
 	@DisplayName("a method marked @NoAuthorization needs no permission")
 	void noAuthorizationMarker() {
 		signInAs(ALICE);
-
 		assertThat(inTenant(service::open)).isEqualTo("open");
 	}
 
@@ -198,7 +261,6 @@ class AuthorizationIT {
 	@DisplayName("a record the caller owns is allowed, someone else's is denied")
 	void recordOwnership() {
 		signInAs(ALICE);
-
 		assertThat(inTenant(() -> service.update(new Item(ALICE, TenantContext.DEFAULT_TENANT)))).isEqualTo("updated");
 		assertThatThrownBy(() -> inTenant(() -> service.update(new Item(BOB, TenantContext.DEFAULT_TENANT))))
 			.isInstanceOf(AccessDeniedException.class);
@@ -208,27 +270,25 @@ class AuthorizationIT {
 	@DisplayName("a record of another tenant is denied even to its owner")
 	void recordOfAnotherTenant() {
 		signInAs(ALICE);
-
 		assertThatThrownBy(() -> inTenant(() -> service.update(new Item(ALICE, OTHER_TENANT))))
 			.isInstanceOf(AccessDeniedException.class);
 	}
 
 	@Test
 	@DisplayName("a list is limited to the caller's own records without the -any permission")
-	void listScope() {
+	void listFilter() {
 		signInAs(ALICE);
-
-		assertThat(inTenant(service::scopeOfUpdates)).isEqualTo(Scope.OWN);
-		assertThatThrownBy(() -> inTenant(service::scopeOfPurges)).isInstanceOf(AccessDeniedException.class);
+		assertThat(inTenant(service::filterOfUpdates)).isEqualTo(AccessFilter.relatedTo(ResourceRef.OWNER, ALICE));
+		assertThatThrownBy(() -> inTenant(service::filterOfPurges)).isInstanceOf(AccessDeniedException.class);
+		GrantedPermissions.grant(UPDATE_ANY);
+		assertThat(inTenant(service::filterOfUpdates)).isEqualTo(AccessFilter.EVERYTHING);
 	}
 
 	@Test
 	@DisplayName("the system may do anything, in the tenant it runs in, and says why")
 	void systemCaller() {
 		signInAs(ALICE);
-
 		String result = inTenant(() -> authorization.runAsSystem("test: purge expired items", service::purge));
-
 		assertThat(result).isEqualTo("purged");
 		assertThatThrownBy(() -> inTenant(service::purge)).as("system authority ends with the block")
 			.isInstanceOf(AccessDeniedException.class);
@@ -257,7 +317,6 @@ class AuthorizationIT {
 	void subjectIsNotAUser() {
 		Jwt token = Jwt.withTokenValue("t").header("alg", "none").subject("not-a-uuid").build();
 		SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(token));
-
 		assertThatThrownBy(() -> inTenant(service::read)).isInstanceOf(AccessDeniedException.class);
 	}
 
@@ -265,7 +324,6 @@ class AuthorizationIT {
 	@DisplayName("a call outside any tenant is denied")
 	void noTenant() {
 		signInAs(ALICE);
-
 		assertThatThrownBy(service::read).isInstanceOf(AccessDeniedException.class);
 	}
 
@@ -273,7 +331,6 @@ class AuthorizationIT {
 	@DisplayName("the current user ID comes from the token")
 	void currentUserId() {
 		signInAs(BOB);
-
 		assertThat(inTenant(service::whoIsCalling)).isEqualTo(BOB);
 	}
 
@@ -281,7 +338,6 @@ class AuthorizationIT {
 	@DisplayName("over HTTP an allowed call is 200 and a denied one is 403 Problem Details")
 	void overHttp() throws Exception {
 		var alice = jwt().jwt((token) -> token.subject(ALICE.toString()).claim("email_verified", true));
-
 		this.mvc.perform(get("/api/v1/probe-auth/read").with(alice)).andExpect(status().isOk());
 		this.mvc.perform(get("/api/v1/probe-auth/purge").with(alice))
 			.andExpect(status().isForbidden())
@@ -294,7 +350,6 @@ class AuthorizationIT {
 	@DisplayName("over HTTP an unverified caller is refused with email_not_verified, not a plain forbidden")
 	void overHttpUnverified() throws Exception {
 		var unverified = jwt().jwt((token) -> token.subject(ALICE.toString()).claim("email_verified", false));
-
 		this.mvc.perform(get("/api/v1/probe-auth/read").with(unverified))
 			.andExpect(status().isForbidden())
 			.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
@@ -312,7 +367,6 @@ class AuthorizationIT {
 			authorization.requireVerified();
 			return null;
 		});
-
 		Jwt unverified = Jwt.withTokenValue("t").header("alg", "none").subject(ALICE.toString()).build();
 		SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(unverified));
 		assertThatThrownBy(() -> inTenant(() -> {
@@ -325,6 +379,89 @@ class AuthorizationIT {
 	@DisplayName("over HTTP without a token is 401")
 	void overHttpUnauthenticated() throws Exception {
 		this.mvc.perform(get("/api/v1/probe-auth/read")).andExpect(status().isUnauthorized());
+	}
+
+	// --- new in contract version 2 -------------------------------------------------------------------------------------
+
+	@Test
+	@DisplayName("a decision carries its reason and what decided it")
+	void decisionsCarryReasons() {
+		signInAs(ALICE);
+		assertThat(inTenant(() -> authorization.decide(UPDATE, new Item(ALICE, TenantContext.DEFAULT_TENANT))))
+			.isEqualTo(Decision.of(Reason.GRANTED, UPDATE));
+		assertThat(inTenant(() -> authorization.decide(UPDATE, new Item(BOB, TenantContext.DEFAULT_TENANT))))
+			.isEqualTo(Decision.of(Reason.OUT_OF_REACH, UPDATE));
+		assertThat(inTenant(() -> authorization.decide(PURGE))).isEqualTo(Decision.of(Reason.NO_GRANT));
+	}
+
+	@Test
+	@DisplayName("a module rule narrows what grants allow, even for a holder of the -any permission")
+	void moduleRuleNarrows() {
+		signInAs(ALICE);
+		GrantedPermissions.grant(UPDATE_ANY);
+		Item locked = new Item(LOCKED, ALICE, TenantContext.DEFAULT_TENANT);
+		assertThat(inTenant(() -> authorization.decide(UPDATE, locked)))
+			.isEqualTo(Decision.of(Reason.REFUSED_BY_RULE, "probe.locked-items"));
+		assertThatThrownBy(() -> inTenant(() -> service.update(locked))).isInstanceOf(AccessDeniedException.class);
+		assertThat(inTenant(() -> service.update(new Item(BOB, TenantContext.DEFAULT_TENANT)))).isEqualTo("updated");
+	}
+
+	@Test
+	@DisplayName("403 without any grant for the action, decided before the record; 404 alike for missing and out of reach")
+	void invisibleRecords() {
+		signInAs(ALICE);
+		Item own = new Item(ALICE, TenantContext.DEFAULT_TENANT);
+		Item bobs = new Item(BOB, TenantContext.DEFAULT_TENANT);
+		assertThat(inTenant(() -> service.openItem(Optional.of(own)))).isEqualTo(own);
+		assertThatThrownBy(() -> inTenant(() -> service.openItem(Optional.of(bobs))))
+			.isInstanceOfSatisfying(ApiException.class, (ex) -> assertThat(ex.code()).isEqualTo("probe.not_found"));
+		assertThatThrownBy(() -> inTenant(() -> service.openItem(Optional.empty())))
+			.isInstanceOfSatisfying(ApiException.class, (ex) -> assertThat(ex.code()).isEqualTo("probe.not_found"));
+	}
+
+	@Test
+	@DisplayName("a refusal becomes exactly one decision record, with identifiers and no attribute values")
+	void refusalIsRecorded(CapturedOutput output) {
+		signInAs(ALICE);
+		Item bobs = new Item(BOB, TenantContext.DEFAULT_TENANT);
+		int before = decisionRecords(output).size();
+		assertThatThrownBy(() -> inTenant(() -> service.update(bobs))).isInstanceOf(AccessDeniedException.class);
+		List<String> records = decisionRecords(output);
+		assertThat(records).hasSize(before + 1);
+		String line = records.getLast();
+		assertThat(line).startsWith("{")
+			.contains(Reason.OUT_OF_REACH.code())
+			.contains(UPDATE)
+			.contains(ITEM)
+			.contains(bobs.id().toString())
+			.contains(ALICE.toString())
+			.contains("deny");
+	}
+
+	@Test
+	@DisplayName("an ordinary allow is counted but not recorded; an allow of a sensitive action is recorded with the system's reason")
+	void allowsOfSensitiveActionsAreRecorded(CapturedOutput output) {
+		signInAs(ALICE);
+		double readsBefore = counted("allow", Reason.GRANTED.code(), READ);
+		int before = decisionRecords(output).size();
+		inTenant(service::read);
+		assertThat(decisionRecords(output)).as("an ordinary allow leaves no record").hasSize(before);
+		assertThat(counted("allow", Reason.GRANTED.code(), READ)).isEqualTo(readsBefore + 1);
+
+		inTenant(() -> authorization.runAsSystem("test: purge expired items", service::purge));
+		List<String> records = decisionRecords(output);
+		assertThat(records).hasSize(before + 1);
+		assertThat(records.getLast()).contains(PURGE).contains(Reason.SYSTEM.code()).contains("test: purge expired items");
+	}
+
+	@Test
+	@DisplayName("a refused list leaves a record too")
+	void refusedListIsRecorded(CapturedOutput output) {
+		signInAs(ALICE);
+		double before = counted("deny", Reason.NO_GRANT.code(), PURGE);
+		assertThatThrownBy(() -> inTenant(service::filterOfPurges)).isInstanceOf(AccessDeniedException.class);
+		assertThat(counted("deny", Reason.NO_GRANT.code(), PURGE)).isEqualTo(before + 1);
+		assertThat(decisionRecords(output).getLast()).contains(PURGE).contains(Reason.NO_GRANT.code());
 	}
 
 }

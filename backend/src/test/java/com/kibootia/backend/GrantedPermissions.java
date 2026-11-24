@@ -20,20 +20,29 @@ public class GrantedPermissions {
 
 	private static final Set<String> GRANTED = ConcurrentHashMap.newKeySet();
 
+	private static final Set<String> REVOKED = ConcurrentHashMap.newKeySet();
+
 	public static void grant(String... permissions) {
 		GRANTED.addAll(Set.of(permissions));
 	}
 
+	/** Takes permissions away, including ones the built-in {@code user} role holds. */
+	public static void revoke(String... permissions) {
+		REVOKED.addAll(Set.of(permissions));
+	}
+
 	public static void reset() {
 		GRANTED.clear();
+		REVOKED.clear();
 	}
 
 	@Bean
 	@Primary
 	PermissionSource grantedPermissionSource(PermissionRegistry registry) {
-		return (caller) -> {
+		return (user) -> {
 			Set<String> held = new HashSet<>(registry.userRolePermissions());
 			held.addAll(GRANTED);
+			held.removeAll(REVOKED);
 			return held;
 		};
 	}

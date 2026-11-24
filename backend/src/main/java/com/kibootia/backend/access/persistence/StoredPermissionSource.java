@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 import com.kibootia.backend.access.application.Role;
 import com.kibootia.backend.access.domain.PermissionRegistry;
 import com.kibootia.backend.access.domain.PermissionSource;
-import com.kibootia.backend.platform.authorization.Caller;
+import com.kibootia.backend.platform.authorization.Principal;
 import com.kibootia.backend.platform.persistence.UuidBytes;
 
 /**
@@ -34,7 +34,7 @@ class StoredPermissionSource implements PermissionSource {
 	}
 
 	@Override
-	public Set<String> permissionsOf(Caller caller) {
+	public Set<String> permissionsOf(Principal.User caller) {
 		Set<String> permissions = new TreeSet<>();
 		boolean[] administrator = { false };
 		this.jdbc.sql("""
@@ -45,7 +45,7 @@ class StoredPermissionSource implements PermissionSource {
 				where ra.tenant_id = :tenant and ra.user_id = :user
 				""")
 			.param("tenant", UuidBytes.toBytes(caller.tenantId()))
-			.param("user", UuidBytes.toBytes(caller.userId()))
+			.param("user", UuidBytes.toBytes(caller.id()))
 			.query((rs, row) -> {
 				if (Role.BuiltIn.ADMIN.name().equals(rs.getString("built_in"))) {
 					administrator[0] = true;

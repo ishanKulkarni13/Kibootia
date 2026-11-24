@@ -66,6 +66,12 @@ public final class PermissionRegistry {
 		return permission != null && permission.allowedBeforeVerification();
 	}
 
+	/** Whether allowed uses of the permission are recorded too, not only refusals (ADR 0055, point 6). */
+	public boolean isSensitive(String name) {
+		Permission permission = this.byName.get(name);
+		return permission != null && permission.sensitive();
+	}
+
 	/** Whether the action has a {@code -any} variant, which makes the plain permission mean "records I own". */
 	public boolean hasAnyVariant(String action) {
 		return this.byName.containsKey(action + ANY_SUFFIX);

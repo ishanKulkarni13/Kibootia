@@ -304,15 +304,17 @@ class NoteAttachmentApiIT extends AdminApiTest {
 	}
 
 	@Test
-	@DisplayName("a caller whose email address is not verified holds no permissions, so the note is 404 to them and nothing changes")
+	@DisplayName("a caller whose email address is not verified holds no permissions, so every operation is 403 email_not_verified and nothing changes")
 	void unverifiedCaller() throws Exception {
 		String[] note = new String[1];
 		attachedNoteOf(ALICE, note);
 		RequestPostProcessor unverifiedAlice = unverified(ALICE);
 
-		get(unverifiedAlice, "/api/v1/notes/" + note[0] + "/attachment").andExpect(status().isNotFound());
-		attach(unverifiedAlice, note[0]).andExpect(status().isNotFound());
-		delete(unverifiedAlice, "/api/v1/notes/" + note[0] + "/attachment").andExpect(status().isNotFound());
+		// Decided before the note is read (ADR 0064); version 1 answered 404 here.
+		get(unverifiedAlice, "/api/v1/notes/" + note[0] + "/attachment").andExpect(status().isForbidden())
+			.andExpect(jsonPath("$.code").value("platform.email_not_verified"));
+		attach(unverifiedAlice, note[0]).andExpect(status().isForbidden());
+		delete(unverifiedAlice, "/api/v1/notes/" + note[0] + "/attachment").andExpect(status().isForbidden());
 
 		assertThat(liveFiles(ALICE)).isEqualTo(1);
 		get(user(ALICE), "/api/v1/notes/" + note[0] + "/attachment").andExpect(status().isOk());

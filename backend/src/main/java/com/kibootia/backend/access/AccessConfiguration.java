@@ -11,7 +11,7 @@ import com.kibootia.backend.platform.authorization.Permission;
 import com.kibootia.backend.platform.authorization.PermissionProvider;
 import com.kibootia.backend.platform.authorization.PolicyDecisionPoint;
 import com.kibootia.backend.platform.authorization.RequiresPermission;
-import com.kibootia.backend.platform.authorization.ResourcePolicy;
+import com.kibootia.backend.platform.authorization.ResourceRule;
 
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.SmartInitializingSingleton;
@@ -38,8 +38,8 @@ class AccessConfiguration {
 
 	@Bean
 	PolicyDecisionPoint policyDecisionPoint(PermissionRegistry registry, PermissionSource source,
-			ObjectProvider<ResourcePolicy> policies) {
-		return new DefaultDecisionPoint(registry, source, policies.orderedStream().toList());
+			ObjectProvider<ResourceRule> rules) {
+		return new DefaultDecisionPoint(registry, source, rules.orderedStream().toList());
 	}
 
 	/** Every {@code @RequiresPermission} must name a declared permission; a typo stops the application at startup. */
