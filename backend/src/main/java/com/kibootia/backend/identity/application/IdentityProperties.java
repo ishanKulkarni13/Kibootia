@@ -3,6 +3,7 @@ package com.kibootia.backend.identity.application;
 import java.time.Duration;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
@@ -33,11 +34,16 @@ public record IdentityProperties(String bootstrapAdminEmail,
 	 * @param clientSecret the service-account secret, from the environment or a file, never from configuration files
 	 * @param connectTimeout how long to wait for a connection
 	 * @param readTimeout how long to wait for an answer
+	 * @param retries how many times a call that can safely be repeated (looking an account up, enabling or disabling it,
+	 * ending its sessions, deleting it) is tried again after a connection error or a 5xx answer; 0 turns retrying off
+	 * (ADR 0058). Sending an email and creating an account are never repeated by this.
+	 * @param retryDelay the wait before the first repeat; each further wait doubles, with some jitter
 	 */
 	public record Keycloak(@DefaultValue("http://localhost:8180") @NotBlank String baseUrl,
 			@DefaultValue("kibootia") @NotBlank String realm, @DefaultValue("kibootia-web") @NotBlank String webClientId,
 			@DefaultValue("kibootia-admin") @NotBlank String clientId, String clientSecret,
-			@DefaultValue("3s") @NotNull Duration connectTimeout, @DefaultValue("10s") @NotNull Duration readTimeout) {
+			@DefaultValue("3s") @NotNull Duration connectTimeout, @DefaultValue("10s") @NotNull Duration readTimeout,
+			@DefaultValue("2") @Min(0) int retries, @DefaultValue("200ms") @NotNull Duration retryDelay) {
 
 	}
 

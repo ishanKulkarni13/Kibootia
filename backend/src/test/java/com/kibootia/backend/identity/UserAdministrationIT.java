@@ -164,6 +164,29 @@ class UserAdministrationIT extends AdminApiTest {
 	}
 
 	@Test
+	@DisplayName("when the account cannot be taken back at once either, the removal is recorded and retried until it works (ADR 0058)")
+	void failedInvitationThatCannotBeTakenBackIsCleanedUpLater() throws Exception {
+		ensureAdmin();
+		this.keycloak.failNext("delete", 1);
+
+		post(admin(), "/api/v1/users", "{\"email\":\"stuck@kibootia.test\",\"roleIds\":[\"" + UUID.randomUUID() + "\"]}")
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.errors[0].code").value("unknown_role"));
+
+		Await.until("the removal to be retried by the handler", () -> this.keycloak.countCalls("delete") == 2);
+		UUID account = UUID.fromString(this.keycloak.calls()
+			.stream()
+			.filter((call) -> call.startsWith("delete:"))
+			.findFirst()
+			.orElseThrow()
+			.substring("delete:".length()));
+		Await.until("the account to be gone from Keycloak", () -> this.keycloak.account(account).isEmpty());
+		assertThat(count("select count(*) from user_profile where id = unhex(?)", account.toString().replace("-", "")))
+			.as("no profile was ever created for it")
+			.isZero();
+	}
+
+	@Test
 	@DisplayName("the invitation can be sent again to a user who has not accepted it, and only to such a user")
 	void resendingTheInvitation() throws Exception {
 		ensureAdmin();
