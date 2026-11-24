@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-24
 
-> **Implementation:** observed on branch `m-7` (local run, 2026-11-24; CI run pending). Recorded in [implementation status](../product/roadmap/implementation-status.md).
+> **Implementation:** observed on branch `m-7` (verified, CI run 45354823982, 2026-11-24). Recorded in [implementation status](../product/roadmap/implementation-status.md).
 
 ## Context
 

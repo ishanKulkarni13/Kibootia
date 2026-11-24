@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-11
 
-> **Implementation:** built; verified except for the end-to-end tests. The backend, frontend, image build and scan, secret scan and all four rows of the `module-removal` job passed in CI on pull request #7 (run 42959703043, 2026-11-11) and on `main` after the merge (run 42981706613). The end-to-end job was **skipped** in both runs, so the 31 end-to-end tests (9 of them the new notes story) have not run in CI and the Playwright criterion below is open (OQ-86 in [open questions](../../decisions/open-questions.md)). Status checked with the GitHub CLI on 2026-11-11. Decisions made while building: [ADR 0052](../../decisions/0052-milestone-5-implementation-decisions.md).
+> **Implementation:** built and verified. The 31 end-to-end tests passed in CI on 2026-11-24 (run 45354022559, pull request #10), which closed OQ-86. The backend, frontend, image build and scan, secret scan and all four rows of the `module-removal` job passed in CI on pull request #7 (run 42959703043, 2026-11-11) and on `main` after the merge (run 42981706613). The end-to-end job was **skipped** in both runs, so the 31 end-to-end tests (9 of them the new notes story) have not run in CI and the Playwright criterion below is open (OQ-86 in [open questions](../../decisions/open-questions.md)). Status checked with the GitHub CLI on 2026-11-11. Decisions made while building: [ADR 0052](../../decisions/0052-milestone-5-implementation-decisions.md).
 
 ## Scope
 
@@ -34,7 +34,7 @@ Level: **verified for every criterion except the Playwright flow** (CI runs 4295
 
 ## Deviations and limits
 
-- **The end-to-end story has not run at all, locally or in CI.** The local stack cannot be started without stopping the developer's containers, which was not done ([conventions](../../engineering/getting-started/start-and-check.md)), and the CI job was skipped on the pull request and on `main`. The story is the part most likely to need a fix once it runs (OQ-86).
+- **The end-to-end story first ran on 2026-11-24, in CI** (run 45354022559), and found three defects before it passed: the note error page had no level-one heading; the destructive alert's text was on the edge of the contrast minimum; and two test-isolation faults (an accessibility check that measured a toast while it faded in, and paging notes that a retry and the administrator's search counted twice). All three were fixed on branch `m-5-1`.
 - **One test was fixed after the full run, and a second full run did not happen.** `NoteAttachmentRateLimitIT` shared a Spring context, and so a limiter, with `AvatarRateLimitIT` and failed when both ran; it now has a context of its own and passed together with the avatar one. Docker stopped afterwards, so the whole suite was not run again.
 - **Modulith cannot be fed a broken fixture**, because it analyses only main classes. The cycle and access rules are shown to be non-vacuous by the real module graph instead ([ADR 0052](../../decisions/0052-milestone-5-implementation-decisions.md)).
 - **One picture per note, images only.** A list of attachments is a child table and a documents category needs type rules of its own; both are left to a fork.

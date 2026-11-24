@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-24
 
-> **Implementation:** planned, in part observed. Declaring `allowedDependencies` for every module is done on branch `m-5-1` (`ModularityTest` passes locally, 2026-11-24; CI run pending). The ports below are not built.
+> **Implementation:** planned, in part observed. Declaring `allowedDependencies` for every module is done on branch `m-5-1` (`ModularityTest` passes locally, 2026-11-24; CI run 45354022559). The ports below are not built.
 
 ## Context
 
