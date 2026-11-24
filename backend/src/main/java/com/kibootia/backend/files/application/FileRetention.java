@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.kibootia.backend.files.FilesPermissions;
 import com.kibootia.backend.files.application.StoredFileStore.StoredFile;
@@ -53,8 +52,14 @@ class FileRetention implements RetentionPurgeable {
 		return "deleted-files";
 	}
 
+	/** The purge calls the storage server, so the job must not hold a transaction around it (ADR 0058). */
 	@Override
-	@Transactional
+	@NoAuthorization("a constant that tells the job how to call purge")
+	public boolean ownsTransactions() {
+		return true;
+	}
+
+	@Override
 	@RequiresPermission(FilesPermissions.PURGE)
 	public int purge() {
 		Instant cutoff = this.clock.instant().minus(Duration.ofDays(this.jobs.softDeleteRetentionDays()));

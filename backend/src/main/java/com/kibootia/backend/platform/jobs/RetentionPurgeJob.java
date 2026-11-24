@@ -53,7 +53,8 @@ public class RetentionPurgeJob {
 		try {
 			// The tenant is bound before the transaction starts, because Hibernate reads it when the session opens.
 			Integer removed = TenantContext.callAs(tenant, () -> this.authorization.runAsSystem(
-					"retention purge of " + purgeable.name(), () -> this.transactions.execute((status) -> purgeable.purge())));
+					"retention purge of " + purgeable.name(), () -> purgeable.ownsTransactions() ? purgeable.purge()
+							: this.transactions.execute((status) -> purgeable.purge())));
 			int count = (removed != null) ? removed : 0;
 			log.info("Retention purge {} removed {} rows", purgeable.name(), count);
 			return count;

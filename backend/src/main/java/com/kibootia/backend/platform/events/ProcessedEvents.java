@@ -35,6 +35,14 @@ class ProcessedEvents {
 		return inserted == 1;
 	}
 
+	/** Whether the handler has already processed the event: the first step of a handler that runs without a transaction. */
+	boolean isProcessed(UUID eventId, String handler, UUID tenantId) {
+		Integer found = this.jdbc.queryForObject(
+				"select count(*) from processed_event where tenant_id = ? and event_id = ? and handler = ?",
+				Integer.class, UuidBytes.toBytes(tenantId), UuidBytes.toBytes(eventId), handler);
+		return found != null && found > 0;
+	}
+
 	int deleteProcessedBefore(UUID tenantId, Instant cutoff) {
 		return this.jdbc.update("delete from processed_event where tenant_id = ? and processed_at < ?",
 				UuidBytes.toBytes(tenantId), utc(cutoff));
