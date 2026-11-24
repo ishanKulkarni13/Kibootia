@@ -82,6 +82,8 @@ Plain meaning of two terms used below: a **time-of-check to time-of-use race** i
 
 ### S10 Audit data (Low to Medium, read in code and documents)
 
+- **Status (2026-11-24): reading the log is recorded** on branch `m-policy`: `audit.entries.view` is a sensitive permission, so every allowed read leaves a decision record naming the reader (`AuditViewerIT.readingIsRecorded`). Per-record history visibility is still milestone 10. This review is a dated record and is otherwise unchanged.
+
 - **Today:** `AuditEntry` rejects personal-data field names and any value containing `@`, and records people by ID only ([ADR 0046](../decisions/0046-audit-log-design.md)). The audit viewer needs one log-wide permission, `audit.entries.view`, and viewing is not itself recorded.
 - **Risk:** the log-wide permission cannot express "the author of a ticket may read that ticket's history" (Timetia needs exactly that), and access to a sensitive log leaves no trace. Decision records, once added, can leak resource attributes if they record values.
 - **Addressed in:** milestone 10 (per-record history visibility); milestone 15 (the decision log stores principal, action, resource reference, outcome, reason code and trace ID, and no attribute values; reading the log is recorded).

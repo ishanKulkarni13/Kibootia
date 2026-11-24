@@ -63,7 +63,7 @@ An ArchUnit rule requires every public use-case method to have a check or an exp
 
 ## Decision records
 
-Every refusal, and every allowed use of a permission its module marks `asSensitive()` (erasing, purging, granting), is written as a structured log line on the logger `kibootia.authorization.decision`: principal kind and ID, tenant, action, resource type and ID, outcome, reason code, what decided, the system's reason, and the trace ID. Records hold identifiers only, never attribute values. Every decision is also counted in the metric `kibootia.authorization.decisions`, tagged with outcome, reason and action. How long records are kept beyond the log is the decision log of milestone 15; they are not written to the audit table.
+Every refusal, and every allowed use of a permission its module marks `asSensitive()` (erasing, purging, granting, and reading the audit log), is written as a structured log line on the logger `kibootia.authorization.decision`: principal kind and ID, tenant, action, resource type and ID, outcome, reason code, what decided, the system's reason, and the trace ID. Records hold identifiers only, never attribute values. Every decision is also counted in the metric `kibootia.authorization.decisions`, tagged with outcome, reason and action. How long records are kept beyond the log is the decision log of milestone 15; they are not written to the audit table.
 
 ## Freshness
 
