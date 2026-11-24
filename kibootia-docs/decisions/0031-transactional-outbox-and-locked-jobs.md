@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-08
 
-> **Implementation:** planned.
+> **Implementation:** not applicable (a decision record). What exists, and the CI run that verified it, is in [implementation status](../product/roadmap/implementation-status.md).
 
 > **Extended by [ADR 0039](0039-spring-modulith-module-boundaries-and-outbox.md)**: the outbox is Spring Modulith's event publication registry (hand-written table as fallback). Audit entries are written in the same transaction rather than through the outbox ([ADR 0046](0046-audit-log-design.md)). This decision still holds.
 

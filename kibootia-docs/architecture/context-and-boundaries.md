@@ -4,9 +4,9 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-08
+- **Last updated:** 2026-11-24
 
-> **Implementation:** planned.
+> **Implementation:** observed. The ownership table describes the repository as it is. Not built: tagged releases and the changelog promised under the guarantees, and the production deployment and secret store (milestone 6).
 
 ## Purpose
 

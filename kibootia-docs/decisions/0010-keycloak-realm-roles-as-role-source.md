@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-10-28
 
-> **Implementation:** planned.
+> **Implementation:** not applicable (a decision record). What exists, and the CI run that verified it, is in [implementation status](../product/roadmap/implementation-status.md).
 
 > **Superseded by [ADR 0025](0025-identity-and-authorization-data-split.md).** Roles are now stored in Kibootia's database, not read from Keycloak realm roles in the token.
 

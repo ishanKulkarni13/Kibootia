@@ -32,7 +32,9 @@ When a capability becomes verified, update its row in [implementation status](..
 
 A milestone is complete when each of its criteria is verified under this rule. Criteria are listed in the [milestone files](../../product/roadmap/README.md).
 
-## CI pipeline (owner decisions of 2026-10-28; backend build and secret scan exist, the rest is planned)
+## CI pipeline
+
+Owner decisions of 2026-10-28. The jobs exist and run (backend, frontend, module removal, images and scan, secret scan, end-to-end on a label or nightly); what they do not yet check is listed in [ADR 0061](../../decisions/0061-ci-quality-and-supply-chain-gates.md).
 
 - **Platform:** GitHub Actions.
 - **On every pull request:** backend build with unit, ArchUnit and Testcontainers integration tests (including migrate-from-empty, tenant isolation and soft-delete filtering); frontend lint, type check and unit tests; the module-removal job ([ADR 0024](../../decisions/0024-package-modules-with-infrastructure-toggles.md)); secret scanning.

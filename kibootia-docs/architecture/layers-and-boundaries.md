@@ -4,9 +4,9 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-08
+- **Last updated:** 2026-11-24
 
-> **Implementation:** planned. The repository has one package, `com.kibootia.backend`, with only the application class.
+> **Implementation:** verified for the rules the tests enforce: module boundaries and architecture rules 1 and 4 to 11 (`ModularityTest` and `ArchitectureTest` in the backend CI job, run 42959703043, 2026-11-11). The rest of the page is description. Per module detail: the [module catalogue](module-catalogue.md).
 
 Decisions: [ADR 0002](../decisions/0002-modular-monolith.md), [ADR 0003](../decisions/0003-hexagonal-architecture-where-boundaries-matter.md), [ADR 0004](../decisions/0004-separate-api-application-and-persistence-models.md), [ADR 0039](../decisions/0039-spring-modulith-module-boundaries-and-outbox.md).
 
@@ -50,4 +50,4 @@ Ports exist where they protect a meaningful boundary. Adding an interface with a
 
 ## Module map
 
-`platform` (shared plumbing, no business logic), `identity` (profiles, `/me`, user administration, avatar use case), `access` (permissions, roles, decision point), `audit` (audit log), `files` (generic storage) and `notes` (deletable example). Every module may depend on `platform`; `access` is kept separate from `identity` so that any module can check permissions without depending on user administration. Layout inside a module: [package structure](../engineering/conventions/package-structure.md).
+`platform` (shared plumbing, no business logic), `identity` (profiles, `/me`, user administration, avatar use case), `access` (permissions, roles, decision point), `audit` (audit log), `files` (generic storage) and `notes` (deletable example). Every module may depend on `platform`, and each module's other allowed dependencies are declared in its `package-info.java` and listed in the [module catalogue](module-catalogue.md); `access` is kept separate from `identity` so that any module can check permissions without depending on user administration. Layout inside a module: [package structure](../engineering/conventions/package-structure.md).

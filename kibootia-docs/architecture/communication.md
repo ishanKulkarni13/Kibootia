@@ -4,9 +4,9 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-08
+- **Last updated:** 2026-11-24
 
-> **Implementation:** planned.
+> **Implementation:** verified for the mechanisms in the table except the broker: durable events, retries, idempotency, locked jobs and the audit entry (CI run 42605511477, 2026-11-09, and later runs). The broker is a recipe that is not written. Known gap: handlers that call an external system run inside a database transaction ([ADR 0058](../decisions/0058-no-external-call-inside-a-database-transaction.md), draft).
 
 Decisions: [ADR 0014](../decisions/0014-in-process-events-no-broker-initially.md), [ADR 0031](../decisions/0031-transactional-outbox-and-locked-jobs.md), [ADR 0039](../decisions/0039-spring-modulith-module-boundaries-and-outbox.md), [ADR 0046](../decisions/0046-audit-log-design.md).
 
@@ -33,6 +33,7 @@ Decisions: [ADR 0014](../decisions/0014-in-process-events-no-broker-initially.md
 - In-process events are not durable messaging. They give no delivery guarantee and no retries; do not rely on them for anything that must not be lost.
 - The outbox gives at-least-once delivery inside the application, not exactly-once.
 - Kafka and RabbitMQ are not initial requirements.
+- A durable handler that calls Keycloak or object storage currently does so inside the transaction that holds its idempotency mark, which holds a database connection while it waits ([architecture assessment](architecture-assessment.md), T-2).
 
 ## External systems
 

@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-08
 
-> **Implementation:** planned. No endpoints, error handling or OpenAPI generation exist.
+> **Implementation:** not applicable (a decision record). What exists, and the CI run that verified it, is in [implementation status](../product/roadmap/implementation-status.md).
 
 ## Context
 

@@ -4,9 +4,9 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-11
+- **Last updated:** 2026-11-24
 
-> **Implementation:** observed. Spring Modulith verification (`ModularityTest`) and ArchUnit rules 1, 4 to 11 (`ArchitectureTest`) run on six modules with code, and `ArchitectureRulesFireTest` shows that rules 5, 7, 9, 10 and 11 fail on classes made to break them (local run, 2026-11-11; no CI run for the milestone 5 changes yet). Rule 7 and rules 9 to 11 were verified in CI for milestone 2 (run 42605511477) and rule 5 for `files` for milestone 4 (run 42873216224); rule 5 now covers `notes` as well.
+> **Implementation:** verified for rules 1 to 11 (`ModularityTest`, `ArchitectureTest` and `ArchitectureRulesFireTest` in the backend CI job, run 42959703043, 2026-11-11). Rule 12 is observed (local run, 2026-11-24; CI run pending). Rule 13 is proposed ([ADR 0058](../decisions/0058-no-external-call-inside-a-database-transaction.md), draft).
 
 Decisions: [ADR 0013](../decisions/0013-archunit-architecture-enforcement.md), [ADR 0039](../decisions/0039-spring-modulith-module-boundaries-and-outbox.md), [ADR 0044](../decisions/0044-authorization-enforcement-conventions.md).
 
@@ -21,7 +21,7 @@ Record the architecture rules that are meant to be enforced by automated tests, 
 
 ## Rules
 
-Decided rules. Rules 1 and 4 to 11 are implemented in `ArchitectureTest` (rule 7 and rules 9 to 11 in helper classes next to it); rules 2 and 3 are covered by `ModularityTest`. Package selectors follow [package structure](../engineering/conventions/package-structure.md).
+Decided rules. Rules 1 and 4 to 11 are implemented in `ArchitectureTest` (rule 7 and rules 9 to 11 in helper classes next to it); rules 2, 3 and 12 are covered by `ModularityTest`. Package selectors follow [package structure](../engineering/conventions/package-structure.md).
 
 | # | Rule |
 |---|---|
@@ -36,6 +36,8 @@ Decided rules. Rules 1 and 4 to 11 are implemented in `ArchitectureTest` (rule 7
 | 9 | Every `@Scheduled` method carries `@SchedulerLock`, because an unlocked job runs on every instance at once ([ADR 0031](../decisions/0031-transactional-outbox-and-locked-jobs.md), [ADR 0049](../decisions/0049-milestone-2-implementation-decisions.md)) |
 | 10 | No method uses `@ApplicationModuleListener`: it opens its transaction before the tenant is bound. Durable listeners use `@DurableEventListener` |
 | 11 | A `@DurableEventListener` method takes a `DomainEvent` as its first parameter, because the tenant and trace are restored from the event's context |
+| 12 | Every module declares `allowedDependencies`, and Spring Modulith fails the build on a dependency that is not listed, so the graph between business modules is a reviewed artefact ([ADR 0057](../decisions/0057-consumer-owned-ports-and-declared-module-dependencies.md)). Implemented by the `package-info.java` of each module and `ModularityTest`; shown to fire by adding an undeclared edge in a scratch copy (2026-11-24) |
+| 13 | Proposed: a class that depends on `IdentityProviderAdmin` or `ObjectStorage` has no `@Transactional` method, so no database transaction is open while an external system is called ([ADR 0058](../decisions/0058-no-external-call-inside-a-database-transaction.md)). Not implemented |
 
 ## Beyond ArchUnit
 

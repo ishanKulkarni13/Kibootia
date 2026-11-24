@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-10-27
 
-> **Implementation:** not applicable (documentation convention).
+> **Implementation:** not applicable (a decision record). What exists, and the CI run that verified it, is in [implementation status](../product/roadmap/implementation-status.md).
 
 > **Superseded by [ADR 0022](0022-maintain-own-documentation-standards.md).** Kibootia now maintains its own [documentation standards](../meta/documentation-standards.md) and `STRUCTURE.md` has been deleted. The text below is the original decision, kept as history; its dependency on `STRUCTURE.md` is no longer current and the file no longer exists.
 

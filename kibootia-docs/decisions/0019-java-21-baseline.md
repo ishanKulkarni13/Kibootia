@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-08
 
-> **Implementation:** planned. `backend/pom.xml` still sets `java.version` to 17.
+> **Implementation:** not applicable (a decision record). What exists, and the CI run that verified it, is in [implementation status](../product/roadmap/implementation-status.md).
 
 > **Superseded by [ADR 0048](0048-java-25-baseline-on-temurin.md)** (Java 25 on Eclipse Temurin).
 

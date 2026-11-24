@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-11
 
-> **Implementation:** observed (local run, 2026-11-11; no CI run yet): 135 fast and 269 integration backend tests, and 196 frontend unit tests with lint, type check and build. One rate-limit test failed in that full run, was fixed, and passed when re-run with the class it had interfered with. With the notes module removed by the script, 115 fast and 209 integration backend tests pass, and the regenerated client, lint, type check and 171 unit tests pass. The `startup` group passed with its default switches; with each switch set through the environment, the stripped-tree production build and a second full run could not be done locally (Docker stopped). The 31 end-to-end tests are written and type-checked and need the full stack, so they have not run. Not verified until a CI run covers it ([verification standard](../engineering/testing/verification-standard.md)).
+> **Implementation:** not applicable (a decision record). What exists, and the CI run that verified it, is in [implementation status](../product/roadmap/implementation-status.md).
 
 ## Context
 

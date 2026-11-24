@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-11
+- **Last updated:** 2026-11-24
 
 > **Implementation:** the decision point, annotations and scopes are verified (CI run 42605511477, 2026-11-09). Stored roles, the editable role model, email verification and the safeguards are verified (CI run 42780048416, 2026-11-10).
 
@@ -25,7 +25,7 @@ This document describes authorization **as it is built today**. What it must bec
 - **Built-in roles:** a protected administrator role, and a `user` role assigned automatically at first sign-in. Administrators may change the `user` role's permissions but cannot delete it. In the reference application it does not include `identity.profiles.view`.
 - **Ownership:** actions on one's own profile and avatar are allowed to any active user by ownership rules, without a role.
 - **Email verification:** until the email address is verified, only viewing one's own profile, resending verification and signing out are allowed. Other operations are denied with `platform.email_not_verified`. A module can mark a permission `beforeVerification()`; none does yet. An unverified user holds no permissions, and `GET /me` says so.
-- **Safeguards:** the last administrator who can sign in cannot be removed, demoted, disabled or deleted; a role editor can only give a role permissions they hold; only an administrator can give the administrator role; a role that is still held cannot be deleted; and every change to roles, permissions and assignments is written to the [audit log](../audit-log.md).
+- **Safeguards:** the last administrator who can sign in cannot be removed, demoted, disabled or deleted; a role editor can only give a role permissions they hold, and whoever assigns a role must hold every permission it carries (since branch `m-5-1`, [assessment](../architecture-assessment.md), S-1); only an administrator can give the administrator role; a role that is still held cannot be deleted; and every change to roles, permissions and assignments is written to the [audit log](../audit-log.md).
 - **First administrator:** `kibootia.identity.bootstrap-admin-email` grants the role to the user whose token carries that address, verified, while no administrator exists, at their first sign-in or the moment they first verify it. It is audited. Locally it names the `demo-admin` user.
 
 ## Decision point

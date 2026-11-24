@@ -25,24 +25,32 @@ The backend calls the Admin API with the `kibootia-admin` service-account client
 
 1. The browser asks the Next.js server for a protected page. With no session, the server starts the OpenID Connect Authorization Code flow with PKCE, as a confidential client.
 2. Keycloak authenticates the user and returns to the Next.js callback. The server checks state, nonce and the PKCE verifier, and exchanges the code for tokens.
-3. The server stores the session in an encrypted HttpOnly, Secure, SameSite cookie. The browser never receives a token.
+3. The server stores the session in encrypted HttpOnly, SameSite cookies (`Secure` over https; [how the session is built](#how-the-session-is-built)). The browser never receives a token.
 4. The server calls Spring with the access token. The token must carry the backend's audience.
 5. Expiring sessions are refreshed on the server, once at a time per request. If the refresh fails, the user signs in again.
 6. Signing out ends the Keycloak session as well as the cookie.
 
+## How the session is built
+
+- **Format.** The session is one encrypted token (JWE, `A256GCM`, a key derived with HKDF from `SESSION_SECRET`) holding the access, refresh and ID tokens and their expiry times. It is split into cookies named `kibootia_session.<n>` of at most 3,600 bytes each, at most eight, so about 28 KB. All are `HttpOnly` and `SameSite=Lax`; `Secure` is set when `PUBLIC_BASE_URL` is `https`. There is one key and no rotation: changing `SESSION_SECRET` signs everyone out.
+- **Lifetime.** The session ends at most ten hours after sign-in, however often it is refreshed. The ID token is kept in the cookie so that sign-out needs no confirmation page.
+- **Refresh.** A session is refreshed 30 seconds before its access token expires, once at a time per refresh token within one Next.js process, in the middleware for pages (`proxy.ts`) and in the API proxy. A failed refresh clears the cookies and forces sign-in. `POST /auth/refresh` forces a refresh, which the unverified-email notice uses.
+- **Sign-out** is initiated by the application (front-channel). It clears the cookies and sends the browser to Keycloak's end-session address with the ID token as a hint. There is no back-channel logout, so a session ended in Keycloak reaches the cookie only at the next refresh.
+- **CSRF.** Every method except `GET` and `HEAD` needs an `Origin` equal to `PUBLIC_BASE_URL` and the header `x-kibootia-request`. `OPTIONS` is answered with 405, so no cross-origin preflight is ever granted.
+
 Library and session store: `openid-client` plus a thin tested module, with the encrypted cookie as the store and a server-side store as the upgrade path for instant revocation ([ADR 0026](../../decisions/0026-nextjs-bff-session.md)). State-changing requests are protected against CSRF: they must carry a matching `Origin` header and a required custom header ([ADR 0042](../../decisions/0042-bff-api-proxy-and-csrf.md)).
 
-## Local environment (decided, not implemented)
+## Local environment
 
-A local Keycloak runs in Docker Compose with its own PostgreSQL. Its realm is version-controlled and applied by OpenTofu, which runs as a one-shot container ([ADR 0045](../../decisions/0045-keycloak-operations.md)): a shared base (the Next.js client, the backend audience mapper, the least-privilege service-account client for administration, registration enabled, email verification handled by Kibootia) plus a local overlay (demo administrator and sample users). Secrets come from the generated `.env` ([ADR 0040](../../decisions/0040-local-development-topology-and-setup.md)); the configuration contains no real secrets, and production startup rejects demo data. The detailed realm contents are designed in milestone 1.
+A local Keycloak runs in Docker Compose with its own PostgreSQL. Its realm is version-controlled and applied by OpenTofu, which runs as a one-shot container ([ADR 0045](../../decisions/0045-keycloak-operations.md)): a shared base (the Next.js client, the backend audience mapper, the least-privilege service-account client for administration, registration enabled, email verification handled by Kibootia) plus a local overlay (demo administrator and sample users). Secrets come from the generated `.env` ([ADR 0040](../../decisions/0040-local-development-topology-and-setup.md)); the configuration contains no real secrets, and production startup rejects demo data. The realm's contents are in `infra/keycloak/base/main.tf`.
 
 ## Production exposure (decided, not implemented)
 
 Keycloak's login pages are served on `auth.<domain>` through the TLS reverse proxy. The admin console is blocked at the proxy and reached through an SSH tunnel. A production overlay of the realm configuration contains no demo data. Production SMTP settings are Keycloak's, from any provider ([open questions](../../decisions/open-questions.md)).
 
-## Realm hardening (decided, not implemented)
+## Realm hardening
 
-Brute-force detection, a password policy, access tokens of about five minutes and refresh-token rotation with a small reuse tolerance so that several tabs refreshing at once do not sign the user out.
+Built in the shared realm base (`infra/keycloak/base/main.tf`): brute-force detection (five failures, then a temporary lockout), a password policy of at least 12 characters that may not match the username or email, access tokens of five minutes, a signed-in session that idles out after 30 minutes and ends after 10 hours, and refresh-token rotation with a reuse tolerance of one so that two tabs refreshing at once do not sign the user out. Not built: a breached-password check, password history, required multi-factor authentication, and SMTP authentication or TLS ([architecture assessment](../architecture-assessment.md), B-4).
 
 ## Failure behavior
 

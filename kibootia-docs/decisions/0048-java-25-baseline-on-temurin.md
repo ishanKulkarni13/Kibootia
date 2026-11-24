@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-08
 
-> **Implementation:** observed. `backend/pom.xml` sets `java.version` to 25 and the CI workflow uses Eclipse Temurin 25; the build and tests passed locally on Oracle JDK 25.0.5 on 2026-11-08. No CI run yet.
+> **Implementation:** not applicable (a decision record). What exists, and the CI run that verified it, is in [implementation status](../product/roadmap/implementation-status.md).
 
 ## Context
 

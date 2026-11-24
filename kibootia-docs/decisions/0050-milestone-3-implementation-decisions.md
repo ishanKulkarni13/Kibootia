@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-10
 
-> **Implementation:** verified (CI run 42780048416, 2026-11-10, pull request #5): 81 fast and 202 integration backend tests, the frontend lint, type check, 144 unit tests and build, the image scan, the secret scan, and 14 end-to-end tests against the full Compose stack.
+> **Implementation:** not applicable (a decision record). What exists, and the CI run that verified it, is in [implementation status](../product/roadmap/implementation-status.md).
 
 ## Context
 

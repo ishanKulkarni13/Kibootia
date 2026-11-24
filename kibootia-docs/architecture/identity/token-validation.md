@@ -4,9 +4,9 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-08
+- **Last updated:** 2026-11-24
 
-> **Implementation:** observed, not verified in CI. `platform/security` validates signature, expiry, issuer, audience and rejects service-account tokens; deny-by-default, stateless, no CORS; 401 and 403 from the filter chain are Problem Details. `ResourceServerIT` (14 tests) cover each rejection case and passed locally on 2026-11-09. The service-account check was confirmed against a real Keycloak token (it carries `client_id` and a `service-account-` username). **Not yet implemented:** the 403 rows (permission, disabled or deleted profile) wait for milestones 2 and 3, and the "Keycloak down, keys cached" rows are untested (the key cache is the decoder's default, about five minutes).
+> **Implementation:** verified. `platform/security` and `ResourceServerIT` (14 tests) run in the backend CI job (run 42959703043, 2026-11-11) and cover signature, expiry, issuer, audience, rejection of service-account tokens, deny-by-default, Problem Details and the split between the public issuer and the internal key address; the 403 rows are covered by `AuthorizationIT` and `IdentityGateIT`. Untested: the two rows for an unreachable Keycloak (the key cache is the decoder's default, about five minutes). Not built: the production guard for development defaults (milestone 6).
 
 ## Required checks (owner decision, [ADR 0007](../../decisions/0007-spring-security-resource-server.md))
 
@@ -16,7 +16,7 @@ On every protected request the backend validates the access token's:
 2. **Issuer**, against the configured Keycloak realm.
 3. **Expiry**.
 
-Spring Security's resource-server support provides these checks when configured with the issuer. Configuring it is part of [milestone 1](../../product/roadmap/milestone-1-walking-skeleton.md).
+Spring Security's resource-server support provides these checks when configured with the issuer. It was configured in [milestone 1](../../product/roadmap/milestone-1-walking-skeleton.md).
 
 A valid token does not authorize every operation; see [authorization](authorization.md).
 
@@ -43,4 +43,4 @@ A valid token does not authorize every operation; see [authorization](authorizat
 
 ## Testing
 
-Each failure row needs an automated test that runs in CI ([verification standard](../../engineering/testing/verification-standard.md)). None exists.
+Each failure row has an automated test that runs in CI ([verification standard](../../engineering/testing/verification-standard.md)) in `ResourceServerIT`, `AuthorizationIT` or `IdentityGateIT`, except the two rows for an unreachable Keycloak.

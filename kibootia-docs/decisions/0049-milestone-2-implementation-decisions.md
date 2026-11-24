@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-09
 
-> **Implementation:** observed, with the `m-2` branch tests passing locally on 2026-11-09 (71 fast tests, 137 integration tests). Becomes verified when the CI run of pull request #4 is recorded in [implementation status](../product/roadmap/implementation-status.md).
+> **Implementation:** not applicable (a decision record). What exists, and the CI run that verified it, is in [implementation status](../product/roadmap/implementation-status.md).
 
 ## Context
 

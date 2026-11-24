@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-10
 
-> **Implementation:** verified (CI run 42780048416, 2026-11-10). Invitation, self-registration, the default `user` role, email verification in the decision point, disable, delete, restore and erase are built; see [ADR 0050](0050-milestone-3-implementation-decisions.md) for the choices made while building.
+> **Implementation:** not applicable (a decision record). What exists, and the CI run that verified it, is in [implementation status](../product/roadmap/implementation-status.md).
 
 ## Context
 

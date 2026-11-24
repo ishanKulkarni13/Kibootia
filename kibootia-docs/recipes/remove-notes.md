@@ -4,9 +4,9 @@
 - **Module:** notes
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-11
+- **Last updated:** 2026-11-24
 
-> **Implementation:** observed (local run, 2026-11-11; no CI run yet). On a clean checkout the script removed 53 files and the tagged lines and passed its own leftover scan; the backend then built and passed 115 fast and 209 integration tests, and with the client regenerated from the rewritten `openapi.json` the frontend passed lint, type check and 171 unit tests. The frontend production build of that checkout was not run. The CI job `module-removal` runs the same steps on every pull request and has not run ([verification standard](../engineering/testing/verification-standard.md)).
+> **Implementation:** verified (CI run 42959703043, 2026-11-11). The `module-removal` rows "notes (removed)" and "all" apply the script, then run every backend test and the frontend pipeline on what is left.
 
 ## Problem
 

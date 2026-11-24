@@ -4,9 +4,9 @@
 - **Module:** files
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-11
+- **Last updated:** 2026-11-24
 
-> **Implementation:** observed (local run, 2026-11-11; no CI run yet). With `kibootia.files.enabled=false` set in the test, the application starts without storage keys, the module has no beans, and the avatar and note-picture endpoints answer 404 `files.disabled` (`FilesDisabledIT`, `NoteAttachmentFilesDisabledIT`). The CI job `module-removal` also starts the application with the switch set through the environment and runs the `startup` group; that has not been run locally ([verification standard](../engineering/testing/verification-standard.md)).
+> **Implementation:** verified (CI run 42959703043, 2026-11-11). The `module-removal` rows "files (switched off)" and "all" start the application with the switch set through the environment and run the `startup` group; `FilesDisabledIT` and `NoteAttachmentFilesDisabledIT` cover the behaviour. Not covered: switching files off on a database that already holds files, where erasure of a user's files cannot run ([ADR 0059](../decisions/0059-data-integrity-in-the-database.md), draft).
 
 ## Problem
 

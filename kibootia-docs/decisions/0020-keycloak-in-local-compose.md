@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-08
 
-> **Implementation:** observed, not verified in CI. `compose.yaml` runs Keycloak 26.8.2 and its PostgreSQL, Mailpit and, in the `observability` profile, Grafana LGTM, besides MySQL and Adminer. The realm is applied by OpenTofu as ADR 0045 decided, not imported. Everything started and became healthy locally on 2026-11-09.
+> **Implementation:** not applicable (a decision record). What exists, and the CI run that verified it, is in [implementation status](../product/roadmap/implementation-status.md).
 
 > **Partly superseded by [ADR 0045](0045-keycloak-operations.md)**: the version-controlled realm is applied by OpenTofu instead of a first-start import. Running Keycloak in local Compose with a realm that holds no real secrets still holds.
 

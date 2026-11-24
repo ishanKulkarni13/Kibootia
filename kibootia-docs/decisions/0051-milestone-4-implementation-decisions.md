@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-10
 
-> **Implementation:** verified (CI run 42873216224, 2026-11-10, pull request #6): 103 fast and 238 integration backend tests (including the storage contract against a real RustFS), 168 frontend unit tests with lint, type check and build, the image scan, the secret scan, and 22 end-to-end tests against the full Compose stack, 8 of them the avatar story ([verification standard](../engineering/testing/verification-standard.md)).
+> **Implementation:** not applicable (a decision record). What exists, and the CI run that verified it, is in [implementation status](../product/roadmap/implementation-status.md).
 
 ## Context
 

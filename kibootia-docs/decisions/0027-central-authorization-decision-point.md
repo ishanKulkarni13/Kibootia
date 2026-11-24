@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-10
 
-> **Implementation:** the decision point, `can` and `scopeFor` are verified (CI run 42605511477, 2026-11-09); the stored roles it now reads, and the email-verification rule, are verified (CI run 42780048416, 2026-11-10) ([ADR 0050](0050-milestone-3-implementation-decisions.md)).
+> **Implementation:** not applicable (a decision record). What exists, and the CI run that verified it, is in [implementation status](../product/roadmap/implementation-status.md).
 
 > **Extended by [ADR 0044](0044-authorization-enforcement-conventions.md)**: checks on use cases, permission names, `scopeFor` for lists, no permission cache, machine clients rejected. This decision still holds.
 

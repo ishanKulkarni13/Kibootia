@@ -20,6 +20,8 @@ Plain meaning of two terms used below: a **time-of-check to time-of-use race** i
 
 ### S1 Role assignment lets a user take roles they could not create (High, read in code)
 
+- **Status (2026-11-24): fixed on branch `m-5-1`.** `RoleAssignmentService` now requires the caller to hold every permission of each role they add; `AccessApiIT.assigningCannotEscalate` and `UserAdministrationIT.invitingCannotEscalate` fail without the check. This review is a dated record and is otherwise unchanged.
+
 - **Today:** `RoleAssignmentService.replaceRolesOfUser` (`access/application`) requires `access.roles.assign`, then adds and removes the requested roles. The only role it protects is the administrator role (`requireAdministrator`). It does not check that the caller holds the permissions of the roles being added. `assignInitialRoles`, used when inviting a user, has the same shape.
 - **Contrast:** the role editor refuses to give a role a permission the editor does not hold (`RoleService.requireGrantable`).
 - **Risk:** a user who holds `access.roles.assign` and nothing else can give themselves, or anyone, every existing role except administrator. If a role holds `identity.users.delete` or `audit.entries.purge`, that user can acquire it. Whether this is a real hole depends on who is given `access.roles.assign`; it is a permission whose name suggests a narrow power and whose effect is wide.
