@@ -74,6 +74,7 @@ Names only.
 | `kibootia.identity.keycloak.client-secret` (`KEYCLOAK_ADMIN_CLIENT_SECRET`) | Backend | Required; startup fails naming it when missing. The secret of the `kibootia-admin` service-account client | Yes |
 | `kibootia.identity.keycloak.base-url` (`KIBOOTIA_IDENTITY_KEYCLOAK_BASE_URL`) | Backend | `http://localhost:8180`; Keycloak as the backend reaches it (`http://keycloak:8080` in Compose) | No |
 | `kibootia.identity.keycloak.realm`, `.web-client-id`, `.client-id`, `.connect-timeout`, `.read-timeout` | Backend | `kibootia`, `kibootia-web`, `kibootia-admin`, `3s`, `10s` | No |
+| `kibootia.identity.keycloak.retries`, `.retry-delay` | Backend | `2`, `200ms` | No. How often a call that is safe to repeat (look up, enable or disable, end sessions, delete) is tried again after a connection error or a 5xx or 429 answer, and the wait before the first repeat, which doubles; `0` turns retrying off ([ADR 0058](../../decisions/0058-no-external-call-inside-a-database-transaction.md)) |
 | `kibootia.identity.public-base-url` (`KIBOOTIA_IDENTITY_PUBLIC_BASE_URL`) | Backend | `http://localhost:3470`; where links in Keycloak's emails return | No |
 | `kibootia.identity.link-lifespan` | Backend | `P7D`; how long a link in an invitation or verification email works | No |
 | `kibootia.identity.bootstrap-admin-email` (`KIBOOTIA_BOOTSTRAP_ADMIN_EMAIL`) | Backend, Compose | Empty by default; locally `demo-admin@kibootia.localhost`. Clear it once an administrator exists | No |

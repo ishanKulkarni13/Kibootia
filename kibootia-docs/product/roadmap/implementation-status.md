@@ -179,6 +179,17 @@ The Level column was added on 2026-11-09.
 | The server refuses to start in production without its addresses and secrets | ADR 0063 item 8 | 5.1 | observed (`config.test.ts`; CI run pending) |
 | Back-channel logout | ADR 0063 item 7 | 6 | planned: it needs a server-side session store |
 
+## Capabilities added on branch `m-5-1-tx` (2026-11-25)
+
+| Capability | Decision | Milestone | Level |
+|---|---|---|---|
+| `@DurableEventListener(transactional = false)`: a handler that calls another system holds no database connection while it works; the mark is read and written in short transactions; `UserEvents` and `FileEvents` use it | [ADR 0058](../../decisions/0058-no-external-call-inside-a-database-transaction.md) item 2 | 5.1 | observed (`HandlerTransactionIT` counts the pool's connections; branch `m-5-1-tx`; CI run pending) |
+| A purge can run without the job's transaction (`RetentionPurgeable.ownsTransactions`); the purge of deleted files deletes objects with none open | ADR 0058 item 3 | 5.1 | observed (`FileJobsIT`, and every integration test through the fakes' record; CI run pending) |
+| Bounded retry of the Keycloak calls that are safe to repeat (find, enable or disable, end sessions, delete) with Spring Framework 7's retry support | ADR 0058 item 4 | 5.1 | observed (`KeycloakAdminAdapterRetryTest`, 7 tests against a local HTTP server; CI run pending) |
+| A failed invitation whose account could not be taken back is cleaned up later, as a durable event | ADR 0058 item 5 | 5.1 | observed (`UserAdministrationIT`; CI run pending) |
+| Architecture rule 13, in two halves, shown to fire; every integration test fails if Keycloak or storage was called while a transaction was open | ADR 0058 item 1 | 5.1 | observed (`ExternalCallRulesTest`, `ArchitectureTest`, `AdminApiTest`; CI run pending) |
+| A reconciliation job that removes Keycloak accounts that have no profile | ADR 0058 item 5 | 5.1 | not built: a self-registered person has no profile until they first sign in, so such a job would delete real people (recorded in the ADR) |
+
 ## Deviations the owner has called out
 
 - Reference feature: a backend-only `notes` module ([ADR 0049](../../decisions/0049-milestone-2-implementation-decisions.md)); completed in milestone 5 with a picture, screens, a copy guide and removal recipes.
