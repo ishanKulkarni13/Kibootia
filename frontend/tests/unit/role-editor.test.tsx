@@ -16,9 +16,9 @@ const permissions = [
   { name: "access.roles.manage", description: "Create, change and delete roles", resourceType: null, reaches: ["all"], userRoleReach: null, sensitive: true },
   { name: "identity.users.invite", description: "Invite users by email", resourceType: null, reaches: ["all"], userRoleReach: null, sensitive: false },
   {
-    name: "notes.notes.view",
-    description: "View notes",
-    resourceType: "notes.note",
+    name: "widgets.widgets.view",
+    description: "View widgets",
+    resourceType: "widgets.widget",
     reaches: ["all", "relation:owner"],
     userRoleReach: "relation:owner",
     sensitive: false,
@@ -51,7 +51,7 @@ function api(current: ReturnType<typeof role>, onSave?: (call: Call) => Response
   });
 }
 
-const manager = () => meWith(["access.roles.view", "access.roles.manage", "notes.notes.view/relation:owner"]);
+const manager = () => meWith(["access.roles.view", "access.roles.manage", "widgets.widgets.view/relation:owner"]);
 
 type Grants = { action: string; reach: string; effect?: string }[];
 const sorted = (grants: Grants) => [...grants].sort((a, b) => a.action.localeCompare(b.action));
@@ -100,9 +100,9 @@ describe("the role editor", () => {
     renderScreen(<RoleEditor roleId="r-1" />, manager());
     await screen.findByRole("heading", { name: "Reviewers" });
 
-    // The editor views only their own notes, so ticking it offers that reach and not "every record".
-    await userEvent.click(screen.getByRole("checkbox", { name: /View notes/ }));
-    const reach = screen.getByRole("combobox", { name: "How far: View notes" });
+    // The editor views only their own widgets, so ticking it offers that reach and not "every record".
+    await userEvent.click(screen.getByRole("checkbox", { name: /View widgets/ }));
+    const reach = screen.getByRole("combobox", { name: "How far: View widgets" });
     expect(reach).toHaveValue("relation:owner");
     expect(screen.getByRole("option", { name: "Every record" })).toBeDisabled();
     await userEvent.click(screen.getByRole("button", { name: "Save role" }));
@@ -111,23 +111,23 @@ describe("the role editor", () => {
     const save = stub.calls.find((call) => call.method === "PUT");
     expect(sorted((save?.body as { grants: Grants }).grants)).toEqual([
       { action: "access.roles.view", reach: "all", effect: "ALLOW" },
-      { action: "notes.notes.view", reach: "relation:owner", effect: "ALLOW" },
+      { action: "widgets.widgets.view", reach: "relation:owner", effect: "ALLOW" },
     ]);
   });
 
   it("lets an editor who holds a permission for every record choose its reach", async () => {
     const stub = api(role());
-    renderScreen(<RoleEditor roleId="r-1" />, meWith(["access.roles.view", "access.roles.manage", "notes.notes.view"]));
+    renderScreen(<RoleEditor roleId="r-1" />, meWith(["access.roles.view", "access.roles.manage", "widgets.widgets.view"]));
     await screen.findByRole("heading", { name: "Reviewers" });
 
-    await userEvent.click(screen.getByRole("checkbox", { name: /View notes/ }));
-    expect(screen.getByRole("combobox", { name: "How far: View notes" })).toHaveValue("all");
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: "How far: View notes" }), "relation:owner");
+    await userEvent.click(screen.getByRole("checkbox", { name: /View widgets/ }));
+    expect(screen.getByRole("combobox", { name: "How far: View widgets" })).toHaveValue("all");
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: "How far: View widgets" }), "relation:owner");
     await userEvent.click(screen.getByRole("button", { name: "Save role" }));
 
     await waitFor(() => expect(success).toHaveBeenCalled());
     const save = stub.calls.find((call) => call.method === "PUT");
-    expect((save?.body as { grants: Grants }).grants).toContainEqual({ action: "notes.notes.view", reach: "relation:owner", effect: "ALLOW" });
+    expect((save?.body as { grants: Grants }).grants).toContainEqual({ action: "widgets.widgets.view", reach: "relation:owner", effect: "ALLOW" });
   });
 
   it("keeps a role's deny grants as they are when it is saved, and says it has them", async () => {
