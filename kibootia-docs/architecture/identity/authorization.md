@@ -46,6 +46,10 @@ Every protected operation asks the [policy decision point](../../shared/glossary
 
 The decision point is a port, so an external engine can replace the Java evaluation, provided it returns a decision with a reason and an access filter ([ADR 0056](../../decisions/0056-authorization-evaluation-engine.md)).
 
+## External guardrails
+
+An optional module, `policy`, lets an Open Policy Agent policy refuse chosen actions above roles ([ADR 0066](../../decisions/0066-opa-as-a-narrowing-guardrail.md), [recipe](../../recipes/enable-opa-guardrails.md)). It is a module rule like any other: asked only after grants allowed, only for the actions listed in `kibootia.policy.opa.actions`, never for the system, and it can only refuse. A rule may speak about an action on the collection as well as about a record, and an objection to a list's action refuses the whole list. OPA that cannot answer refuses its actions, as `authorization.evaluation_error`; every other action is decided without it. Off by default.
+
 ## Where checks are written
 
 On application use-case methods, not controllers, because use cases are also called by other modules, jobs and event handlers:

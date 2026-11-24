@@ -14,6 +14,6 @@ Project-wide architecture decision records (ADRs), numbered `NNNN-short-title.md
 |---|---|
 | [INDEX.md](INDEX.md) | Table of every ADR with status |
 | [open-questions.md](open-questions.md) | Undecided items, checks that gate decisions, and observed deviations |
-| `0001` to `0065` | The ADRs, listed in the index (`0053` to `0065` are drafts) |
+| `0001` to `0066` | The ADRs, listed in the index (`0053` to `0066` are drafts) |
 
 New ADRs start from the [ADR template](../meta/templates/adr.md) and follow the [documentation standards](../meta/documentation-standards.md#7-architecture-decision-records).

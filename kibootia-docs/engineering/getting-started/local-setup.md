@@ -43,6 +43,7 @@ To start again from nothing, `pnpm reset` removes every local volume (databases,
 | Adminer | <http://localhost:8081> (server `mysql`) |
 | MySQL | `localhost:3307` |
 | RustFS, the object store (S3 API and console; the `files` profile) | `localhost:9000` and <http://localhost:9001>, signed in with `KIBOOTIA_FILES_ACCESS_KEY` and `KIBOOTIA_FILES_SECRET_KEY` |
+| Open Policy Agent (the optional `policy` profile, [recipe](../../recipes/enable-opa-guardrails.md)) | `127.0.0.1:8181` |
 
 These ports were chosen to avoid the ones other local projects commonly use. If one is taken, the corresponding service fails to start rather than moving to another port, because the sign-in redirect URIs depend on the web app's port.
 

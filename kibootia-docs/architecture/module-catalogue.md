@@ -22,6 +22,7 @@ Declared with `allowedDependencies` in each module's `package-info.java` since b
 | `identity` | `access`, `audit`, `platform` | no | none |
 | `files` | `identity`, `platform` | yes | `kibootia.files.enabled` |
 | `notes` | `identity`, `audit`, `platform` | yes, by deleting it | none (ADR 0024: no switch without infrastructure) |
+| `policy` | `platform` | yes | `kibootia.policy.opa.enabled`, off by default |
 
 `files` depends on `identity` only for the type `UserErased`. `notes` depends on `identity` only for the same type. Both are a listener of an event, not a use of identity's services.
 
@@ -106,6 +107,13 @@ A technical kernel with 12 named interfaces: `authorization`, `directory`, `erro
 - **Needs:** `audit.AuditLog`, `platform.files.StoredFiles` (optional), `identity.UserErased`.
 - **Publishes:** `NoteDeleted` (nobody consumes it), `NotePurged` (consumed by itself).
 - **Listens to:** `UserErased`, `NotePurged`.
+
+### policy (removable, off by default)
+
+- **Purpose:** an Open Policy Agent guardrail that can refuse chosen actions above roles ([ADR 0066](../decisions/0066-opa-as-a-narrowing-guardrail.md)).
+- **Contract:** none. It contributes a `ResourceRule` bean to the decision point while switched on.
+- **Owns:** no table. Its policy and data live in OPA (`infra/opa` locally).
+- **Needs:** OPA's REST API.
 
 ## Events
 
