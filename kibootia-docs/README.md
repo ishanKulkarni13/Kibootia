@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-11
+- **Last updated:** 2026-11-24
 
 > **Implementation:** not applicable (index).
 
@@ -35,6 +35,7 @@ Every document says whether it describes a decision, a requirement, a plan, obse
 - New to the project: [vision](product/vision.md), then [architecture overview](architecture/overview.md).
 - Want to run it and see it work: [start and check](engineering/getting-started/start-and-check.md).
 - Wondering what works today: [implementation status](product/roadmap/implementation-status.md).
+- Wondering how sound the structure is, where data lives and who owns what: the [architecture assessment](architecture/architecture-assessment.md), the [module catalogue](architecture/module-catalogue.md) and the [data inventory](architecture/data/data-inventory.md).
 - Why something is the way it is: [ADR index](decisions/INDEX.md).
 - What is still undecided: [open questions](decisions/open-questions.md).
 - What authorization must become, and how far the code is: [authorization requirements](product/requirements/authorization/README.md) and their [traceability](product/requirements/authorization/traceability.md).

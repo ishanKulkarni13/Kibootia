@@ -19,6 +19,7 @@ The project is built through seven ordered milestones, each a vertical slice: ev
 | [milestone-3-identity-and-access-administration.md](milestone-3-identity-and-access-administration.md) | Profiles, roles and permissions, admin UI, invitations and self-registration, audit log viewer, rate limiting |
 | [milestone-4-files.md](milestone-4-files.md) | Object storage and the avatar flow |
 | [milestone-5-example-feature.md](milestone-5-example-feature.md) | The deletable example feature (Notes, with a picture and screens), removal recipes and the module-removal matrix |
+| [milestone-5-1-architecture-hardening.md](milestone-5-1-architecture-hardening.md) | Proposed: close the structural, data and operational gaps of the [architecture assessment](../../architecture/architecture-assessment.md) before the authorization phases. Draft |
 | [milestone-6-production-readiness.md](milestone-6-production-readiness.md) | Reference deployment, production guards, first recipes, first release |
 | [authorization-roadmap.md](authorization-roadmap.md) | The phases (milestones 7 to 17) that deliver the [authorization requirements](../requirements/authorization/README.md). Draft, awaiting the owner's confirmation |
 | [milestone-7-authorization-contract.md](milestone-7-authorization-contract.md) | The first authorization phase: the decision contract, the role-assignment fix and denial records, with no schema change. Draft |
