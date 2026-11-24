@@ -1,24 +1,16 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+
+import { signIn } from "./support";
 
 const DEMO_USERNAME = "demo";
 const demoPassword = process.env.DEMO_USER_PASSWORD;
 
 test.skip(!demoPassword, "DEMO_USER_PASSWORD is not set; run 'pnpm bootstrap' or export it");
 
-async function signIn(page: Page, returnPath = "/") {
-  await page.goto(returnPath === "/" ? "/" : returnPath);
-  if (returnPath === "/") await page.getByRole("link", { name: "Sign in" }).click();
-  // Keycloak's own login page, on its public address.
-  await expect(page).toHaveURL(/localhost:8180\/realms\/kibootia\//);
-  await page.locator("#username").fill(DEMO_USERNAME);
-  await page.locator("#password").fill(demoPassword!);
-  await page.locator("#kc-login").click();
-}
-
 test.describe("signing in through the Next.js server", () => {
   test("signs in, shows the identity from Spring both server-side and through the proxy, and signs out", async ({ page, context }) => {
-    await signIn(page);
+    await signIn(page, DEMO_USERNAME, demoPassword!);
     await expect(page.getByTestId("signed-in")).toBeVisible();
 
     await page.getByRole("link", { name: /who the API thinks you are/i }).click();
@@ -64,7 +56,7 @@ test.describe("signing in through the Next.js server", () => {
   });
 
   test("the proxy refuses a state-changing request without the Origin and custom header, and an unauthenticated one", async ({ page, browser }) => {
-    await signIn(page);
+    await signIn(page, DEMO_USERNAME, demoPassword!);
     await expect(page.getByTestId("signed-in")).toBeVisible();
 
     // From the page itself the Origin is right but the custom header is missing.
@@ -84,7 +76,7 @@ test.describe("signing in through the Next.js server", () => {
     await expect(page.getByTestId("signed-out")).toBeVisible();
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 
-    await signIn(page);
+    await signIn(page, DEMO_USERNAME, demoPassword!);
     await page.goto("/me");
     await expect(page.getByTestId("me-browser")).toBeVisible();
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
