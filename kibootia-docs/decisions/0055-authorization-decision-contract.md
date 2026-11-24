@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-11
 
-> **Implementation:** planned. The contract in the repository is version 1: `PolicyDecisionPoint.can(Caller, String, Object)` returning a boolean and `scopeFor` returning `ALL`, `OWN` or `NONE` (verified, CI run 42605511477).
+> **Implementation:** points 1 to 4 and 6 observed on branch `m-7` (local run, 2026-11-24; CI run pending), with the choices made while building in draft [ADR 0064](0064-milestone-7-implementation-decisions.md). Point 5 is milestone 8, point 7 milestone 12.
 
 ## Context
 

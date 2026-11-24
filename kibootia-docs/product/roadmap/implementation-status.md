@@ -112,6 +112,17 @@ The Level column was added on 2026-11-09.
 | [Module catalogue](../../architecture/module-catalogue.md), [data inventory](../../architecture/data/data-inventory.md), [architecture assessment](../../architecture/architecture-assessment.md) | none | 5.1 | observed (documentation, read from the code; not machine-checked) |
 | Implementation banners of ADRs 0001 to 0052 replaced by a fixed pointer to this document | [ADR 0060](../../decisions/0060-implementation-status-in-one-place.md) (draft) | 5.1 | observed (documentation) |
 
+## Capabilities added on branch `m-7` (2026-11-24)
+
+| Capability | Decision | Milestone | Level |
+|---|---|---|---|
+| Decision contract version 2: typed principal, resource reference, decision with a stable reason code, access filter for lists | [ADR 0055](../../decisions/0055-authorization-decision-contract.md), [ADR 0064](../../decisions/0064-milestone-7-implementation-decisions.md) (drafts) | [7](milestone-7-authorization-contract.md) | observed (`DefaultDecisionPointTest`, `AuthorizationIT` and every authorization integration suite, local run 2026-11-24; CI run pending) |
+| Module rules that can only narrow; every applicable rule consulted; a failing rule refuses (closes S3) | ADR 0064 | 7 | observed (`DefaultDecisionPointTest`, `AuthorizationIT`; local; CI pending) |
+| Decision records for refusals and for allowed uses of sensitive permissions, and the decision metric | ADR 0064 | 7 | observed (`AuthorizationIT` reads the JSON log line and the counter; local; CI pending) |
+| One rule for invisible records: 403 without any grant, 404 alike for missing and out of reach (resolves OQ-87) | ADR 0064 | 7 | observed (`NotesApiIT`, `NoteAttachmentApiIT`, `AuthorizationIT`; local; CI pending) |
+| The request gate is required at startup (closes S11) | ADR 0064 | 7 | observed (every integration test starts with it; local; CI pending) |
+| Administration sections guarded one by one; an ended session sends the user to sign in (closes S13) | ADR 0064 | 7 | observed (`admin-frame.test.tsx`, `session-expiry.test.ts`, 204 unit tests; local; CI pending) |
+
 ## Deviations the owner has called out
 
 - Reference feature: a backend-only `notes` module ([ADR 0049](../../decisions/0049-milestone-2-implementation-decisions.md)); completed in milestone 5 with a picture, screens, a copy guide and removal recipes.

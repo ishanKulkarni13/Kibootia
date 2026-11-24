@@ -31,9 +31,12 @@ Declare permissions in a `PermissionProvider` bean (`NotesPermissions`). Name th
 In the use cases (`NoteService`):
 
 - a check that needs no record: `@RequiresPermission(NotesPermissions.CREATE)`;
-- a check on a loaded record: `authorization.require(NotesPermissions.UPDATE, note)`, with the record implementing `Owned` and `TenantBound` (see `Note`);
-- a record the caller may not *see* is `404`, one they may see but not change is `403` (a private helper that loads and filters does the first);
-- a list asks for its scope with `authorization.requireScope(...)` and filters in the query, so paging stays correct.
+- the record implements `Resource` and describes itself with a `ResourceRef`: its type (declare a constant, `NotesPermissions.NOTE = "notes.note"`), its ID, its tenant and its owner (`ResourceRef.of(...).ownedBy(ownerId)`; see `Note`);
+- the read that loads a record: `authorization.requireVisible(NotesPermissions.VIEW, notes.find(id), NoteService::notFound)`. A caller with no view grant at all gets `403`, decided before the record is read; a record out of their reach and a missing one both get your `404` ([ADR 0064](../../decisions/0064-milestone-7-implementation-decisions.md));
+- a check on a loaded record: `authorization.require(NotesPermissions.UPDATE, note)`, so one they may see but not change is `403`;
+- a list asks `authorization.requireFilter(...)` and turns the access filter into its query, so paging stays correct. A store that understands only ownership calls `filter.ownerOnly()`, which refuses any filter shape it does not know;
+- a rule grants cannot express (a locked record) is a `ResourceRule` bean. It can only narrow what grants allow;
+- a permission whose every use should be reviewable (purging, erasing) is declared `.asSensitive()`, so its allowed uses are written as decision records too.
 
 Every public method of a use-case class needs one of these or `@NoAuthorization("reason")`; ArchUnit rule 7 fails the build otherwise.
 

@@ -6,11 +6,11 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-24
 
-> **Implementation:** the decision point, annotations and scopes are verified (CI run 42605511477, 2026-11-09). Stored roles, the editable role model, email verification and the safeguards are verified (CI run 42780048416, 2026-11-10).
+> **Implementation:** stored roles, the editable role model, email verification and the safeguards are verified (CI run 42780048416, 2026-11-10). Contract version 2 (decisions with reasons, access filters, narrowing rules, decision records) is observed on branch `m-7` (local run, 2026-11-24; CI run pending).
 
 Decisions: [ADR 0009](../../decisions/0009-role-based-authorization-first.md), [ADR 0025](../../decisions/0025-identity-and-authorization-data-split.md), [ADR 0027](../../decisions/0027-central-authorization-decision-point.md), [ADR 0041](../../decisions/0041-user-lifecycle-and-account-model.md), [ADR 0044](../../decisions/0044-authorization-enforcement-conventions.md).
 
-This document describes authorization **as it is built today**. What it must become is in the [authorization requirements](../../product/requirements/authorization/README.md); how far the code is from them is in their [traceability](../../product/requirements/authorization/traceability.md); the proposed changes to the model and to the contract below are draft [ADR 0054](../../decisions/0054-authorization-domain-model.md) and draft [ADR 0055](../../decisions/0055-authorization-decision-contract.md). Nothing below changes until those are accepted and built.
+This document describes authorization **as it is built today**. What it must become is in the [authorization requirements](../../product/requirements/authorization/README.md); how far the code is from them is in their [traceability](../../product/requirements/authorization/traceability.md); the contract below is draft [ADR 0055](../../decisions/0055-authorization-decision-contract.md), built on the owner's instruction of 2026-11-24 and awaiting acceptance; the grant model of draft [ADR 0054](../../decisions/0054-authorization-domain-model.md) is next.
 
 ## Principles (owner decisions)
 
@@ -30,23 +30,35 @@ This document describes authorization **as it is built today**. What it must bec
 
 ## Decision point
 
-Every protected operation asks the [policy decision point](../../shared/glossary/policy-decision-point.md). It has two operations:
+Every protected operation asks the [policy decision point](../../shared/glossary/policy-decision-point.md), through the `Authorization` facade in `platform.authorization`. Contract version 2 ([ADR 0055](../../decisions/0055-authorization-decision-contract.md), built in [milestone 7](../../product/roadmap/milestone-7-authorization-contract.md), [ADR 0064](../../decisions/0064-milestone-7-implementation-decisions.md)):
 
 | Operation | Answers | Used for |
 |---|---|---|
-| `can(principal, action, resource)` | May this caller do this to this record? | Single records |
-| `scopeFor(principal, action)` | Which records may this caller see or change: `ALL`, `OWN` or `NONE` (richer later)? | Lists; the module turns the scope into a query condition |
+| `decide(principal, action, resource)` | A **decision**: allow or deny, a stable reason code, and the grant or rule that decided | Single records, and actions on the collection (no record) |
+| `filter(principal, action)` | An **access filter**: nothing, everything in the tenant, or records to which the principal has a relation (today: records they own) | Lists; the module's store turns it into its query condition |
 
-Policies behind it live in the modules and cover the permission held, record rules such as ownership, the email-verification fact, and later contextual rules including tenant facts ([ADR 0028](../../decisions/0028-tenant-ready-schema.md)). The decision point is a port, so an external engine such as OPA can replace the Java policies; OPA is a recipe in the [technology catalogue](../../technology/README.md).
+- The **principal** is a user (ID, tenant, email-verified) or the system (tenant and the reason it was entered).
+- The **resource** is a `ResourceRef` the owning module builds from its record (type, ID, tenant, relations such as `owner`), so the decision point never reads another module's tables.
+- **Reason codes** are part of the contract: `authorization.granted`, `.system`, `.no_grant`, `.out_of_reach`, `.other_tenant`, `.email_not_verified`, `.refused_by_rule`, `.denied_by_grant`, `.evaluation_error`, `.no_decision_point`.
+
+**The combination rule.** Default deny. An undeclared action is a programming error and throws. The system may act in its own tenant. An unverified user holds only actions marked for it. A grant reaches either every record of the tenant or the records the user owns (the `-any` convention, until [milestone 8](../../product/roadmap/milestone-8-grant-model.md) replaces it with a reach on each grant). A record of another tenant is refused. Then every module rule (`ResourceRule`) that applies is consulted: a rule can only **narrow**, never allow what grants refused, and a rule that throws refuses as `evaluation_error`, logged at error level.
+
+The decision point is a port, so an external engine can replace the Java evaluation, provided it returns a decision with a reason and an access filter ([ADR 0056](../../decisions/0056-authorization-evaluation-engine.md)).
 
 ## Where checks are written
 
 On application use-case methods, not controllers, because use cases are also called by other modules, jobs and event handlers:
 
-- `@RequiresPermission(...)` for permission-only checks;
-- `authorization.require(action, record)` after loading a record, for record rules.
+- `@RequiresPermission(...)` for an action on the collection (create, an administrative action);
+- `authorization.require(action, record)` after loading a record, with the record implementing `Resource`;
+- `authorization.requireVisible(action, store.find(id), notFound)` for the read that loads a record, which applies the rule for invisible records below;
+- `authorization.requireFilter(action)` for a list, turning the filter into the query.
 
-An ArchUnit rule requires every public use-case method to have a check or an explicit `@NoAuthorization("reason")` ([architecture enforcement](../architecture-enforcement.md)).
+An ArchUnit rule requires every public use-case method to have a check or an explicit `@NoAuthorization("reason")`, and the check must be a direct call ([architecture enforcement](../architecture-enforcement.md)).
+
+## Decision records
+
+Every refusal, and every allowed use of a permission its module marks `asSensitive()` (erasing, purging, granting), is written as a structured log line on the logger `kibootia.authorization.decision`: principal kind and ID, tenant, action, resource type and ID, outcome, reason code, what decided, the system's reason, and the trace ID. Records hold identifiers only, never attribute values. Every decision is also counted in the metric `kibootia.authorization.decisions`, tagged with outcome, reason and action. How long records are kept beyond the log is the decision log of milestone 15; they are not written to the audit table.
 
 ## Freshness
 
@@ -58,8 +70,10 @@ Only tokens that belong to a user are accepted. Tokens issued to service account
 
 ## Failure behavior
 
-An authenticated caller who lacks permission receives 403, distinct from 401 for authentication failures. A record the caller may not see at all is reported as 404 ([API conventions](../api/conventions.md)).
+An authenticated caller who is refused receives 403, distinct from 401 for authentication failures; an unverified caller receives 403 `platform.email_not_verified`. For records ([ADR 0064](../../decisions/0064-milestone-7-implementation-decisions.md), resolving OQ-87): a caller who holds **no grant** for the action gets 403, decided before any record is read; a caller who holds the action but whose grants do not reach the record, and a record that does not exist, both get 404 ([API conventions](../api/conventions.md)). The answer therefore never depends on whether an ID exists.
+
+The request gate is required: the application refuses to start without it, rather than letting disabled or deleted users in.
 
 ## Testing
 
-Every protected operation has an allowed and a denied test, and list endpoints test their scope: `AccessApiIT` for roles and assignments, `UserAdministrationIT` and `IdentityGateIT` for users, `AuditViewerIT` for the log, `AuthorizationIT` and `DefaultDecisionPointTest` for the mechanism.
+Every protected operation has an allowed and a denied test, and list endpoints test their scope: `AccessApiIT` for roles and assignments, `UserAdministrationIT` and `IdentityGateIT` for users, `AuditViewerIT` for the log, `AuthorizationIT` and `DefaultDecisionPointTest` for the mechanism, including the combination rule, narrowing rules, decision records and the metric.
