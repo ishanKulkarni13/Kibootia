@@ -146,6 +146,21 @@ services:
       retries: 10
       start_period: 10s
 
+  # Open Policy Agent with Kibootia's guardrail policy (ADR 0066), for the optional `policy` module. Only on this machine.
+  # The profile `policy` starts it; the backend asks it only when KIBOOTIA_POLICY_OPA_ENABLED=true, and only about the
+  # actions in KIBOOTIA_POLICY_OPA_ACTIONS. The image has no shell, so there is no health check; the backend fails closed
+  # for those actions while OPA is not answering.
+  opa:
+    image: openpolicyagent/opa:1.22.2
+    container_name: kibootia-opa
+    restart: unless-stopped
+    profiles: ["policy"]
+    command: ["run", "--server", "--addr=0.0.0.0:8181", "--log-level=info", "/policies"]
+    ports:
+      - "127.0.0.1:8181:8181"
+    volumes:
+      - ./infra/opa:/policies:ro
+
   # Grafana, Tempo, Loki and an OTLP receiver in one container, for development only (ADR 0030).
   lgtm:
     image: grafana/otel-lgtm:0.40.0
@@ -188,6 +203,10 @@ services:
       KIBOOTIA_FILES_ACCESS_KEY: ${KIBOOTIA_FILES_ACCESS_KEY:-}
       KIBOOTIA_FILES_SECRET_KEY: ${KIBOOTIA_FILES_SECRET_KEY:-}
       KIBOOTIA_OBSERVABILITY_ENABLED: ${KIBOOTIA_OBSERVABILITY_ENABLED:-true}
+      # The optional guardrail policy (ADR 0066), reached on the Compose network; off unless switched on in .env.
+      KIBOOTIA_POLICY_OPA_ENABLED: ${KIBOOTIA_POLICY_OPA_ENABLED:-false}
+      KIBOOTIA_POLICY_OPA_URL: http://opa:8181
+      KIBOOTIA_POLICY_OPA_ACTIONS: ${KIBOOTIA_POLICY_OPA_ACTIONS:-}
     ports:
       - "8080:8080"
     depends_on:

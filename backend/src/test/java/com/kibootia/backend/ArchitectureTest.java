@@ -82,7 +82,7 @@ class ArchitectureTest {
 	 * The default-on modules a fork may remove or switch off (ADR 0024). Adding a module to this list is how a new
 	 * removable module comes under rule 5.
 	 */
-	static final List<String> REMOVABLE_MODULES = List.of("files", "notes");
+	static final List<String> REMOVABLE_MODULES = List.of("files", "notes", "policy");
 
 	/**
 	 * Rule 5 for every removable default-on module (ADR 0024): nothing outside it depends on it, so removing it, or

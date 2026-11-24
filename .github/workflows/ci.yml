@@ -208,6 +208,16 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+  # The shipped guardrail policy (ADR 0066) compiles and passes its own tests, with the OPA version Compose runs.
+  policy:
+    name: Guardrail policy tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - name: Check and test the policy
+        run: docker run --rm -v "$PWD/infra/opa:/policies:ro" openpolicyagent/opa:1.22.2 test -v /policies
+
   secret-scan:
     name: Secret scan
     runs-on: ubuntu-latest
