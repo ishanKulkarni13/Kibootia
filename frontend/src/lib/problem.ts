@@ -6,7 +6,9 @@ export function problem(status: number, code: string, detail: string, extraHeade
     403: "Forbidden",
     404: "Not Found",
     405: "Method Not Allowed",
+    413: "Content Too Large",
     502: "Bad Gateway",
+    504: "Gateway Timeout",
   };
   const headers = new Headers(extraHeaders);
   headers.set("Content-Type", "application/problem+json");
