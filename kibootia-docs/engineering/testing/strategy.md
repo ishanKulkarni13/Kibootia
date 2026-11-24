@@ -32,7 +32,7 @@ Test starters listed as present are in `pom.xml`. Their presence says nothing ab
 
 ## Observed tests
 
-At milestone 5 the backend had 135 fast (`*Test`) and 269 integration (`*IT`) tests, the frontend 196 Vitest tests, and 31 Playwright tests, which have not yet run in CI (OQ-86 in [open questions](../../decisions/open-questions.md)). Not covered yet: upgrading an existing schema, event payload compatibility, a throughput baseline, a request in a second tenant, and a slow Keycloak ([architecture assessment](../../architecture/architecture-assessment.md), Q-4).
+At milestone 5 the backend had 135 fast (`*Test`) and 269 integration (`*IT`) tests, the frontend 196 Vitest tests, and 31 Playwright tests, which passed in CI for the first time on 2026-11-24 (run 45354022559). Not covered yet: upgrading an existing schema, event payload compatibility, a throughput baseline, a request in a second tenant, and a slow Keycloak ([architecture assessment](../../architecture/architecture-assessment.md), Q-4).
 
 ## Database for tests
 

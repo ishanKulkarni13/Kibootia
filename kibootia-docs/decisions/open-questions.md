@@ -12,7 +12,7 @@ Live list of unresolved decisions, deviations observed in the repository and che
 
 Resolved on 2026-10-28 and removed: OQ-02, OQ-03, OQ-04, OQ-06, OQ-20, OQ-22, OQ-23, OQ-25, OQ-27, OQ-28, OQ-29, OQ-31 (versions aside) and OQ-34; see ADRs [0023](0023-template-fork-adoption-model.md) to [0038](0038-frontend-stack.md).
 
-Resolved on 2026-11-24 and removed: OQ-87 (403 when the caller holds no grant for the action, decided before the record is read; 404 alike for a missing record and one out of reach; draft [0064](0064-milestone-7-implementation-decisions.md)).
+Resolved on 2026-11-24 and removed: OQ-86 (the 31 end-to-end tests of milestone 5 passed in CI run 45354022559 on pull request #10, after three defects they found were fixed) and OQ-87 (403 when the caller holds no grant for the action, decided before the record is read; 404 alike for a missing record and one out of reach; draft [0064](0064-milestone-7-implementation-decisions.md)).
 
 Resolved on 2026-11-11 and removed: OQ-37 (the owner kept the name "Notes" for the example feature; [0052](0052-milestone-5-implementation-decisions.md)).
 
@@ -55,7 +55,6 @@ Raised by the review of 2026-11-11 (`temp/authorization-review.md`). The recomme
 | OQ-83 | Is draft [ADR 0055](0055-authorization-decision-contract.md), the decision contract, accepted? | Accept | Milestone 7 |
 | OQ-84 | The engine evaluation of draft [ADR 0056](0056-authorization-evaluation-engine.md): in-house on MySQL against OpenFGA and Cerbos on two reference scenarios, with measurements | Run it during milestone 7; decide before milestone 9 | Milestone 9 onward |
 | OQ-85 | Does [milestone 6](../product/roadmap/milestone-6-production-readiness.md) (production readiness and the first release tag) come before or after milestones 7 and 8? The owner said on 2026-11-11 that Kibootia has no forks and no users, so breaking changes are acceptable and the order is no longer forced | After milestone 8, so the first tag already carries the new contract; either order is safe | The order of work |
-| OQ-86 | The 31 end-to-end tests of milestone 5 were skipped in both CI runs (42959703043, 42981706613) and have never run in CI | Run the workflow by manual dispatch, or check the next nightly run | Marking milestone 5 verified |
 | OQ-88 | What "SDK" means in AUTH-037, given that nothing is published as a library ([ADR 0023](0023-template-fork-adoption-model.md)). The owner did not answer this directly; it follows from authorization being an in-process module | The in-repository Java contract and the OpenAPI-described administration API; confirm the wording | AUTH-037 |
 
 ## Architecture assessment of 2026-11-24

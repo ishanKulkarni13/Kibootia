@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-24
 
-> **Implementation:** stored roles, the editable role model, email verification and the safeguards are verified (CI run 42780048416, 2026-11-10). Contract version 2 (decisions with reasons, access filters, narrowing rules, decision records) is observed on branch `m-7` (local run, 2026-11-24; CI run pending).
+> **Implementation:** stored roles, the editable role model, email verification and the safeguards are verified (CI run 42780048416, 2026-11-10). Contract version 2 (decisions with reasons, access filters, narrowing rules, decision records) is observed on branch `m-7` (verified, CI run 45354823982, 2026-11-24).
 
 Decisions: [ADR 0009](../../decisions/0009-role-based-authorization-first.md), [ADR 0025](../../decisions/0025-identity-and-authorization-data-split.md), [ADR 0027](../../decisions/0027-central-authorization-decision-point.md), [ADR 0041](../../decisions/0041-user-lifecycle-and-account-model.md), [ADR 0044](../../decisions/0044-authorization-enforcement-conventions.md).
 

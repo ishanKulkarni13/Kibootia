@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-24
 
-> **Implementation:** observed. Read from the code on branch `m-5-1` (commit `75b2091`, 2026-11-24). The dependency declarations in the table below are enforced by `ModularityTest` (passed in a local run, 2026-11-24; CI run pending). The rest is a reading of the code and is not machine-checked, so it can drift: when a module changes, change this page in the same commit.
+> **Implementation:** observed. Read from the code on branch `m-5-1` (commit `75b2091`, 2026-11-24). The dependency declarations in the table below are enforced by `ModularityTest` (passed in a verified, CI run 45354022559, 2026-11-24). The rest is a reading of the code and is not machine-checked, so it can drift: when a module changes, change this page in the same commit.
 
 One page per fact, one row per module: what each module is for, what other modules may use from it, what it owns, and what it needs. The rules behind it are in [layers and boundaries](layers-and-boundaries.md) and [package structure](../engineering/conventions/package-structure.md); the data in each row is detailed in the [data inventory](data/data-inventory.md); what an enterprise would change is in the [architecture assessment](architecture-assessment.md).
 

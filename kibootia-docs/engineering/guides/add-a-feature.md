@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-24
 
-> **Implementation:** verified for the backend and the frontend unit tests (CI run 42959703043, 2026-11-11). The notes end-to-end story has not run in CI (OQ-86), so the browser path of the example is unverified ([verification standard](../testing/verification-standard.md)).
+> **Implementation:** verified for the backend and the frontend unit tests (CI run 42959703043, 2026-11-11). The notes end-to-end story passed in CI run 45354022559 (2026-11-24), so the browser path of the example is verified too ([verification standard](../testing/verification-standard.md)).
 
 ## Goal
 

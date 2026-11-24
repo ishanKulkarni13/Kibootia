@@ -46,7 +46,7 @@ Query counts and per-request costs are readings, not measurements. No load test 
 | Milestone | State |
 |---|---|
 | 0 Hygiene and guardrails; 1 Walking skeleton; 2 Platform conventions; 3 Identity and access administration; 4 Files | Built and verified in CI |
-| 5 Example feature | Built; backend verified in CI. Its 31 end-to-end tests have never run in CI ([OQ-86](../decisions/open-questions.md)) |
+| 5 Example feature | Built and verified in CI. Its 31 end-to-end tests ran in CI for the first time on 2026-11-24 (run 45354022559), after three defects they exposed were fixed: a heading missing on the note error page, an alert colour on the edge of the contrast minimum, and two test-isolation faults |
 | 6 Production readiness and first release | Not built. Nothing deploys; no release tag, changelog or licence |
 | 7 to 17 Authorization | Drafts only; no code |
 
@@ -179,13 +179,13 @@ The table keeps only what changes the design or the risk. "Where" names the prop
 
 | What | Evidence |
 |---|---|
-| S-1 / R-01: role assignment now requires the caller to hold the permissions of each role they add | `AccessApiIT.assigningCannotEscalate` and `UserAdministrationIT.invitingCannotEscalate` pass; with the check removed they fail with 200 and 201 (local run, 2026-11-24; CI run pending) |
-| C-3 / R-02: `allowedDependencies` for `access`, `audit`, `files`, `identity`, `notes` | `ModularityTest` passes; with `notes` denied access to `identity` it fails with the named violation (local run, 2026-11-24; CI run pending) |
+| S-1 / R-01: role assignment now requires the caller to hold the permissions of each role they add | `AccessApiIT.assigningCannotEscalate` and `UserAdministrationIT.invitingCannotEscalate` pass; with the check removed they fail with 200 and 201 (verified, CI run 45354022559, 2026-11-24) |
+| C-3 / R-02: `allowedDependencies` for `access`, `audit`, `files`, `identity`, `notes` | `ModularityTest` passes; with `notes` denied access to `identity` it fails with the named violation (verified, CI run 45354022559, 2026-11-24) |
 | Q-6 / R-16: README, SECURITY, CODEOWNERS, PR template, `.editorconfig`, `.nvmrc` | Files exist |
 
 ## Limits of this assessment
 
-Nothing was run except the tests named above. A full backend run on branch `m-5-1` passed 135 fast and 271 integration tests with no change to `openapi.json` (local, 2026-11-24, recorded in [implementation status](../product/roadmap/implementation-status.md); CI run pending). The frontend was read, not run. Findings tagged **R** or **I** should be confirmed by a test before a design change relies on them.
+Nothing was run except the tests named above. A full backend run on branch `m-5-1` passed 135 fast and 271 integration tests with no change to `openapi.json` (local, 2026-11-24, recorded in [implementation status](../product/roadmap/implementation-status.md); CI run 45354022559). The frontend was read, not run. Findings tagged **R** or **I** should be confirmed by a test before a design change relies on them.
 
 ## Related
 

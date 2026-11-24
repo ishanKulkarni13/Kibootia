@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-24
 
-> **Implementation:** observed on branch `m-7` (local run, 2026-11-24; CI run pending), built on the owner's instruction of 2026-11-24 while ADRs 0053 to 0055 await acceptance. What was decided while building is draft [ADR 0064](../../decisions/0064-milestone-7-implementation-decisions.md). Open: the measured query baseline of acceptance criterion 4 (one query per decision by reading, not measured).
+> **Implementation:** observed on branch `m-7` (verified, CI run 45354823982, 2026-11-24), built on the owner's instruction of 2026-11-24 while ADRs 0053 to 0055 await acceptance. What was decided while building is draft [ADR 0064](../../decisions/0064-milestone-7-implementation-decisions.md). Open: the measured query baseline of acceptance criterion 4 (one query per decision by reading, not measured).
 
 The first phase of the [authorization roadmap](authorization-roadmap.md). Decisions: draft [ADR 0053](../../decisions/0053-adopt-authorization-requirements.md), [ADR 0054](../../decisions/0054-authorization-domain-model.md) and [ADR 0055](../../decisions/0055-authorization-decision-contract.md). It does not start until all three are accepted and the owner authorizes implementation.
 

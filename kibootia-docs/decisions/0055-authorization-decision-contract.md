@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-11
 
-> **Implementation:** points 1 to 4 and 6 observed on branch `m-7` (local run, 2026-11-24; CI run pending), with the choices made while building in draft [ADR 0064](0064-milestone-7-implementation-decisions.md). Point 5 is milestone 8, point 7 milestone 12.
+> **Implementation:** points 1 to 4 and 6 observed on branch `m-7` (verified, CI run 45354823982, 2026-11-24), with the choices made while building in draft [ADR 0064](0064-milestone-7-implementation-decisions.md). Point 5 is milestone 8, point 7 milestone 12.
 
 ## Context
 

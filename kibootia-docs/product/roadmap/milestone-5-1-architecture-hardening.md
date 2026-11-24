@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-24
 
-> **Implementation:** observed in part. The items marked "done" are on branch `m-5-1` (local run, 2026-11-24; CI run pending). Everything else is planned. It is a proposal awaiting the owner: no item beyond those already done starts until the draft ADRs it relies on are accepted.
+> **Implementation:** observed in part. The items marked "done" are on branch `m-5-1` (verified, CI run 45354022559, 2026-11-24). Everything else is planned. It is a proposal awaiting the owner: no item beyond those already done starts until the draft ADRs it relies on are accepted.
 
 ## 1. Objective
 
@@ -81,7 +81,7 @@ Improves: S1 (done), the edge (CSP, HSTS, header allow-list, client address), su
 
 1. Every ADR it relies on is accepted, or the item is removed from this milestone.
 2. `./mvnw verify`, the frontend pipeline and the `module-removal` job pass in CI, with run IDs recorded in implementation status.
-3. The 31 end-to-end tests of milestone 5 have run in CI (OQ-86).
+3. The 31 end-to-end tests of milestone 5 have run in CI (OQ-86). **Met:** CI run 45354022559, 2026-11-24.
 4. No class that depends on an external-system port has a transactional method (rule 13).
 5. Each custom metric appears in the local Grafana, shown by a test or a recorded query.
 6. The PostgreSQL evaluation has a written outcome as an ADR.
