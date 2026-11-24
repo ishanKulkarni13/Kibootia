@@ -231,6 +231,9 @@ class IdentityGateIT extends AdminApiTest {
 
 		this.keycloak.register(BOB, true, false);
 		get(unverified(BOB), "/api/v1/me").andExpect(status().isOk());
+		// The first sign-in sends the verification email in the background. Plan the failure only after that send has
+		// happened, or it uses up the planned failure and the request below succeeds (a race seen in the nightly run).
+		Await.until("the first verification email to be requested", () -> this.keycloak.countCalls("sendVerificationEmail") == 1);
 		this.keycloak.failNext("sendVerificationEmail", 1);
 		post(unverified(BOB), "/api/v1/me/verification-email", null).andExpect(status().isServiceUnavailable());
 	}
