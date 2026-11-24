@@ -1,6 +1,6 @@
 import { context, propagation, type Context } from "@opentelemetry/api";
 
-import { checkCsrf, CSRF_HEADER } from "../csrf";
+import { checkCsrf } from "../csrf";
 import { logger } from "../logger";
 import { problem } from "../problem";
 import type { Deps } from "./deps";
@@ -10,6 +10,10 @@ import { currentSession } from "./refresh";
  * The generic `/api/*` proxy (ADR 0042). The upstream is fixed to the Spring API, so the browser can never use this
  * server to reach another host. It attaches the access token, enforces the CSRF rule, streams bodies in both
  * directions and passes W3C trace context. The browser never sees a token, and cookies never reach Spring.
+ *
+ * Hardening (ADR 0063): only the request headers the API needs are forwarded, a request that waits too long for the API
+ * is answered 504, a request body larger than the API accepts is refused before it is streamed, and the client's
+ * address is passed on only from the proxies this deployment says it trusts.
  */
 
 const HOP_BY_HOP = new Set([
@@ -24,25 +28,21 @@ const HOP_BY_HOP = new Set([
   "upgrade",
 ]);
 
-/** Request headers that are never forwarded: credentials, the browser's origin data and anything proxies would set. */
-const DROPPED_REQUEST_HEADERS = new Set([
-  ...HOP_BY_HOP,
-  "host",
-  "cookie",
-  "authorization",
-  "origin",
-  "referer",
-  "content-length",
-  CSRF_HEADER,
-  "forwarded",
-  "x-forwarded-for",
-  "x-forwarded-host",
-  "x-forwarded-proto",
-  "x-forwarded-port",
-  // Trace context comes from this server's own span, never from the browser (it would let a caller forge trace links).
-  "traceparent",
-  "tracestate",
-  "baggage",
+/**
+ * The request headers that are forwarded: an allow-list, so a header the API does not know about, or one a client made
+ * up to confuse it, never arrives. Credentials, the browser's origin data and the CSRF header are not on it, and neither
+ * are trace headers: those come from this server's own span, never from the browser (a caller could forge trace links).
+ * The body's length is left out because the body is streamed and the upstream request frames it again.
+ */
+const FORWARDED_REQUEST_HEADERS = new Set([
+  "accept",
+  "accept-encoding",
+  "accept-language",
+  "content-type",
+  "if-match",
+  "if-modified-since",
+  "if-none-match",
+  "user-agent",
 ]);
 
 /** The body is already decoded by `fetch`, so the upstream's encoding and length no longer describe it. */
@@ -68,6 +68,44 @@ export function isSafeApiPath(pathname: string): boolean {
   return true;
 }
 
+/**
+ * The client's address, from `X-Forwarded-For`, or null when it cannot be trusted. Each trusted proxy appends the
+ * address it saw to the right of the list, so with N trusted proxies the client's address is the Nth from the right;
+ * anything to its left was written by the client and means nothing. With no trusted proxy there is nothing to read, and
+ * the API sees this server's address.
+ */
+export function clientAddress(forwardedFor: string | null, trustedHops: number): string | null {
+  if (trustedHops < 1 || !forwardedFor) return null;
+  const addresses = forwardedFor.split(",").map((address) => address.trim()).filter((address) => address !== "");
+  const address = addresses[addresses.length - trustedHops];
+  // Only the characters of an IPv4 or IPv6 address: the value goes into a header the API reads.
+  return address !== undefined && /^[0-9a-fA-F:.]{2,45}$/.test(address) ? address : null;
+}
+
+/** Counts the bytes of a streamed request body and fails the stream when it passes the limit. */
+class BodyLimit {
+  exceeded = false;
+
+  constructor(private readonly max: number) {}
+
+  wrap(body: ReadableStream<Uint8Array>): ReadableStream<Uint8Array> {
+    let seen = 0;
+    return body.pipeThrough(
+      new TransformStream<Uint8Array, Uint8Array>({
+        transform: (chunk, controller) => {
+          seen += chunk.byteLength;
+          if (seen > this.max) {
+            this.exceeded = true;
+            controller.error(new Error("request body too large"));
+            return;
+          }
+          controller.enqueue(chunk);
+        },
+      }),
+    );
+  }
+}
+
 export async function proxyApi(request: Request, deps: Deps, traceContext: Context = context.active()): Promise<Response> {
   const { config } = deps;
   if (!ALLOWED_METHODS.has(request.method.toUpperCase())) {
@@ -80,6 +118,12 @@ export async function proxyApi(request: Request, deps: Deps, traceContext: Conte
   const incoming = new URL(request.url);
   if (!isSafeApiPath(incoming.pathname)) {
     return problem(400, "bff.invalid_path", "The request path is not valid");
+  }
+
+  // A body that declares itself too large is refused before anything is read or streamed.
+  const declared = Number(request.headers.get("content-length"));
+  if (Number.isFinite(declared) && declared > config.proxyMaxBodyBytes) {
+    return problem(413, "bff.body_too_large", "The request is too large");
   }
 
   const result = await currentSession(request.headers.get("cookie"), deps);
@@ -96,9 +140,11 @@ export async function proxyApi(request: Request, deps: Deps, traceContext: Conte
 
   const headers = new Headers();
   for (const [name, value] of request.headers) {
-    if (!DROPPED_REQUEST_HEADERS.has(name.toLowerCase())) headers.set(name, value);
+    if (FORWARDED_REQUEST_HEADERS.has(name.toLowerCase())) headers.set(name, value);
   }
   headers.set("Authorization", `Bearer ${result.session.accessToken}`);
+  const client = clientAddress(request.headers.get("x-forwarded-for"), config.trustedProxyHops);
+  if (client) headers.set("X-Forwarded-For", client);
   propagation.inject(traceContext, headers, {
     set: (carrier, key, value) => {
       carrier.set(key, value);
@@ -106,18 +152,28 @@ export async function proxyApi(request: Request, deps: Deps, traceContext: Conte
   });
 
   const hasBody = request.method !== "GET" && request.method !== "HEAD";
+  const limit = new BodyLimit(config.proxyMaxBodyBytes);
+  const uploading = (request.headers.get("content-type") ?? "").toLowerCase().startsWith("multipart/form-data");
+  const timeout = AbortSignal.timeout(uploading ? config.proxyUploadTimeoutMs : config.proxyTimeoutMs);
   let upstream: Response;
   try {
     upstream = await deps.fetch(target, {
       method: request.method,
       headers,
-      body: hasBody ? request.body : undefined,
+      body: hasBody && request.body ? limit.wrap(request.body) : undefined,
       // Streams the request body instead of buffering it.
       duplex: "half",
       redirect: "manual",
-      signal: request.signal,
+      signal: AbortSignal.any([request.signal, timeout]),
     } as RequestInit & { duplex: "half" });
   } catch (error) {
+    if (limit.exceeded) {
+      return problem(413, "bff.body_too_large", "The request is too large", cookieHeaders(result.setCookies));
+    }
+    if (timeout.aborted) {
+      logger.warn({ path: incoming.pathname }, "API did not answer in time");
+      return problem(504, "bff.upstream_timeout", "The API did not answer in time", cookieHeaders(result.setCookies));
+    }
     logger.error({ reason: error instanceof Error ? error.name : "unknown", path: incoming.pathname }, "API upstream unreachable");
     return problem(502, "bff.upstream_unavailable", "The API is not reachable", cookieHeaders(result.setCookies));
   }
