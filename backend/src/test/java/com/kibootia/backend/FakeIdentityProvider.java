@@ -10,6 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.kibootia.backend.identity.application.IdentityProviderAdmin;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
  * Stands in for Keycloak in every integration test except {@code KeycloakAdminAdapterIT}. It keeps accounts in memory,
@@ -29,6 +30,9 @@ public final class FakeIdentityProvider implements IdentityProviderAdmin {
 
 	private final List<String> calls = new CopyOnWriteArrayList<>();
 
+	/** The calls that were made while a database transaction was open on the calling thread (ADR 0058). */
+	private final List<String> callsInTransaction = new CopyOnWriteArrayList<>();
+
 	private final Map<String, Integer> failures = new ConcurrentHashMap<>();
 
 	private volatile boolean everythingFails;
@@ -39,8 +43,18 @@ public final class FakeIdentityProvider implements IdentityProviderAdmin {
 		this.emails.clear();
 		this.gone.clear();
 		this.calls.clear();
+		this.callsInTransaction.clear();
 		this.failures.clear();
 		this.everythingFails = false;
+	}
+
+	/**
+	 * The calls made while a database transaction was open on the calling thread, such as {@code delete:<id>}. No code may
+	 * call Keycloak that way (ADR 0058, architecture rule 13); every integration test that extends {@code AdminApiTest}
+	 * fails if this list is not empty when it ends.
+	 */
+	public List<String> callsInTransaction() {
+		return new ArrayList<>(this.callsInTransaction);
 	}
 
 	/** Registers an account with these properties. */
@@ -81,6 +95,9 @@ public final class FakeIdentityProvider implements IdentityProviderAdmin {
 	private void failIfAsked(String operation, UUID id) {
 		Integer remaining = this.failures.get(operation);
 		this.calls.add(operation + ":" + id);
+		if (TransactionSynchronizationManager.isActualTransactionActive()) {
+			this.callsInTransaction.add(operation + ":" + id);
+		}
 		if (this.everythingFails) {
 			throw new Unavailable("The fake Keycloak is down");
 		}

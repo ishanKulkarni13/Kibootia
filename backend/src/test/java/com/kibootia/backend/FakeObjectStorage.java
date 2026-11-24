@@ -33,6 +33,9 @@ public class FakeObjectStorage implements ObjectStorage {
 
 	private final AtomicInteger bucketCalls = new AtomicInteger();
 
+	/** The calls that were made while a database transaction was open on the calling thread (ADR 0058). */
+	private final List<String> callsInTransaction = new java.util.concurrent.CopyOnWriteArrayList<>();
+
 	/** Makes every call fail with {@link ObjectStorage.Unavailable} until switched back. */
 	public void setUnavailable(boolean unavailable) {
 		this.unavailable = unavailable;
@@ -43,6 +46,7 @@ public class FakeObjectStorage implements ObjectStorage {
 	}
 
 	public void clear() {
+		this.callsInTransaction.clear();
 		this.objects.clear();
 		this.unavailable = false;
 	}
@@ -73,7 +77,19 @@ public class FakeObjectStorage implements ObjectStorage {
 		return this.objects.get(key).content();
 	}
 
+	/**
+	 * The names of the calls made while a database transaction was open on the calling thread. No code may call the storage
+	 * server that way (ADR 0058, architecture rule 13); every integration test that extends {@code AdminApiTest} fails if
+	 * this list is not empty when it ends.
+	 */
+	public List<String> callsInTransaction() {
+		return new java.util.ArrayList<>(this.callsInTransaction);
+	}
+
 	private void check() {
+		if (org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive()) {
+			this.callsInTransaction.add(StackWalker.getInstance().walk((frames) -> frames.skip(1).findFirst()).get().getMethodName());
+		}
 		if (this.unavailable) {
 			throw new Unavailable("The fake storage server is switched off", null);
 		}

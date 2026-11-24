@@ -78,6 +78,12 @@ class ArchitectureTest {
 		EventAndJobRules.durableListenersTakeADomainEvent().check(classes);
 	}
 
+	@Test
+	void rule13_noTransactionIsOpenWhileAnotherSystemIsCalled() {
+		ExternalCallRules.transactionalMethodsDoNotCallOtherSystems().check(classes);
+		ExternalCallRules.handlersThatUseOtherSystemsRunWithoutATransaction().check(classes);
+	}
+
 	/**
 	 * The default-on modules a fork may remove or switch off (ADR 0024). Adding a module to this list is how a new
 	 * removable module comes under rule 5.

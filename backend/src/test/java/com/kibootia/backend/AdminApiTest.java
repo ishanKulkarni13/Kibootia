@@ -1,5 +1,7 @@
 package com.kibootia.backend;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import com.jayway.jsonpath.JsonPath;
@@ -74,6 +76,15 @@ public abstract class AdminApiTest {
 		Await.until("in-flight deliveries to finish", () -> this.jdbc.queryForObject(
 				"select count(*) from event_publication where completion_date is null and status in "
 						+ "('PUBLISHED', 'PROCESSING', 'RESUBMITTED')", Integer.class) == 0);
+		// ADR 0058, architecture rule 13: nothing calls Keycloak or the storage server while a transaction is open. The
+		// architecture test sees the calls written in the code; this sees the ones that really happened in this test.
+		List<String> inTransaction = new ArrayList<>(this.keycloak.callsInTransaction());
+		inTransaction.addAll(this.objectStorage.callsInTransaction());
+		if (!inTransaction.isEmpty()) {
+			this.keycloak.reset();
+			this.objectStorage.clear();
+			throw new AssertionError("Another system was called while a database transaction was open: " + inTransaction);
+		}
 		this.jdbc.update("delete from role_assignment");
 		this.jdbc.update("delete from role_permission");
 		this.jdbc.update("delete from role_permission_seed");
