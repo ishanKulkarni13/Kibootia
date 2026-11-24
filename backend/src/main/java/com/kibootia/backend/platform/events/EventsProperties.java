@@ -20,12 +20,15 @@ import jakarta.validation.constraints.NotNull;
  * @param pollInterval how often the retry job looks for events to retry
  * @param completedRetentionDays how long a delivered event stays in the registry before the retention purge removes it
  * @param processedRetentionDays how long the "already handled" marks are kept; must outlast the longest retry window
+ * @param failedRetentionDays how long an event whose retries are exhausted stays in the failed-event view before the
+ * retention purge removes it (ADR 0059); the removal is audited
  */
 @ConfigurationProperties("kibootia.events")
 @Validated
 public record EventsProperties(@DefaultValue("5") @Min(1) int maxAttempts,
 		@DefaultValue("30s") @NotNull Duration initialBackoff, @DefaultValue("1h") @NotNull Duration maxBackoff,
 		@DefaultValue("5m") @NotNull Duration staleAfter, @DefaultValue("30s") @NotNull Duration pollInterval,
-		@DefaultValue("7") @Min(1) int completedRetentionDays, @DefaultValue("30") @Min(1) int processedRetentionDays) {
+		@DefaultValue("7") @Min(1) int completedRetentionDays, @DefaultValue("30") @Min(1) int processedRetentionDays,
+		@DefaultValue("90") @Min(1) int failedRetentionDays) {
 
 }

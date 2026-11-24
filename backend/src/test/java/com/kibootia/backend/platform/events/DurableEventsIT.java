@@ -3,6 +3,7 @@ package com.kibootia.backend.platform.events;
 import java.util.List;
 import java.util.UUID;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.tracing.Span;
 import io.micrometer.tracing.Tracer;
 import org.junit.jupiter.api.AfterEach;
@@ -61,6 +62,9 @@ class DurableEventsIT {
 
 	@Autowired
 	JdbcTemplate jdbc;
+
+	@Autowired
+	MeterRegistry meters;
 
 	@BeforeEach
 	@AfterEach
@@ -286,6 +290,44 @@ class DurableEventsIT {
 		assertThat(FailedEvent.class.getRecordComponents()).extracting((c) -> c.getName())
 			.containsExactly("id", "eventType", "listener", "publishedAt", "attempts", "lastAttemptAt",
 					"retriesExhausted");
+	}
+
+	@Test
+	@DisplayName("an event larger than 4,000 characters is stored and delivered (ADR 0059)")
+	void aLargeEventIsStoredAndDelivered() {
+		publish(TENANT_A, "x".repeat(6000));
+
+		Await.until("the handler to run", () -> FlakyListener.SUCCESSES.get() == 1);
+		Integer longest = jdbc.queryForObject("select max(char_length(serialized_event)) from event_publication",
+				Integer.class);
+		assertThat(longest).isGreaterThan(4000);
+	}
+
+	@Test
+	@DisplayName("a new event is stored with the schema version it was written in (ADR 0059)")
+	void aNewEventCarriesTheCurrentSchemaVersion() {
+		publish(TENANT_A, "versioned");
+
+		Await.until("the handler to run", () -> FlakyListener.SUCCESSES.get() == 1);
+		String stored = jdbc.queryForObject(
+				"select json_unquote(json_extract(serialized_event, '$.context.schemaVersion')) from event_publication",
+				String.class);
+		assertThat(stored).isEqualTo(String.valueOf(EventContext.CURRENT_VERSION));
+	}
+
+	@Test
+	@DisplayName("the failed-event gauge counts every event that has failed, in every tenant, and no other")
+	void failedEventsAreCounted() {
+		publish(TENANT_A, "delivered");
+		Await.until("the first event to be delivered", () -> completedPublications() == 1);
+		assertThat(meters.get(FailedEventsMetrics.FAILED).gauge().value()).isZero();
+
+		FlakyListener.FAILURES_LEFT.addAndGet(2);
+		publish(TENANT_A, "fails");
+		publish(TENANT_B, "fails too");
+
+		Await.until("both events to fail", () -> failedPublications() == 2);
+		assertThat(meters.get(FailedEventsMetrics.FAILED).gauge().value()).isEqualTo(2.0);
 	}
 
 }

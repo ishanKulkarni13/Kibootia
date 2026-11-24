@@ -43,11 +43,14 @@ public class FailedEventAdministration {
 
 	private final RetryPolicy policy;
 
+	private final int maxAttempts;
+
 	FailedEventAdministration(JdbcTemplate jdbc, IncompleteEventPublications incomplete,
 			EventsProperties properties) {
 		this.jdbc = jdbc;
 		this.incomplete = incomplete;
 		this.policy = new RetryPolicy(properties);
+		this.maxAttempts = properties.maxAttempts();
 	}
 
 	/**
@@ -94,6 +97,26 @@ public class FailedEventAdministration {
 		}
 		this.incomplete.resubmitIncompletePublications((publication) -> publication.getIdentifier().equals(id));
 		return true;
+	}
+
+	/**
+	 * Removes the failed events of the current tenant whose retries are exhausted and that were published before the
+	 * cutoff (ADR 0059). An event that is still being retried is never removed. The caller authorizes and audits.
+	 *
+	 * @return how many events were removed
+	 */
+	public int purgeExhaustedBefore(Instant cutoff) {
+		return this.jdbc.update("delete from event_publication where completion_date is null and status = 'FAILED' "
+				+ "and completion_attempts >= ? and publication_date < ? and " + TENANT_OF_EVENT + " = ?",
+				this.maxAttempts, LocalDateTime.ofInstant(cutoff, ZoneOffset.UTC), TenantContext.require().toString());
+	}
+
+	/** How many events have failed, in every tenant: the registry has no tenant column, and an alert is not per tenant. */
+	long countFailed() {
+		Long failed = this.jdbc.queryForObject(
+				"select count(*) from event_publication where completion_date is null and status = 'FAILED'",
+				Long.class);
+		return (failed != null) ? failed : 0;
 	}
 
 	private FailedEvent map(ResultSet row, int index) throws SQLException {

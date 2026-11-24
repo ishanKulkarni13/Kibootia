@@ -26,7 +26,8 @@ public class EventContextFactory {
 
 	/** The context for an event raised now, by work that runs in a tenant. */
 	public EventContext capture() {
-		return new EventContext(UuidV7.next(this.clock), TenantContext.require(), traceparent(), this.clock.instant());
+		return new EventContext(UuidV7.next(this.clock), TenantContext.require(), traceparent(), this.clock.instant(),
+				EventContext.CURRENT_VERSION);
 	}
 
 	private String traceparent() {
