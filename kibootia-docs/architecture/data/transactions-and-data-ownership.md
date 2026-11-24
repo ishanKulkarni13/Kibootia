@@ -27,6 +27,10 @@ The schema is tenant-ready with a single default tenant ([ADR 0028](../../decisi
 
 Organization onboarding, administration and a tenant-management subsystem remain out of scope.
 
+## Facts
+
+Where each piece of data lives, who owns it, how long it stays and how it is erased: [data inventory](data-inventory.md). Findings against these rules: [architecture assessment](../architecture-assessment.md#data-and-ownership).
+
 ## Related
 
-[Persistence stack](persistence-stack.md), [authorization](../identity/authorization.md).
+[Persistence stack](persistence-stack.md), [authorization](../identity/authorization.md), [data inventory](data-inventory.md).

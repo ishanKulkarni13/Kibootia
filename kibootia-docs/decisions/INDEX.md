@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-11
+- **Last updated:** 2026-11-24
 
 > **Implementation:** not applicable (index).
 
@@ -70,5 +70,12 @@ Accepted does not mean implemented: see [implementation status](../product/roadm
 | 0054 | Authorization domain model | platform | draft | 2026-11-11 | [0054](0054-authorization-domain-model.md) |
 | 0055 | Authorization decision contract, version 2 | platform | draft | 2026-11-11 | [0055](0055-authorization-decision-contract.md) |
 | 0056 | Authorization evaluation engine | platform | draft | 2026-11-11 | [0056](0056-authorization-evaluation-engine.md) |
+| 0057 | Consumer-owned ports and declared module dependencies | platform | draft | 2026-11-24 | [0057](0057-consumer-owned-ports-and-declared-module-dependencies.md) |
+| 0058 | No external call inside a database transaction | platform | draft | 2026-11-24 | [0058](0058-no-external-call-inside-a-database-transaction.md) |
+| 0059 | Data integrity in the database | platform | draft | 2026-11-24 | [0059](0059-data-integrity-in-the-database.md) |
+| 0060 | Implementation status in one place | platform | draft | 2026-11-24 | [0060](0060-implementation-status-in-one-place.md) |
+| 0061 | CI quality and supply-chain gates | platform | draft | 2026-11-24 | [0061](0061-ci-quality-and-supply-chain-gates.md) |
+| 0062 | Reassess the application database before multi-tenancy | platform | draft | 2026-11-24 | [0062](0062-reassess-the-application-database-before-multi-tenancy.md) |
+| 0063 | BFF and edge hardening | platform | draft | 2026-11-24 | [0063](0063-bff-and-edge-hardening.md) |
 
 Module-scoped ADRs will be listed here too once modules exist.
