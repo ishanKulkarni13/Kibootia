@@ -302,6 +302,37 @@ test("an administrator sees everyone's notes, deletes the user's note and restor
   await expectNoAccessibilityViolations(user);
 });
 
+test("a role reaching every note, made in the role editor, lets the user it is given to see everyone's notes", async () => {
+  // The administrator holds "View notes" for every note, so the editor offers that reach first.
+  await admin.goto("/admin/roles/new");
+  await admin.getByLabel("Name").fill(`Note readers ${STAMP}`);
+  await admin.getByRole("checkbox", { name: /View notes/ }).check();
+  const reach = admin.getByRole("combobox", { name: "How far: View notes" });
+  await expect(reach).toHaveValue("all");
+  await admin.getByRole("button", { name: "Create role" }).click();
+  await expect(admin).toHaveURL(/\/admin\/roles\/[0-9a-f-]{36}$/);
+  await expect(admin.getByRole("combobox", { name: "How far: View notes" })).toHaveValue("all");
+  const roleId = admin.url().split("/").pop()!;
+
+  const userId = (await api(user, "GET", "/api/v1/me")).json!.id as string;
+  const held = (await api(admin, "GET", `/api/v1/users/${userId}/roles`)).json as unknown as { id: string }[];
+  const before = held.map((role) => role.id);
+  expect((await api(admin, "PUT", `/api/v1/users/${userId}/roles`, { roleIds: [...before, roleId] })).status).toBe(200);
+
+  // The next page the user opens knows: their grant now reaches every note.
+  await user.goto("/notes");
+  await user.getByLabel("Show").click();
+  await expect(user.getByRole("option", { name: "Everyone's notes" })).toBeVisible();
+  await user.keyboard.press("Escape");
+
+  // Taken away again, it is gone at once, and the role can be deleted.
+  expect((await api(admin, "PUT", `/api/v1/users/${userId}/roles`, { roleIds: before })).status).toBe(200);
+  await user.goto("/notes");
+  await expect(user.getByRole("heading", { name: "Notes" })).toBeVisible();
+  await expect(user.getByLabel("Show")).toHaveCount(0);
+  expect((await api(admin, "DELETE", `/api/v1/roles/${roleId}`)).status).toBe(204);
+});
+
 test("the story leaves nothing behind that would show in the next run", async () => {
   for (const word of [STAMP, PAGING]) {
     const listed = await api(user, "GET", `/api/v1/notes?q=${word}&size=100`);
