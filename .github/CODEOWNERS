@@ -1,0 +1,11 @@
+# Every path has one accountable owner. Narrow these as more people join (for example security-sensitive
+# paths below can require a second reviewer once there is one).
+*                               @ishanKulkarni13
+
+# Security-sensitive code: token validation, the BFF session and proxy, authorization, and the realm.
+/backend/src/main/java/com/kibootia/backend/platform/security/       @ishanKulkarni13
+/backend/src/main/java/com/kibootia/backend/platform/authorization/  @ishanKulkarni13
+/backend/src/main/java/com/kibootia/backend/access/                  @ishanKulkarni13
+/frontend/src/lib/bff/                                               @ishanKulkarni13
+/infra/                                                              @ishanKulkarni13
+/.github/                                                            @ishanKulkarni13

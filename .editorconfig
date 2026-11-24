@@ -1,0 +1,23 @@
+root = true
+
+[*]
+charset = utf-8
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+# Java and the Maven build use tabs (the existing code does).
+[*.java]
+indent_style = tab
+
+[pom.xml]
+indent_style = tab
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.properties]
+indent_style = space
+
+# Line endings are decided by .gitattributes and the checkout's autocrlf, not here.
