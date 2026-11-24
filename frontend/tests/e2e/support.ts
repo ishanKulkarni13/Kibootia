@@ -41,6 +41,14 @@ export async function signOut(page: Page) {
 }
 
 export async function expectNoAccessibilityViolations(page: Page) {
+  // An element that is fading in (a toast, an alert) is measured at its momentary opacity, which fails the contrast rule
+  // for colours that pass once it has arrived. Wait until finite animations and transitions are done; endless ones
+  // (a spinner) never finish and do not change contrast.
+  await page.waitForFunction(() =>
+    document
+      .getAnimations()
+      .every((animation) => animation.playState !== "running" || animation.effect?.getComputedTiming().iterations === Infinity),
+  );
   const results = await new AxeBuilder({ page }).analyze();
   // Name the elements, so a failure says what to fix and not only that something is wrong.
   expect(

@@ -24,6 +24,9 @@ test.describe.configure({ mode: "serial" });
 
 const STAMP = Date.now().toString(36);
 const title = (name: string) => `${name} ${STAMP}`;
+// A word that only this attempt's paging notes contain: a retry starts a new worker with a new STAMP, so the notes of a
+// failed attempt are not counted again.
+const PAGING = `Paging${STAMP}`;
 
 let userContext: BrowserContext;
 let user: Page;
@@ -174,13 +177,13 @@ test("a picture is kept whole in proportion, replaced by another, refused when i
 
 test("the list finds a note by its text, sorts, pages, and says when nothing matches", async () => {
   for (let index = 1; index <= 21; index++) {
-    const created = await api(user, "POST", "/api/v1/notes", { title: title(`Paging ${String(index).padStart(2, "0")}`), body: "x" });
+    const created = await api(user, "POST", "/api/v1/notes", { title: `${PAGING} ${String(index).padStart(2, "0")}`, body: "x" });
     expect(created.status).toBe(201);
   }
   await user.goto("/notes");
   await expect(rows(user).first()).toBeVisible();
 
-  await user.getByLabel("Search").fill(`Paging`);
+  await user.getByLabel("Search").fill(PAGING);
   await user.getByRole("button", { name: "Search" }).click();
   await expect(user.getByText(/Page 1 of 2 · 21 in all/)).toBeVisible();
   await expect(rows(user)).toHaveCount(20);
@@ -191,7 +194,7 @@ test("the list finds a note by its text, sorts, pages, and says when nothing mat
   await user.getByLabel("Sort by").click();
   await user.getByRole("option", { name: "Title A to Z" }).click();
   await expect(user.getByText(/Page 1 of 2/)).toBeVisible();
-  await expect(rows(user).first()).toContainText(title("Paging 01"));
+  await expect(rows(user).first()).toContainText(`${PAGING} 01`);
 
   await user.getByLabel("Search").fill(`no such text ${STAMP}`);
   await user.getByRole("button", { name: "Search" }).click();
