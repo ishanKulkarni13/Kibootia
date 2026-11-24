@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-11
+- **Last updated:** 2026-11-25
 
 > **Implementation:** not applicable (summary). Per-requirement implementation status: [traceability](traceability.md).
 
@@ -85,7 +85,7 @@ Taken on 2026-11-11; each is recorded where it applies.
 | Every Approved requirement is committed scope, reconfirmed after the reference applications were read | Draft [ADR 0053](../../../decisions/0053-adopt-authorization-requirements.md) |
 | Timetia and indent-edi validate the design and do not limit it; no integration with either is planned | [Reference scenarios](reference-scenarios.md) |
 | Authorization is an in-process module, not a network service; the contract is kept as plain data | Draft ADR 0053 |
-| Conditions are named conditions written by developers; administrators attach them | [AUTH-002](model-and-principals.md#auth-002-controlled-runtime-extensibility), draft [ADR 0054](../../../decisions/0054-authorization-domain-model.md) |
+| Conditions are named conditions written by developers; administrators attach them | [AUTH-002](model-and-principals.md#auth-002-controlled-runtime-extensibility), [ADR 0054](../../../decisions/0054-authorization-domain-model.md) |
 | Storage and evaluation stay in Kibootia on MySQL, confirmed by measurement | Draft [ADR 0056](../../../decisions/0056-authorization-evaluation-engine.md) |
 | A user may assign only roles whose permissions they hold | [AUTH-028](administration-audit-and-governance.md#auth-028-administrator-hierarchy) |
 | Breaking changes are acceptable: no forks, no users | Draft ADR 0053 |

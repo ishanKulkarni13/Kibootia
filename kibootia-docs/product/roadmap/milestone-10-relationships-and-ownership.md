@@ -4,11 +4,11 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-11
+- **Last updated:** 2026-11-25
 
 > **Implementation:** planned. Nothing of this milestone exists.
 
-A phase of the [authorization roadmap](authorization-roadmap.md). Decision: draft [ADR 0054](../../decisions/0054-authorization-domain-model.md); an ADR on how relationships are stored and queried is written when the phase starts.
+A phase of the [authorization roadmap](authorization-roadmap.md). Decision: [ADR 0054](../../decisions/0054-authorization-domain-model.md); an ADR on how relationships are stored and queried is written when the phase starts.
 
 ## 1. Objective
 

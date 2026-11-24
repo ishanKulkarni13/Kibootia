@@ -2,9 +2,9 @@
 
 - **Type:** adr
 - **Module:** platform
-- **Status:** accepted
+- **Status:** deprecated
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-10-28
+- **Last updated:** 2026-11-25
 
 > **Implementation:** not applicable (a decision record). What exists, and the CI run that verified it, is in [implementation status](../product/roadmap/implementation-status.md).
 
@@ -31,7 +31,7 @@ Contextual policies (ownership, tenant) will need later ADRs. The source of role
 
 ## Status
 
-accepted. Extended by [ADR 0027](0027-central-authorization-decision-point.md).
+deprecated; was accepted on 2026-10-28. Superseded by [ADR 0053](0053-adopt-authorization-requirements.md). It was extended by [ADR 0027](0027-central-authorization-decision-point.md).
 
 ## Related
 

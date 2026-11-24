@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-24
+- **Last updated:** 2026-11-25
 
 > **Implementation:** not applicable (index).
 
@@ -22,7 +22,7 @@ Accepted does not mean implemented: see [implementation status](../product/roadm
 | 0006 | Keycloak with OpenID Connect for identity | platform | accepted | 2026-10-27 | [0006](0006-keycloak-oidc-identity.md) |
 | 0007 | Spring Security resource server with signature, issuer and expiry validation | platform | accepted | 2026-10-27 | [0007](0007-spring-security-resource-server.md) |
 | 0008 | Audience validation and deny-by-default | platform | accepted (tightened by 0047) | 2026-10-27 | [0008](0008-audience-validation-and-deny-by-default.md) |
-| 0009 | Role-based authorization first, extensible later | platform | accepted (extended by 0027) | 2026-10-27 | [0009](0009-role-based-authorization-first.md) |
+| 0009 | Role-based authorization first, extensible later | platform | deprecated (superseded by 0053) | 2026-10-27 | [0009](0009-role-based-authorization-first.md) |
 | 0010 | Keycloak realm roles as role source | platform | deprecated (superseded by 0025) | 2026-10-27 | [0010](0010-keycloak-realm-roles-as-role-source.md) |
 | 0011 | MySQL, Spring Data JPA and Hibernate | platform | accepted | 2026-10-27 | [0011](0011-mysql-jpa-hibernate-persistence.md) |
 | 0012 | Flyway-managed schema evolution | platform | accepted | 2026-10-27 | [0012](0012-flyway-managed-schema-evolution.md) |
@@ -66,19 +66,19 @@ Accepted does not mean implemented: see [implementation status](../product/roadm
 | 0050 | Milestone 3 implementation decisions | platform | accepted | 2026-11-10 | [0050](0050-milestone-3-implementation-decisions.md) |
 | 0051 | Milestone 4 implementation decisions | platform | accepted | 2026-11-10 | [0051](0051-milestone-4-implementation-decisions.md) |
 | 0052 | Milestone 5 implementation decisions | platform | accepted | 2026-11-11 | [0052](0052-milestone-5-implementation-decisions.md) |
-| 0053 | Adopt the authorization requirements as committed scope | platform | draft (on acceptance supersedes 0009) | 2026-11-11 | [0053](0053-adopt-authorization-requirements.md) |
-| 0054 | Authorization domain model | platform | draft | 2026-11-11 | [0054](0054-authorization-domain-model.md) |
-| 0055 | Authorization decision contract, version 2 | platform | draft | 2026-11-11 | [0055](0055-authorization-decision-contract.md) |
+| 0053 | Adopt the authorization requirements as committed scope | platform | accepted (supersedes 0009) | 2026-11-11 | [0053](0053-adopt-authorization-requirements.md) |
+| 0054 | Authorization domain model | platform | accepted | 2026-11-11 | [0054](0054-authorization-domain-model.md) |
+| 0055 | Authorization decision contract, version 2 | platform | accepted | 2026-11-11 | [0055](0055-authorization-decision-contract.md) |
 | 0056 | Authorization evaluation engine | platform | draft | 2026-11-11 | [0056](0056-authorization-evaluation-engine.md) |
 | 0057 | Consumer-owned ports and declared module dependencies | platform | draft | 2026-11-24 | [0057](0057-consumer-owned-ports-and-declared-module-dependencies.md) |
 | 0058 | No external call inside a database transaction | platform | draft | 2026-11-24 | [0058](0058-no-external-call-inside-a-database-transaction.md) |
 | 0059 | Data integrity in the database | platform | draft | 2026-11-24 | [0059](0059-data-integrity-in-the-database.md) |
-| 0060 | Implementation status in one place | platform | draft | 2026-11-24 | [0060](0060-implementation-status-in-one-place.md) |
+| 0060 | Implementation status in one place | platform | accepted | 2026-11-24 | [0060](0060-implementation-status-in-one-place.md) |
 | 0061 | CI quality and supply-chain gates | platform | draft | 2026-11-24 | [0061](0061-ci-quality-and-supply-chain-gates.md) |
 | 0062 | Reassess the application database before multi-tenancy | platform | draft | 2026-11-24 | [0062](0062-reassess-the-application-database-before-multi-tenancy.md) |
 | 0063 | BFF and edge hardening | platform | draft | 2026-11-24 | [0063](0063-bff-and-edge-hardening.md) |
-| 0064 | Milestone 7 implementation decisions | platform | draft | 2026-11-24 | [0064](0064-milestone-7-implementation-decisions.md) |
-| 0065 | Milestone 8 implementation decisions | platform | draft | 2026-11-24 | [0065](0065-milestone-8-implementation-decisions.md) |
-| 0066 | Open Policy Agent as a narrowing guardrail | platform | draft | 2026-11-24 | [0066](0066-opa-as-a-narrowing-guardrail.md) |
+| 0064 | Milestone 7 implementation decisions | platform | accepted | 2026-11-24 | [0064](0064-milestone-7-implementation-decisions.md) |
+| 0065 | Milestone 8 implementation decisions | platform | accepted | 2026-11-24 | [0065](0065-milestone-8-implementation-decisions.md) |
+| 0066 | Open Policy Agent as a narrowing guardrail | platform | accepted | 2026-11-24 | [0066](0066-opa-as-a-narrowing-guardrail.md) |
 
 Module-scoped ADRs will be listed here too once modules exist.

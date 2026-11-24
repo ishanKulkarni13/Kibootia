@@ -4,11 +4,11 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-11
+- **Last updated:** 2026-11-25
 
 > **Implementation:** not applicable (index). Per-requirement status is in [traceability](traceability.md).
 
-The authoritative requirements for Kibootia's authorization and access control system. This folder **is** the specification; [summary.md](summary.md) is a one-page index into it and never competes with it. The specification was merged on 2026-11-11 from two drafts in `temp/` (`authz-new-srs.md`, the primary source, and the older `authz-srs.md`) and corrected during a review of the code and documents; the review is `temp/authorization-review.md`. The owner decided on 2026-11-11 that every Approved requirement is committed scope; that decision is recorded in draft [ADR 0053](../../../decisions/0053-adopt-authorization-requirements.md).
+The authoritative requirements for Kibootia's authorization and access control system. This folder **is** the specification; [summary.md](summary.md) is a one-page index into it and never competes with it. The specification was merged on 2026-11-11 from two drafts in `temp/` (`authz-new-srs.md`, the primary source, and the older `authz-srs.md`) and corrected during a review of the code and documents; the review is `temp/authorization-review.md`. The owner decided on 2026-11-11 that every Approved requirement is committed scope; that decision is recorded in [ADR 0053](../../../decisions/0053-adopt-authorization-requirements.md).
 
 These documents say **what** must be supported. They choose no engine, policy language, schema or API; those decisions are in draft ADRs [0054](../../../decisions/0054-authorization-domain-model.md), [0055](../../../decisions/0055-authorization-decision-contract.md) and [0056](../../../decisions/0056-authorization-evaluation-engine.md). What exists today is described in [authorization](../../../architecture/identity/authorization.md).
 

@@ -4,11 +4,11 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-11
+- **Last updated:** 2026-11-25
 
 > **Implementation:** planned. Nothing of this milestone exists.
 
-A phase of the [authorization roadmap](authorization-roadmap.md). Decisions: draft [ADR 0054](../../decisions/0054-authorization-domain-model.md) (named conditions) and the owner's decision of 2026-11-11 that no expression language ships now.
+A phase of the [authorization roadmap](authorization-roadmap.md). Decisions: [ADR 0054](../../decisions/0054-authorization-domain-model.md) (named conditions) and the owner's decision of 2026-11-11 that no expression language ships now.
 
 ## 1. Objective
 

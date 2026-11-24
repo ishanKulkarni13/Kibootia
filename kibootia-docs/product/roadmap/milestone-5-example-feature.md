@@ -4,9 +4,9 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-11
+- **Last updated:** 2026-11-25
 
-> **Implementation:** built and verified. The 31 end-to-end tests passed in CI on 2026-11-24 (run 45354022559, pull request #10), which closed OQ-86. The backend, frontend, image build and scan, secret scan and all four rows of the `module-removal` job passed in CI on pull request #7 (run 42959703043, 2026-11-11) and on `main` after the merge (run 42981706613). The end-to-end job was **skipped** in both runs, so the 31 end-to-end tests (9 of them the new notes story) have not run in CI and the Playwright criterion below is open (OQ-86 in [open questions](../../decisions/open-questions.md)). Status checked with the GitHub CLI on 2026-11-11. Decisions made while building: [ADR 0052](../../decisions/0052-milestone-5-implementation-decisions.md).
+> **Implementation:** built and verified. The 31 end-to-end tests passed in CI on 2026-11-24 (run 45354022559, pull request #10), which closed OQ-86. The backend, frontend, image build and scan, secret scan and all four rows of the `module-removal` job passed in CI on pull request #7 (run 42959703043, 2026-11-11) and on `main` after the merge (run 42981706613). The end-to-end job was skipped in both of those runs; the 31 end-to-end tests (9 of them the new notes story) first ran in CI in run 45354022559, so the Playwright criterion below is met. Status checked with the GitHub CLI on 2026-11-11 and 2026-11-25. Decisions made while building: [ADR 0052](../../decisions/0052-milestone-5-implementation-decisions.md).
 
 ## Scope
 
@@ -22,7 +22,7 @@ One small, generic, deletable example feature, **Notes** (the name stays, OQ-37 
 
 ## Status against the criteria
 
-Level: **verified for every criterion except the Playwright flow** (CI runs 42959703043 and 42981706613, 2026-11-11). The evidence column below was written from the local run before CI ran and is kept as written; the last row records what CI has since shown.
+Level: **verified for every criterion** (CI runs 42959703043 and 42981706613, 2026-11-11; the Playwright flow in run 45354022559, 2026-11-24). The evidence column below was written from the local run before CI ran and is kept as written; the last row records what CI has since shown.
 
 | Criterion | Evidence |
 |---|---|

@@ -4,9 +4,9 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-24
+- **Last updated:** 2026-11-25
 
-> **Implementation:** observed on branch `m-policy` (`OpaGuardrailIT` against a real OPA 1.22.2, `OpaUnreachableIT`, `PolicyConfigurationTest`, and the policy's own `opa test`; local run, 2026-11-24; CI run pending). Documented, not verified, until CI covers it.
+> **Implementation:** verified (`OpaGuardrailIT` against a real OPA 1.22.2, `OpaUnreachableIT`, `PolicyConfigurationTest`, and the policy's own `opa test`; CI run 45385703846, 2026-11-24).
 
 ## Problem
 

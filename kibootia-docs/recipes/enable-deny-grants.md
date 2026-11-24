@@ -4,9 +4,9 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-24
+- **Last updated:** 2026-11-25
 
-> **Implementation:** observed on branch `m-8` (`DenyGrantsIT` starts the application with the switch on; local run, 2026-11-24; CI run pending). Documented, not verified, until CI covers it.
+> **Implementation:** verified (`DenyGrantsIT` starts the application with the switch on; CI run 45384428905, 2026-11-24).
 
 ## Problem
 

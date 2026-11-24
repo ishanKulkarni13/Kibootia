@@ -2,9 +2,9 @@
 
 - **Type:** adr
 - **Module:** platform
-- **Status:** draft
+- **Status:** accepted
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-24
+- **Last updated:** 2026-11-25
 
 > **Implementation:** observed. The ADR change in item 1 is applied on branch `m-5-1` (52 ADRs). The rest is planned.
 
@@ -37,7 +37,7 @@ The documentation standards say that the `Implementation:` line is about the rep
 
 ## Status
 
-draft. Awaiting the owner. Item 1 is applied on branch `m-5-1` because it removes text that is wrong; revert it with git if this ADR is rejected.
+accepted on the owner's delegation of 2026-11-25. Item 1 was applied on branch `m-5-1` (CI run 45354022559). The remaining items are delivered with milestone 5.1.
 
 ## Related
 

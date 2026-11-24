@@ -10,16 +10,17 @@ It is not a business application. Nothing specific to one domain belongs in the 
 |---|---|
 | `platform` | Technical kernel: security, errors, tenancy, persistence base types, durable events, scheduled jobs |
 | `identity` | Profiles, `/me`, user administration through Keycloak, avatars |
-| `access` | Permissions, runtime-editable roles, the authorization decision point |
+| `access` | Roles made of grants with a reach, assignments, the authorization decision point |
 | `audit` | Append-only audit log and its viewer |
 | `files` | Object storage, upload checks, image processing (removable) |
 | `notes` | A small example feature to copy, and to delete (removable) |
+| `policy` | An optional Open Policy Agent guardrail that can only narrow what roles allow (removable, off by default) |
 
 The architecture is checked by tests (Spring Modulith and ArchUnit), not only described. What works today, with the CI run that proves it, is in [implementation status](kibootia-docs/product/roadmap/implementation-status.md). A dated review of the structure, with recommendations, is the [architecture assessment](kibootia-docs/architecture/architecture-assessment.md).
 
 ## Quick start
 
-Needs Docker, a Java 25 JDK (Temurin), Node 22 or later and pnpm 11. Full steps, addresses and troubleshooting: [local setup](kibootia-docs/engineering/getting-started/local-setup.md).
+Needs Docker, a Java 25 JDK (Temurin), Node 24 (see `.nvmrc`; CI and the images use it) and pnpm 11. Full steps, addresses and troubleshooting: [local setup](kibootia-docs/engineering/getting-started/local-setup.md).
 
 ```sh
 pnpm install
@@ -44,6 +45,6 @@ Tests: `./mvnw verify` in `backend/` (needs Docker); `pnpm --filter kibootia-fro
 
 ## Status and licence
 
-Milestones 0 to 5 are built; production readiness and the first release are not. The licence has not been chosen yet ([OQ-48](kibootia-docs/decisions/open-questions.md)), so until then no licence is granted.
+Milestones 0 to 5, 7 and 8 are built and verified in CI, with part of the architecture hardening of milestone 5.1 and an optional Open Policy Agent guardrail; production readiness and the first release are not. The licence has not been chosen yet ([OQ-48](kibootia-docs/decisions/open-questions.md)), so until then no licence is granted. [Implementation status](kibootia-docs/product/roadmap/implementation-status.md) is the single reference.
 
 Security reports: see [SECURITY.md](SECURITY.md).

@@ -4,11 +4,11 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-11
+- **Last updated:** 2026-11-25
 
 > **Implementation:** planned. Nothing of this milestone exists. The audit log records the acting user only, by design ([ADR 0046](../../decisions/0046-audit-log-design.md)).
 
-A phase of the [authorization roadmap](authorization-roadmap.md). Decisions: draft [ADR 0054](../../decisions/0054-authorization-domain-model.md); ADRs on delegation, on separation of duties and on the audit identity (extending ADR 0046) are written when the phase starts.
+A phase of the [authorization roadmap](authorization-roadmap.md). Decisions: [ADR 0054](../../decisions/0054-authorization-domain-model.md); ADRs on delegation, on separation of duties and on the audit identity (extending ADR 0046) are written when the phase starts.
 
 ## 1. Objective
 

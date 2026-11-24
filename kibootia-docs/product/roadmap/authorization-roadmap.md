@@ -4,11 +4,11 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-24
+- **Last updated:** 2026-11-25
 
-> **Implementation:** planned. No phase is built. What exists today is in [traceability](../requirements/authorization/traceability.md).
+> **Implementation:** phases 7 and 8 are built and verified (CI runs 45354823982 and 45384428905, 2026-11-24); phases 9 to 17 are planned. What exists today is in [traceability](../requirements/authorization/traceability.md).
 
-How the [authorization requirements](../requirements/authorization/README.md) are delivered on top of what milestones 0 to 6 built. The scope is committed by draft [ADR 0053](../../decisions/0053-adopt-authorization-requirements.md); this document is the order. It is a proposal awaiting the owner's review; no implementation starts until the owner authorizes it.
+How the [authorization requirements](../requirements/authorization/README.md) are delivered on top of what milestones 0 to 6 built. The scope is committed by [ADR 0053](../../decisions/0053-adopt-authorization-requirements.md); this document is the order. The owner authorized implementation on 2026-11-24 (milestones 7 and 8) and delegated the remaining acceptances on 2026-11-25.
 
 Kibootia is not starting again. The authorization built in milestones 2 and 3 is kept and evolved; nothing is rewritten that does not have to change.
 

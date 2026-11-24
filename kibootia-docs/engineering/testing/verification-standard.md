@@ -4,9 +4,9 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-11
+- **Last updated:** 2026-11-25
 
-> **Implementation:** partly observed. `.github/workflows/ci.yml` runs the backend build and tests, the frontend lint, type check, tests and build, the image build and scan, the end-to-end job and the secret scan; all passed for milestone 4 (run 42873216224, 2026-11-10). The `module-removal` job, a four-row matrix added in milestone 5, is written and has no passing run yet.
+> **Implementation:** partly observed. `.github/workflows/ci.yml` runs the backend build and tests, the frontend lint, type check, tests and build, the image build and scan, the end-to-end job and the secret scan; all passed for milestone 4 (run 42873216224, 2026-11-10). The `module-removal` job, a four-row matrix added in milestone 5, passed in run 42959703043 (2026-11-11) and in every run since.
 
 Decision: [ADR 0018](../../decisions/0018-ci-as-verification-standard.md).
 

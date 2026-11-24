@@ -4,9 +4,9 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-24
+- **Last updated:** 2026-11-25
 
-> **Implementation:** observed in part. The items marked "done" are on branch `m-5-1` (verified, CI run 45354022559, 2026-11-24). Everything else is planned. It is a proposal awaiting the owner: no item beyond those already done starts until the draft ADRs it relies on are accepted.
+> **Implementation:** observed in part. The items marked "done" are on branch `m-5-1` (verified, CI run 45354022559, 2026-11-24). Everything else is planned. The remaining items are built one by one, and each ADR it relies on (0057 to 0059, 0061 to 0063) is accepted by the change that builds it, on the owner's delegation of 2026-11-25.
 
 ## 1. Objective
 
