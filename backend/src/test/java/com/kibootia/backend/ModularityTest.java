@@ -15,8 +15,8 @@ class ModularityTest {
 	static final ApplicationModules MODULES = ApplicationModules.of(BackendApplication.class);
 
 	/**
-	 * The core modules are always there. The default-on modules ({@code files}, {@code notes}) are not required, because
-	 * a fork may remove them (ADR 0024); what they may and may not depend on is checked by rule 5 in
+	 * The core modules are always there. The optional modules ({@code files}, {@code notes}, {@code policy}) are not required, because
+	 * a fork may remove or switch them off (ADR 0024, ADR 0066); what they may and may not depend on is checked by rule 5 in
 	 * {@code ArchitectureTest}, and the verification below covers whatever modules exist.
 	 */
 	@Test
