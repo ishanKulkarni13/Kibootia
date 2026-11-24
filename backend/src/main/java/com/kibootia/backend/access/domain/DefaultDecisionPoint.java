@@ -37,7 +37,8 @@ import com.kibootia.backend.platform.authorization.ResourceRule;
  * consulted where grants refused. A rule that throws refuses, as {@link Reason#EVALUATION_ERROR}.</li>
  * </ol>
  *
- * <p>Without a record (an action on the collection) the decision is made from grants alone: any allow grant allows.
+ * <p>Without a record (an action on the collection) any allow grant allows, and then the rules that apply to the action
+ * without a record are consulted the same way. A list ({@link #filter}) is refused entirely when such a rule objects.
  * The decision names the grant that decided, for example {@code notes.notes.update/relation:owner}.
  */
 public final class DefaultDecisionPoint implements PolicyDecisionPoint {
@@ -88,7 +89,8 @@ public final class DefaultDecisionPoint implements PolicyDecisionPoint {
 			return Decision.of(Reason.NO_GRANT);
 		}
 		if (resource == null) {
-			return Decision.of(Reason.GRANTED, held.allows().getFirst().describe());
+			return narrowed(principal, action, null)
+				.orElseGet(() -> Decision.of(Reason.GRANTED, held.allows().getFirst().describe()));
 		}
 		if (!user.tenantId().equals(resource.tenantId())) {
 			return Decision.of(Reason.OTHER_TENANT);
@@ -113,6 +115,10 @@ public final class DefaultDecisionPoint implements PolicyDecisionPoint {
 		}
 		Held held = heldBy(user, action);
 		if (held.deny().isPresent() || held.nothing()) {
+			return AccessFilter.NOTHING;
+		}
+		// A rule that refuses the action on the collection refuses the whole list.
+		if (narrowed(principal, action, null).isPresent()) {
 			return AccessFilter.NOTHING;
 		}
 		if (held.allows().getFirst().reach() instanceof Reach.All) {
@@ -162,7 +168,7 @@ public final class DefaultDecisionPoint implements PolicyDecisionPoint {
 	private Optional<Decision> narrowed(Principal principal, String action, ResourceRef resource) {
 		for (ResourceRule rule : this.rules) {
 			try {
-				if (!rule.appliesTo(resource.type(), action)) {
+				if (!rule.appliesTo((resource != null) ? resource.type() : null, action)) {
 					continue;
 				}
 				Optional<String> objection = rule.objection(principal, action, resource);

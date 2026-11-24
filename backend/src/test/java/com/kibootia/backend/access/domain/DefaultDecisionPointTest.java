@@ -473,6 +473,73 @@ class DefaultDecisionPointTest {
 
 	}
 
+	@Nested
+	@DisplayName("rules about an action as a whole, without a record (ADR 0066)")
+	class CollectionRules {
+
+		/** A rule about the action whatever the record: objects, or has nothing to say. */
+		ResourceRule freeze(boolean objects, List<String> consulted) {
+			return new ResourceRule() {
+
+				@Override
+				public String name() {
+					return "freeze";
+				}
+
+				@Override
+				public boolean appliesTo(String resourceType, String action) {
+					return RESTORE.equals(action) || UPDATE.equals(action);
+				}
+
+				@Override
+				public Optional<String> objection(Principal principal, String action, ResourceRef resource) {
+					consulted.add(resource == null ? "collection" : "record");
+					return objects ? Optional.of("frozen") : Optional.empty();
+				}
+
+			};
+		}
+
+		@Test
+		@DisplayName("narrows an action on the collection, and is asked without a record")
+		void narrowsCollectionAction() {
+			List<String> consulted = new ArrayList<>();
+			assertThat(pointFor(Set.of(RESTORES), freeze(true, consulted)).decide(alice(), RESTORE, null))
+				.isEqualTo(Decision.of(Reason.REFUSED_BY_RULE, "freeze"));
+			assertThat(consulted).containsExactly("collection");
+		}
+
+		@Test
+		@DisplayName("refuses a whole list when it objects to the action, and leaves the filter alone when it does not")
+		void refusesTheList() {
+			assertThat(pointFor(Set.of(ALL_UPDATES), freeze(true, new ArrayList<>())).filter(alice(), UPDATE))
+				.isEqualTo(AccessFilter.NOTHING);
+			assertThat(pointFor(Set.of(OWN_UPDATES), freeze(false, new ArrayList<>())).filter(alice(), UPDATE))
+				.isEqualTo(AccessFilter.relatedTo(ResourceRef.OWNER, ALICE));
+		}
+
+		@Test
+		@DisplayName("is still only asked after grants allowed, and never for the system")
+		void onlyAfterGrants() {
+			List<String> consulted = new ArrayList<>();
+			assertThat(pointFor(Set.of(), freeze(false, consulted)).decide(alice(), RESTORE, null).reason())
+				.isEqualTo(Reason.NO_GRANT);
+			assertThat(pointFor(Set.of(), freeze(true, consulted)).filter(DefaultDecisionPointTest.system(), RESTORE))
+				.isEqualTo(AccessFilter.EVERYTHING);
+			assertThat(consulted).isEmpty();
+		}
+
+		@Test
+		@DisplayName("a rule for one resource type is not asked about the collection")
+		void typeRulesAreNotAskedAboutTheCollection() {
+			List<String> consulted = new ArrayList<>();
+			assertThat(pointFor(Set.of(OWN_UPDATES), rule("widgets-only", true, consulted)).decide(alice(), UPDATE, null)
+				.allowed()).isTrue();
+			assertThat(consulted).isEmpty();
+		}
+
+	}
+
 	@Test
 	@DisplayName("a grant's short form is accepted by the audit log, which refuses anything that looks like an email address")
 	void grantDescriptionsFitTheAuditLog() {
