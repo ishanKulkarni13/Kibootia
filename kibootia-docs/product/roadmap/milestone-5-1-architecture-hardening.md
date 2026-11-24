@@ -26,7 +26,7 @@ Close the structural, data and operational gaps found in the [architecture asses
 | Q-1, Q-2, Q-5 | R-09 CI gates | [ADR 0061](../../decisions/0061-ci-quality-and-supply-chain-gates.md): **built** except signing (milestone 6) and the Java formatter (not adopted) |
 | Q-3 | R-10 custom metrics | none needed |
 | D-8, D-9 | R-11 database evaluation | [ADR 0062](../../decisions/0062-reassess-the-application-database-before-multi-tenancy.md) |
-| B-1 to B-3, E-3 | R-12 edge hardening | [ADR 0063](../../decisions/0063-bff-and-edge-hardening.md) |
+| B-1 to B-3, E-3 | R-12 edge hardening | [ADR 0063](../../decisions/0063-bff-and-edge-hardening.md): **built** except back-channel logout (milestone 6) and the backend's reading of the client address |
 | C-6, C-7, C-8, Q-4, T-4 | R-13 to R-15 cohesion, frontend structure, tests | none needed |
 
 ## 3. Existing implementation affected

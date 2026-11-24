@@ -76,7 +76,7 @@ Accepted does not mean implemented: see [implementation status](../product/roadm
 | 0060 | Implementation status in one place | platform | accepted | 2026-11-24 | [0060](0060-implementation-status-in-one-place.md) |
 | 0061 | CI quality and supply-chain gates | platform | accepted | 2026-11-24 | [0061](0061-ci-quality-and-supply-chain-gates.md) |
 | 0062 | Reassess the application database before multi-tenancy | platform | draft | 2026-11-24 | [0062](0062-reassess-the-application-database-before-multi-tenancy.md) |
-| 0063 | BFF and edge hardening | platform | draft | 2026-11-24 | [0063](0063-bff-and-edge-hardening.md) |
+| 0063 | BFF and edge hardening | platform | accepted | 2026-11-24 | [0063](0063-bff-and-edge-hardening.md) |
 | 0064 | Milestone 7 implementation decisions | platform | accepted | 2026-11-24 | [0064](0064-milestone-7-implementation-decisions.md) |
 | 0065 | Milestone 8 implementation decisions | platform | accepted | 2026-11-24 | [0065](0065-milestone-8-implementation-decisions.md) |
 | 0066 | Open Policy Agent as a narrowing guardrail | platform | accepted | 2026-11-24 | [0066](0066-opa-as-a-narrowing-guardrail.md) |

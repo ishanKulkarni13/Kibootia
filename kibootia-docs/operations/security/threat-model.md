@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-10
+- **Last updated:** 2026-11-25
 
 > **Implementation:** the entries for milestones 1 and 2 are verified or observed as their rows in [implementation status](../../product/roadmap/implementation-status.md) say; the entries added for milestone 3 (marked below) are verified (CI run 42780048416, 2026-11-10); the entries marked milestone 4 are verified (CI run 42873216224, 2026-11-10). Entries for later milestones are intended mitigations only.
 
@@ -31,7 +31,11 @@ flowchart LR
 |---|---|---|---|
 | Browser to BFF | Script injection steals credentials | Tokens never reach the browser; HttpOnly, Secure, SameSite cookie; nonce-based content security policy | [0026](../../decisions/0026-nextjs-bff-session.md) |
 | Browser to BFF | Cross-site request forgery on cookie-authenticated changes | Matching `Origin` header plus a required custom header on every state-changing request, with a SameSite cookie | [0042](../../decisions/0042-bff-api-proxy-and-csrf.md) |
-| Browser to BFF | The `/api` proxy is abused to reach other hosts or leak cookies | Fixed upstream (Spring `/api` only); cookies and hop-by-hop headers stripped; dedicated proxy tests | [0042](../../decisions/0042-bff-api-proxy-and-csrf.md) |
+| Browser to BFF | Script injected into a page runs with the user's session | A Content-Security-Policy with a nonce for every script, `object-src 'none'`, `frame-ancestors 'none'` and `base-uri 'self'`, in report-only mode until a release shows nothing is wrongly blocked; the tokens are in an HttpOnly cookie in any case (`security-headers.test.ts`) | [0063](../../decisions/0063-bff-and-edge-hardening.md) |
+| Browser to BFF | A sibling subdomain plants or overwrites a session cookie | Over https the cookies are `__Host-` prefixed, so the browser refuses one that is not Secure, from this host and without a Domain; a session is read only from the cookie of its own mode | [0063](../../decisions/0063-bff-and-edge-hardening.md) |
+| Browser to BFF | A caller invents the address that is audited or rate limited, by writing `X-Forwarded-For` | The proxy passes on only the address the trusted proxies appended, counted from the right (`TRUSTED_PROXY_HOPS`), and only if it looks like an address; with no trusted proxy it passes none | [0063](../../decisions/0063-bff-and-edge-hardening.md) |
+| Browser to BFF | A slow or very large request holds the server's connections and memory | A timeout on the call to the API (504), a body limit enforced from the declared length and while streaming (413) | [0063](../../decisions/0063-bff-and-edge-hardening.md) |
+| Browser to BFF | The `/api` proxy is abused to reach other hosts or leak cookies | Fixed upstream (Spring `/api` only); only an allow-list of request headers is forwarded, so cookies and anything unknown are stripped; dedicated proxy tests | [0042](../../decisions/0042-bff-api-proxy-and-csrf.md) |
 | Browser to BFF | Session cookie tampering or theft | Encrypted cookie; short access-token lifetime; documented upgrade to a server-side store for revocation | [0026](../../decisions/0026-nextjs-bff-session.md) |
 | BFF to Spring | Token meant for another client is accepted | Signature, issuer, expiry and audience checks | [0007](../../decisions/0007-spring-security-resource-server.md), [0008](../../decisions/0008-audience-validation-and-deny-by-default.md) |
 | BFF to Spring | A new endpoint is exposed unprotected | Deny-by-default; no public endpoint on the API port; health on an internal management port | [0008](../../decisions/0008-audience-validation-and-deny-by-default.md), [0047](../../decisions/0047-health-exposure-and-container-images.md) |
