@@ -7,6 +7,8 @@ import type { components } from "@/lib/api/schema.gen";
 
 export type Role = components["schemas"]["RoleResponse"];
 export type PermissionInfo = components["schemas"]["PermissionResponse"];
+export type GrantInfo = components["schemas"]["GrantBody"];
+export type PermissionCatalogue = components["schemas"]["PermissionCatalogueResponse"];
 
 export function useRoles(enabled = true) {
   return useQuery({
@@ -26,7 +28,7 @@ export function useRole(id: string | undefined) {
   });
 }
 
-/** Every permission the modules declare, for the role editor. */
+/** Every action the modules declare, with the reaches a grant of it can have, for the role editor. */
 export function usePermissionCatalogue() {
   return useQuery({
     queryKey: ["permissions"],
@@ -52,7 +54,7 @@ function useRefreshRoles() {
 export interface RoleInput {
   name: string;
   description: string;
-  permissions: string[];
+  grants: GrantInfo[];
 }
 
 export function useCreateRole() {

@@ -70,17 +70,17 @@ export function NoteEditor({ noteId }: { noteId?: string }) {
 
 function NoteForm({ note }: { note?: Note }) {
   const router = useRouter();
-  const { me, has } = usePermissions();
+  const { me, has, reachesAll } = usePermissions();
   const create = useCreateNote();
   const update = useUpdateNote(note?.id ?? "");
   const remove = useDeleteNote(note?.id ?? "");
   const [failure, setFailure] = useState<string | null>(null);
 
-  // Whose note it is decides which permission counts: the plain one is for your own, the "-any" one for anyone's. This only
-  // decides what is shown; the API enforces it.
+  // Whose note it is decides what counts: any grant covers your own note, someone else's needs a grant reaching every note
+  // (ADR 0054). This only decides what is shown; the API enforces it.
   const own = !note || note.ownerId === me.id;
-  const canChange = note ? has(own ? "notes.notes.update" : "notes.notes.update-any") : has("notes.notes.create");
-  const canDelete = note ? has(own ? "notes.notes.delete" : "notes.notes.delete-any") : false;
+  const canChange = note ? (own ? has("notes.notes.update") : reachesAll("notes.notes.update")) : has("notes.notes.create");
+  const canDelete = note ? (own ? has("notes.notes.delete") : reachesAll("notes.notes.delete")) : false;
 
   const form = useForm<Values, unknown, z.output<typeof schema>>({
     resolver: zodResolver(schema),

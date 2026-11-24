@@ -35,7 +35,7 @@ function api(current: ReturnType<typeof note>, onWrite?: (call: Call) => Respons
   });
 }
 
-const writer = () => meWith(["notes.notes.create", "notes.notes.view", "notes.notes.update", "notes.notes.delete"]);
+const writer = () => meWith(["notes.notes.create", "notes.notes.view/relation:owner", "notes.notes.update/relation:owner", "notes.notes.delete/relation:owner"]);
 
 describe("the note editor", () => {
   beforeEach(() => {
@@ -104,7 +104,7 @@ describe("the note editor", () => {
 
   it("shows someone else's note read-only to a caller who may only view it", async () => {
     api(note({ ownerId: OTHER }));
-    renderScreen(<NoteEditor noteId="n-1" />, meWith(["notes.notes.view", "notes.notes.view-any", "notes.notes.update", "notes.notes.delete"]));
+    renderScreen(<NoteEditor noteId="n-1" />, meWith(["notes.notes.view", "notes.notes.update/relation:owner", "notes.notes.delete/relation:owner"]));
 
     expect(await screen.findByRole("heading", { name: "Shopping" })).toBeInTheDocument();
     expect(screen.getByLabelText("Title")).toHaveAttribute("readonly");
@@ -116,7 +116,7 @@ describe("the note editor", () => {
 
   it("lets someone who may change anyone's notes change and delete someone else's", async () => {
     api(note({ ownerId: OTHER }));
-    renderScreen(<NoteEditor noteId="n-1" />, meWith(["notes.notes.view-any", "notes.notes.update-any", "notes.notes.delete-any"]));
+    renderScreen(<NoteEditor noteId="n-1" />, meWith(["notes.notes.view", "notes.notes.update", "notes.notes.delete"]));
 
     await screen.findByRole("heading", { name: "Shopping" });
     expect(screen.getByLabelText("Title")).not.toHaveAttribute("readonly");

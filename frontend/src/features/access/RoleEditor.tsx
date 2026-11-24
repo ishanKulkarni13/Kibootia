@@ -29,6 +29,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  type PermissionCatalogue,
   type PermissionInfo,
   type Role,
   useCreateRole,
@@ -49,10 +50,18 @@ const schema = z.object({
     .max(80, "Use at most 80 characters")
     .regex(/^[A-Za-z0-9][A-Za-z0-9 ._-]*$/, "Use letters, digits, spaces, dots, dashes and underscores"),
   description: z.string().max(255, "Use at most 255 characters"),
-  permissions: z.array(z.string()),
+  // One allow per action, with how far it reaches (ADR 0054). Deny grants are not edited here; see `kept` below.
+  grants: z.array(z.object({ action: z.string(), reach: z.string() })),
 });
 
 type Values = z.input<typeof schema>;
+
+/** How a reach reads in the editor. */
+export function reachLabel(reach: string): string {
+  if (reach === "all") return "Every record";
+  if (reach === "relation:owner") return "Only their own";
+  return reach.startsWith("relation:") ? `Where they are ${reach.slice("relation:".length)}` : reach;
+}
 
 /** A role to create (no id) or to look at and change. */
 export function RoleEditor({ roleId }: { roleId?: string }) {
@@ -77,9 +86,9 @@ export function RoleEditor({ roleId }: { roleId?: string }) {
   );
 }
 
-function RoleForm({ role, catalogue }: { role?: Role; catalogue: PermissionInfo[] }) {
+function RoleForm({ role, catalogue: { permissions: catalogue } }: { role?: Role; catalogue: PermissionCatalogue }) {
   const router = useRouter();
-  const { has } = usePermissions();
+  const { has, reaches: heldReaches } = usePermissions();
   const create = useCreateRole();
   const update = useUpdateRole(role?.id ?? "");
   const remove = useDeleteRole(role?.id ?? "");
@@ -89,8 +98,23 @@ function RoleForm({ role, catalogue }: { role?: Role; catalogue: PermissionInfo[
   const readOnly = !has("access.roles.manage") || isAdminRole;
   const form = useForm<Values, unknown, z.output<typeof schema>>({
     resolver: zodResolver(schema),
-    defaultValues: { name: role?.name ?? "", description: role?.description ?? "", permissions: role?.permissions ?? [] },
+    defaultValues: {
+      name: role?.name ?? "",
+      description: role?.description ?? "",
+      grants: (role?.grants ?? []).filter((grant) => grant.effect !== "DENY").map(({ action, reach }) => ({ action, reach })),
+    },
   });
+  // Deny grants, which this editor does not change, are sent back as they are so a save never drops one.
+  const kept = (role?.grants ?? []).filter((grant) => grant.effect === "DENY");
+
+  /**
+   * The reaches the editor may give for an action: only as far as their own grants reach (the "only what you hold" rule).
+   * Holding it for every record covers every reach.
+   */
+  const grantable = (permission: PermissionInfo): string[] => {
+    const held = heldReaches(permission.name);
+    return held.includes("all") ? permission.reaches : permission.reaches.filter((reach) => held.includes(reach));
+  };
 
   const groups = new Map<string, PermissionInfo[]>();
   for (const permission of catalogue) {
@@ -101,7 +125,8 @@ function RoleForm({ role, catalogue }: { role?: Role; catalogue: PermissionInfo[
   const mutation = role ? update : create;
   const submit = form.handleSubmit(async (values) => {
     setFailure(null);
-    const input = { name: values.name, description: values.description, permissions: values.permissions };
+    const allows = values.grants.map((grant) => ({ ...grant, effect: "ALLOW" as const }));
+    const input = { name: values.name, description: values.description, grants: [...allows, ...kept] };
     try {
       // Awaited, not given callbacks: saving refreshes the role, which starts this form again with the new version, and a
       // callback given to `mutate` is dropped for a form that has gone by then.
@@ -110,7 +135,7 @@ function RoleForm({ role, catalogue }: { role?: Role; catalogue: PermissionInfo[
       if (!role) router.push(`/admin/roles/${saved.id}`);
     } catch (error) {
       setFailure(
-        applyProblem(error, ["name", "description", "permissions"], (field, message) => form.setError(field as "name", { message }), {
+        applyProblem(error, ["name", "description", "grants"], (field, message) => form.setError(field as "name", { message }), {
           "access.role_name_in_use": "name",
         }),
       );
@@ -129,7 +154,8 @@ function RoleForm({ role, catalogue }: { role?: Role; catalogue: PermissionInfo[
 
       {isAdminRole && (
         <p className="max-w-prose text-sm text-muted-foreground">
-          The administrator role holds every permission and cannot be changed or deleted. Someone is always an administrator.
+          The administrator role holds every permission, for every record, and cannot be changed or deleted. Someone is always
+          an administrator.
         </p>
       )}
 
@@ -169,14 +195,14 @@ function RoleForm({ role, catalogue }: { role?: Role; catalogue: PermissionInfo[
         <CardHeader>
           <CardTitle>Permissions</CardTitle>
           <CardDescription>
-            You can only give a role permissions you hold yourself.{" "}
+            You can only give a role permissions you hold yourself, and only as far as yours reach.{" "}
             {!has("access.roles.manage") && "You can look at this role but not change it."}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Controller
             control={form.control}
-            name="permissions"
+            name="grants"
             render={({ field }) => (
               <div className="grid gap-5">
                 {[...groups].map(([area, permissions]) => (
@@ -184,22 +210,47 @@ function RoleForm({ role, catalogue }: { role?: Role; catalogue: PermissionInfo[
                     <legend className="mb-1 text-sm font-semibold capitalize">{area}</legend>
                     {permissions.map((permission) => {
                       const id = `perm-${permission.name}`;
-                      const selected = field.value.includes(permission.name);
+                      const current = field.value.find((grant) => grant.action === permission.name);
+                      const offered = grantable(permission);
+                      // Every reach the action has is listed, so the editor sees what exists; the ones they cannot give are
+                      // disabled, except the one the role already has, which stays selectable so a save keeps it.
+                      const selectable = (reach: string) => offered.includes(reach) || reach === current?.reach;
+                      const others = field.value.filter((grant) => grant.action !== permission.name);
                       return (
-                        <div key={permission.name} className="flex items-start gap-2">
-                          <Checkbox
-                            id={id}
-                            checked={selected}
-                            // A permission the editor does not hold cannot be added; one already there can be removed.
-                            disabled={!selected && !has(permission.name)}
-                            onCheckedChange={(checked) =>
-                              field.onChange(checked ? [...field.value, permission.name] : field.value.filter((name) => name !== permission.name))
-                            }
-                          />
-                          <Label htmlFor={id} className="grid gap-0.5 font-normal">
-                            <span>{permission.description}</span>
-                            <span className="font-mono text-xs text-muted-foreground">{permission.name}</span>
-                          </Label>
+                        <div key={permission.name} className="flex flex-wrap items-start gap-x-3 gap-y-1">
+                          <div className="flex items-start gap-2">
+                            <Checkbox
+                              id={id}
+                              checked={current !== undefined}
+                              // A permission the editor does not hold cannot be added; one already there can be removed.
+                              disabled={current === undefined && offered.length === 0}
+                              onCheckedChange={(checked) =>
+                                field.onChange(
+                                  // Ticking it gives the widest reach the editor may give.
+                                  checked && offered[0] ? [...others, { action: permission.name, reach: offered[0] }] : others,
+                                )
+                              }
+                            />
+                            <Label htmlFor={id} className="grid gap-0.5 font-normal">
+                              <span>{permission.description}</span>
+                              <span className="font-mono text-xs text-muted-foreground">{permission.name}</span>
+                            </Label>
+                          </div>
+                          {current && permission.reaches.length > 1 && (
+                            <select
+                              aria-label={`How far: ${permission.description}`}
+                              className="h-8 rounded-md border bg-background px-2 text-sm"
+                              value={current.reach}
+                              disabled={readOnly || permission.reaches.filter(selectable).length < 2}
+                              onChange={(event) => field.onChange([...others, { action: permission.name, reach: event.target.value }])}
+                            >
+                              {permission.reaches.map((reach) => (
+                                <option key={reach} value={reach} disabled={!selectable(reach)}>
+                                  {reachLabel(reach)}
+                                </option>
+                              ))}
+                            </select>
+                          )}
                         </div>
                       );
                     })}
@@ -208,9 +259,15 @@ function RoleForm({ role, catalogue }: { role?: Role; catalogue: PermissionInfo[
               </div>
             )}
           />
-          {form.formState.errors.permissions && (
+          {kept.length > 0 && (
+            <p className="mt-3 text-sm text-muted-foreground">
+              This role also has {kept.length === 1 ? "a deny grant" : `${kept.length} deny grants`}, which take a permission away
+              whatever other roles give: {kept.map((grant) => grant.action).join(", ")}. They are kept as they are.
+            </p>
+          )}
+          {form.formState.errors.grants && (
             <p role="alert" className="mt-2 text-sm text-destructive">
-              {form.formState.errors.permissions.message}
+              {form.formState.errors.grants.message}
             </p>
           )}
         </CardContent>

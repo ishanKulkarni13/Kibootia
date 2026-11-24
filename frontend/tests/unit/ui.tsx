@@ -5,8 +5,20 @@ import { vi } from "vitest";
 import { PermissionsProvider } from "@/features/identity/permissions";
 import type { Me } from "@/lib/api/client";
 
-/** A signed-in user with the given permissions, for the components that adapt to what the user may do. */
-export function meWith(permissions: string[], overrides: Partial<Me> = {}): Me {
+/**
+ * A signed-in user with the given grants, for the components that adapt to what the user may do. `"action"` reaches every
+ * record; `"action/relation:owner"` only the user's own (ADR 0054), as the backend's test helper writes them.
+ */
+export function meWith(grants: string[], overrides: Partial<Me> = {}): Me {
+  const reaches: Record<string, string[]> = {};
+  for (const grant of grants) {
+    const [action = grant, reach = "all"] = grant.split("/");
+    reaches[action] = [...(reaches[action] ?? []), reach];
+  }
+  for (const action of Object.keys(reaches)) {
+    if (reaches[action]?.includes("all")) reaches[action] = ["all"];
+  }
+  const permissions = Object.keys(reaches);
   return {
     id: "11111111-1111-7111-8111-111111111111",
     username: "alice",
@@ -16,6 +28,7 @@ export function meWith(permissions: string[], overrides: Partial<Me> = {}): Me {
     status: "ACTIVE",
     theme: "SYSTEM",
     permissions,
+    reaches,
     roles: [{ id: "r-user", name: "User", builtIn: true }],
     avatarVersion: null,
     avatarsEnabled: true,

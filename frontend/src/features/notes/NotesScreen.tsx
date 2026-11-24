@@ -27,12 +27,12 @@ const SORTS = [
 
 /**
  * The notes list: the reference for a list that depends on what the caller may see (ADR 0043, ADR 0044). Everyone sees
- * their own notes. Someone with `notes.notes.view-any` can switch to everyone's, and someone with `notes.notes.restore`
+ * their own notes. Someone whose grant of `notes.notes.view` reaches every note can switch to everyone's, and someone with `notes.notes.restore`
  * can look at the deleted ones and bring one back. The choices only decide what is offered; the API limits the list to
  * what the caller may see whatever is asked for.
  */
 export function NotesScreen() {
-  const { me, has } = usePermissions();
+  const { me, has, reachesAll } = usePermissions();
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState("");
   const [q, setQ] = useState("");
@@ -41,7 +41,7 @@ export function NotesScreen() {
   const restore = useRestoreNote();
 
   const views: { value: View; label: string }[] = [{ value: "mine", label: "My notes" }];
-  if (has("notes.notes.view-any")) views.push({ value: "everyone", label: "Everyone's notes" });
+  if (reachesAll("notes.notes.view")) views.push({ value: "everyone", label: "Everyone's notes" });
   if (has("notes.notes.restore")) views.push({ value: "deleted", label: "Deleted notes" });
 
   const notes = useNotes({
