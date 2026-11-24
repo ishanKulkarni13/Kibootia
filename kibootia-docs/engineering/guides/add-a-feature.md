@@ -4,9 +4,9 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-11
+- **Last updated:** 2026-11-24
 
-> **Implementation:** observed. Every file named here exists and is covered by tests that passed in a local run on 2026-11-11; there is no passing CI run yet ([verification standard](../testing/verification-standard.md)).
+> **Implementation:** verified for the backend and the frontend unit tests (CI run 42959703043, 2026-11-11). The notes end-to-end story has not run in CI (OQ-86), so the browser path of the example is unverified ([verification standard](../testing/verification-standard.md)).
 
 ## Goal
 

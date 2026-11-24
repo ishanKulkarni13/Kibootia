@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-10-28
 
-> **Implementation:** planned. Current repository state does not meet the secrets rules; see [secrets management](../operations/security/secrets-management.md).
+> **Implementation:** not applicable (a decision record). What exists, and the CI run that verified it, is in [implementation status](../product/roadmap/implementation-status.md).
 
 ## Context
 

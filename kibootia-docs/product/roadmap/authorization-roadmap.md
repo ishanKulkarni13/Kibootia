@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-11
+- **Last updated:** 2026-11-24
 
 > **Implementation:** planned. No phase is built. What exists today is in [traceability](../requirements/authorization/traceability.md).
 
@@ -48,7 +48,7 @@ One file per phase, each with the same thirteen sections. "Reference" says wheth
 
 | Milestone | Phase | Requirements | Schema change | Reference |
 |---|---|---|---|---|
-| [7](milestone-7-authorization-contract.md) | Decision contract; the role-assignment fix; denial records | AUTH-020, 031, 034, 036, part of 022 and 028 | None | Both |
+| [7](milestone-7-authorization-contract.md) | Decision contract; denial records (the role-assignment fix was done early in [5.1](milestone-5-1-architecture-hardening.md)) | AUTH-020, 031, 034, 036, part of 022 and 028 | None | Both |
 | [8](milestone-8-grant-model.md) | Grant model: declared resource types and action kinds; grants with a reach replace `-any` | AUTH-001, 003, 010, 038 | Role permissions to role grants | Both |
 | [9](milestone-9-scoped-assignments.md) | Scoped assignments: scope nodes, records in several scopes, validity, inheritance, list filters | AUTH-004, 007, 008, 016, 021, 024, 045, 051 | Scope nodes; wider assignments | Both |
 | [10](milestone-10-relationships-and-ownership.md) | Relationships and ownership; per-record audit history | AUTH-005, 009, 016, 044, 046, 047 | Relationship records | Timetia |

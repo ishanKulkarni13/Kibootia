@@ -4,9 +4,9 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-08
+- **Last updated:** 2026-11-24
 
-> **Implementation:** planned. Observed today: a Spring Boot backend skeleton and a Compose MySQL ([implementation status](../product/roadmap/implementation-status.md)).
+> **Implementation:** observed. Every block of the diagram runs in the local Compose stack together with the two applications. Not built: the production reverse proxy and TLS, `auth.<domain>`, a production telemetry backend and backups (milestone 6). Evidence per capability: [implementation status](../product/roadmap/implementation-status.md).
 
 ## Purpose
 
@@ -36,7 +36,7 @@ Notes on the diagram:
 - Keycloak owns identity; Kibootia's database owns roles, permissions and profiles ([ADR 0025](../decisions/0025-identity-and-authorization-data-split.md)).
 - Storage is reached through an S3 API contract ([ADR 0029](../decisions/0029-s3-object-storage-contract.md)); telemetry leaves the application only as OTLP ([ADR 0030](../decisions/0030-otlp-telemetry-and-local-lgtm.md)).
 - Secrets reach the application as environment variables or files; Vault is a recommended source, not a component of the diagram ([ADR 0032](../decisions/0032-secrets-from-environment-and-files.md)).
-- Nothing in this picture except the backend skeleton and MySQL exists in the repository.
+- Every block runs in the local stack. The production deployment (reverse proxy with TLS, `auth.<domain>`, backups) is milestone 6 and not built. Each module's contract, tables and events are in the [module catalogue](module-catalogue.md).
 
 ## Building blocks
 

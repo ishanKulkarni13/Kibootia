@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-08
 
-> **Implementation:** verified (CI run 42873216224, 2026-11-10, pull request #6). The `files` module, the S3 adapter, RustFS in the `files` Compose profile and the avatar flow exist; decisions made while building are in [ADR 0051](0051-milestone-4-implementation-decisions.md). The verification gate passed, locally and in CI: 12 contract tests against `rustfs/rustfs:1.0.4`, including presigned PUT and GET.
+> **Implementation:** not applicable (a decision record). What exists, and the CI run that verified it, is in [implementation status](../product/roadmap/implementation-status.md).
 
 > **Extended by [ADR 0051](0051-milestone-4-implementation-decisions.md)**: the port lives in `platform` and the consumer asks for it optionally; the gate result; the AWS SDK checksum settings; the order of storage and database writes; how images are processed and avatars are served.
 

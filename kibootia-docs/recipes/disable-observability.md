@@ -4,9 +4,9 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-11
+- **Last updated:** 2026-11-24
 
-> **Implementation:** observed (local run, 2026-11-11; no CI run yet). The test configuration sets `kibootia.observability.enabled=false`, so every integration test runs the application with export off and it starts and answers. The CI job `module-removal` sets it through the environment and runs the `startup` group; that has not been run locally ([verification standard](../engineering/testing/verification-standard.md)).
+> **Implementation:** verified (CI run 42959703043, 2026-11-11). The `module-removal` rows "observability (switched off)" and "all" set the switch through the environment and run the `startup` group; every integration test also runs with export off.
 
 ## Problem
 

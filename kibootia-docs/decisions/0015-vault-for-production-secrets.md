@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-10-28
 
-> **Implementation:** planned.
+> **Implementation:** not applicable (a decision record). What exists, and the CI run that verified it, is in [implementation status](../product/roadmap/implementation-status.md).
 
 > **Partly superseded by [ADR 0032](0032-secrets-from-environment-and-files.md):** Vault is the recommended production secret store, not a mandatory one. The rules that secrets are never committed and that production never falls back to development credentials still hold.
 

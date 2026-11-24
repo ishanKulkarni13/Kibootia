@@ -15,4 +15,4 @@
 | [guides/](guides/README.md) | How to add a feature by copying the example feature |
 | [testing/](testing/README.md) | Test strategy and the standard for calling something verified |
 
-The branching and commit-message workflow is decided and listed in the [verification standard](testing/verification-standard.md#ci-pipeline-owner-decisions-of-2026-10-28-none-of-it-exists-yet). A guide to adopting and upgrading Kibootia in an application ([ADR 0023](../decisions/0023-template-fork-adoption-model.md)) is not written yet.
+The branching and commit-message workflow is decided and listed in the [verification standard](testing/verification-standard.md#ci-pipeline). A guide to adopting and upgrading Kibootia in an application ([ADR 0023](../decisions/0023-template-fork-adoption-model.md)) is not written yet.

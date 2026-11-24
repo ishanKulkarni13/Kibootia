@@ -4,13 +4,13 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-08
+- **Last updated:** 2026-11-24
 
-> **Implementation:** observed (one `contextLoads` test, not run for this document) and otherwise planned.
+> **Implementation:** verified. The test kinds below exist and run in CI; evidence per milestone is in [implementation status](../../product/roadmap/implementation-status.md). Coverage is not measured yet ([ADR 0061](../../decisions/0061-ci-quality-and-supply-chain-gates.md), draft).
 
 Testing is part of the architecture (owner direction). Verification rules: [verification standard](verification-standard.md).
 
-## Intended test kinds
+## Test kinds
 
 | Kind | Covers | Tooling |
 |---|---|---|
@@ -32,7 +32,7 @@ Test starters listed as present are in `pom.xml`. Their presence says nothing ab
 
 ## Observed tests
 
-`BackendApplicationIT.contextLoads` starts the Spring context. Whether it passes was not checked. It would need a reachable database and the security starters' defaults; this is an inference, not a measurement.
+At milestone 5 the backend had 135 fast (`*Test`) and 269 integration (`*IT`) tests, the frontend 196 Vitest tests, and 31 Playwright tests, which have not yet run in CI (OQ-86 in [open questions](../../decisions/open-questions.md)). Not covered yet: upgrading an existing schema, event payload compatibility, a throughput baseline, a request in a second tenant, and a slow Keycloak ([architecture assessment](../../architecture/architecture-assessment.md), Q-4).
 
 ## Database for tests
 
@@ -44,4 +44,4 @@ Real MySQL through Testcontainers, not an in-memory substitute, so MySQL-specifi
 - Test methods have readable names through `@DisplayName`.
 - Tests live in the same module package as the code they test.
 - Test data comes from small builder classes per module. There are no shared SQL fixtures; local seed data is for demos, not tests.
-- Coverage is reported in CI but no percentage gate fails a build; the required tests are listed in the [definition of done](verification-standard.md#definition-of-done-for-a-feature).
+- Coverage is not measured in CI yet, and no percentage gate fails a build; the required tests are listed in the [definition of done](verification-standard.md#definition-of-done-for-a-feature).

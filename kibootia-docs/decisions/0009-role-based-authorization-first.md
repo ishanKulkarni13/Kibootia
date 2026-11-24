@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-10-28
 
-> **Implementation:** planned.
+> **Implementation:** not applicable (a decision record). What exists, and the CI run that verified it, is in [implementation status](../product/roadmap/implementation-status.md).
 
 > **Extended by [ADR 0027](0027-central-authorization-decision-point.md)**, which adds a permission model and a central decision point. This decision still holds. Role data is now stored in Kibootia's database ([ADR 0025](0025-identity-and-authorization-data-split.md)); [ADR 0010](0010-keycloak-realm-roles-as-role-source.md), named below, is superseded.
 

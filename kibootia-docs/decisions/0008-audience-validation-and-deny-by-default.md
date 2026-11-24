@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-08
 
-> **Implementation:** planned.
+> **Implementation:** not applicable (a decision record). What exists, and the CI run that verified it, is in [implementation status](../product/roadmap/implementation-status.md).
 
 > **Tightened by [ADR 0047](0047-health-exposure-and-container-images.md)**: the health check moves to an internal management port, so no endpoint on the API port is public. This decision still holds.
 

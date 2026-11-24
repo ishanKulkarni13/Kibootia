@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-10
 
-> **Implementation:** writing and purging entries are verified (CI run 42605511477, 2026-11-09); the viewer, the administrative entries of milestone 3 and the display of erased users are verified (CI run 42780048416, 2026-11-10).
+> **Implementation:** not applicable (a decision record). What exists, and the CI run that verified it, is in [implementation status](../product/roadmap/implementation-status.md).
 
 ## Context
 

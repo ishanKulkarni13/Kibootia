@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-08
 
-> **Implementation:** observed, not verified in CI. `frontend/src/lib/bff/proxy.ts` implements the fixed upstream, the Origin and `X-Kibootia-Request` rule, token attachment, streaming in both directions, trace context from the server's own span and the stripping of cookies and hop-by-hop headers; each rule has a unit test, and the browser path is covered by a Playwright test. Passed locally on 2026-11-09. An OPTIONS request gets 405, so no CORS preflight is ever answered.
+> **Implementation:** not applicable (a decision record). What exists, and the CI run that verified it, is in [implementation status](../product/roadmap/implementation-status.md).
 
 ## Context
 

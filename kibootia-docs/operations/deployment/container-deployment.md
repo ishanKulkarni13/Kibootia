@@ -4,9 +4,9 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-08
+- **Last updated:** 2026-11-24
 
-> **Implementation:** planned. No Dockerfile or deployment configuration exists.
+> **Implementation:** planned. The two images exist (`backend/Dockerfile`, `frontend/Dockerfile`, built and scanned in CI, run 42959703043); the deployment described here (reverse proxy with TLS, a separate migration step, the production realm overlay, backups) is milestone 6 and not built.
 
 Decision: [ADR 0037](../../decisions/0037-single-server-compose-reference-deployment.md).
 

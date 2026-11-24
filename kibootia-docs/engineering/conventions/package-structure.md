@@ -4,9 +4,9 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-08
+- **Last updated:** 2026-11-24
 
-> **Implementation:** observed. The six module packages exist under `com.kibootia.backend` as skeletons (a `package-info.java` with `@ApplicationModule` each); only `platform` has code (startup settings validation). No CI run yet.
+> **Implementation:** verified. The six modules exist with code and are checked by `ModularityTest` and `ArchitectureTest` (CI run 42959703043, 2026-11-11). Each module's allowed dependencies are declared and listed in the [module catalogue](../../architecture/module-catalogue.md).
 
 Decisions: [ADR 0024](../../decisions/0024-package-modules-with-infrastructure-toggles.md), [ADR 0039](../../decisions/0039-spring-modulith-module-boundaries-and-outbox.md), [ADR 0044](../../decisions/0044-authorization-enforcement-conventions.md).
 

@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-10-28
 
-> **Implementation:** planned.
+> **Implementation:** not applicable (a decision record). What exists, and the CI run that verified it, is in [implementation status](../product/roadmap/implementation-status.md).
 
 > **Extended by [ADR 0031](0031-transactional-outbox-and-locked-jobs.md)**, which adds a database outbox for events that must not be lost. "No broker initially" still holds.
 

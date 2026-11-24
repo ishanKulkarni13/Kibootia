@@ -8,7 +8,7 @@
 
 > **Implementation:** not applicable (index).
 
-Task-oriented guides for things a fork does on purpose: remove or switch off what ships by default, and add optional integrations ([ADR 0036](../decisions/0036-technology-catalogue-and-recipes-areas.md)). A recipe is "documented, not verified" unless CI covers it, and each says which. The first recipes are the removal recipes of [milestone 5](../product/roadmap/milestone-5-example-feature.md), which CI runs; the integration recipes named in the [technology catalogue](../technology/README.md#recipes-planned-none-written-yet) arrive with [milestone 6](../product/roadmap/milestone-6-production-readiness.md).
+Task-oriented guides for things a fork does on purpose: remove or switch off what ships by default, and add optional integrations ([ADR 0036](../decisions/0036-technology-catalogue-and-recipes-areas.md)). A recipe is "documented, not verified" unless CI covers it, and each says which. The first recipes are the removal recipes of [milestone 5](../product/roadmap/milestone-5-example-feature.md), which CI runs; the integration recipes named in the [technology catalogue](../technology/README.md#recipes) arrive with [milestone 6](../product/roadmap/milestone-6-production-readiness.md).
 
 | Recipe | What it does | CI |
 |---|---|---|

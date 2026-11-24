@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-11
+- **Last updated:** 2026-11-24
 
 > **Implementation:** this document is the reference for how far each authorization requirement is implemented. Snapshot of commit `4cea34f` on 2026-11-11, from reading the code and tests; no build was run for this snapshot. "Verified" below relies on the CI runs recorded in [implementation status](../../roadmap/implementation-status.md).
 
@@ -83,7 +83,7 @@ Summary: 4 Full, 21 Partial, 25 None, 1 Future, out of 51.
 | AUTH-022 | Decision auditing | None | A denial produces a 403 and nothing else (`GlobalExceptionHandler`); `runAsSystem` logs its reason at DEBUG | No decision record, no reason: the decision point returns a boolean | 7 (denials), 15 |
 | AUTH-023 | Simulation and impact analysis | Future | | | Later |
 | AUTH-027 | Administration interface | Partial | Screens for users, roles, role assignment and the audit log (`features/access`, `features/identity`, `features/audit`); they follow the caller's permissions | No screens for groups, scopes, relationships, delegations, policies or bundles | 15, with each phase |
-| AUTH-028 | Administrator hierarchy | Partial | Three separate administrative permissions; an editor cannot grant what they do not hold; only an administrator grants the administrator role; last-administrator lock (`AccessApiIT`) | Role assignment does not check that the assigner holds the permissions of the roles they assign (`RoleAssignmentService.replaceRolesOfUser`; [security review](../../../temp/authorization-security-review.md), S1). One all-powerful built-in administrator role; no scope-limited or tenant-level administrators | 7 (assignment rule), 15, 16 |
+| AUTH-028 | Administrator hierarchy | Partial | Three separate administrative permissions; an editor cannot grant what they do not hold; only an administrator grants the administrator role; last-administrator lock (`AccessApiIT`) | An assigner must hold the permissions of the roles they assign (fixed on branch `m-5-1`: `AccessApiIT.assigningCannotEscalate`, `UserAdministrationIT.invitingCannotEscalate`; [security review](../../../temp/authorization-security-review.md), S1). One all-powerful built-in administrator role; no scope-limited or tenant-level administrators | 15, 16 (assignment rule done in 5.1) |
 | AUTH-029 | Approval of sensitive changes | None | | Everything | 15 |
 | AUTH-030 | Configuration lifecycle | None | Roles have an optimistic version and an audit trail | No draft, validation step, publication, history or rollback | 15 |
 | AUTH-044 | Independent audit-history visibility | Partial | Viewing the audit log needs `audit.entries.view`, separate from any resource permission (`AuditViewerIT`) | One log-wide permission; no per-resource or per-scope history visibility; viewing is not itself audited | 10 |

@@ -1,6 +1,6 @@
 # Milestone 5 handover
 
-Working material, not authoritative: the permanent record is [milestone 5](../product/roadmap/milestone-5-example-feature.md), [ADR 0052](../decisions/0052-milestone-5-implementation-decisions.md) and [implementation status](../product/roadmap/implementation-status.md). Written 2026-11-11 at the end of an unattended session.
+Historical (milestone 5 was verified in CI run 42959703043 on 2026-11-11, after this note was written; its to-do list below is done except the end-to-end tests, OQ-86). Working material, not authoritative: the permanent record is [milestone 5](../product/roadmap/milestone-5-example-feature.md), [ADR 0052](../decisions/0052-milestone-5-implementation-decisions.md) and [implementation status](../product/roadmap/implementation-status.md). Written 2026-11-11 at the end of an unattended session.
 
 ## Where things stand
 

@@ -4,9 +4,9 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-11
+- **Last updated:** 2026-11-24
 
-> **Implementation:** planned. Nothing of this milestone exists. The contract it replaces is verified (CI run 42605511477) and stays in use until this milestone is complete.
+> **Implementation:** planned, except the assignment rule, which was done early on branch `m-5-1` (milestone 5.1; local run, CI pending). The contract it replaces is verified (CI run 42605511477) and stays in use until this milestone is complete.
 
 The first phase of the [authorization roadmap](authorization-roadmap.md). Decisions: draft [ADR 0053](../../decisions/0053-adopt-authorization-requirements.md), [ADR 0054](../../decisions/0054-authorization-domain-model.md) and [ADR 0055](../../decisions/0055-authorization-decision-contract.md). It does not start until all three are accepted and the owner authorizes implementation.
 
@@ -40,7 +40,7 @@ AUTH-020 (conflict resolution), AUTH-034 (one interface), AUTH-031 and AUTH-036 
 - The combination rule: default deny; a deny decides; a module rule can only narrow; an error during evaluation denies and is logged as an error.
 - Decision records in the structured log for every denial and for every allow of an action its module marks sensitive.
 - The reason passed to `runAsSystem` appears in those records.
-- The assignment rule: a user assigns only roles whose permissions they hold.
+- The assignment rule: a user assigns only roles whose permissions they hold. **Done early, in [milestone 5.1](milestone-5-1-architecture-hardening.md); this milestone moves it onto the new contract.**
 - One rule for invisible records, 404 or 403, recorded and applied to profiles and avatars (OQ-87).
 
 ## 5. Modules affected
@@ -57,7 +57,7 @@ None. No table, column or row changes. `Owned` and `TenantBound` stay in this ph
 
 ## 8. Security implications
 
-- Closes S1: the "only what you hold" rule now covers assignment as well as role editing.
+- S1 (the "only what you hold" rule covering assignment as well as role editing) was closed early in milestone 5.1; this milestone keeps its tests passing on the new contract.
 - Closes S3: a module rule cannot widen what roles allow.
 - Makes refusals visible for the first time (S5, S10 in part).
 - Risk introduced: the decision point is rewritten. The control is that the existing tests are the specification: none may change its expected outcome except those for the assignment rule.
@@ -91,4 +91,4 @@ There is no data change, so rollback is reverting the commits of the phase. The 
 
 ## 13. Usable state at the end of the phase
 
-Kibootia builds, starts and behaves as it does today for every user, with three visible differences: a role assignment that would exceed the assigner's own permissions is refused; a refusal appears in the log with a reason; and the administration screens refuse a section the user may not see instead of showing an error box. The database schema is unchanged.
+Kibootia builds, starts and behaves as it does today for every user, with two visible differences (the assignment refusal is already visible since 5.1): a refusal appears in the log with a reason; and the administration screens refuse a section the user may not see instead of showing an error box. The database schema is unchanged.
