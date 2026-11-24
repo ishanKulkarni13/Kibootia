@@ -134,6 +134,7 @@ The Level column was added on 2026-11-09.
 | "Only what you hold" covers reach, for role editing and role assignment | ADR 0065 | 8 | observed (`GrantsApiIT`; branch `m-8`, local run 2026-11-24, CI pending) |
 | `/me` reports the reach of each held action; the role editor chooses a reach per grant and keeps deny grants | ADR 0065 | 8 | observed (`GrantsApiIT`, `role-editor.test.tsx`; branch `m-8`, local run 2026-11-24, CI pending) |
 | Architecture rule 14: hand-written SQL names the tenant (closes S7 for the code as it is) | ADR 0065 | 8 | observed (`TenantSqlRulesTest`, with a negative control; branch `m-8`, local run 2026-11-24, CI pending) |
+| One decision is one SQL statement, measured: on the collection, on a record, a list filter and a refusal (the baseline of milestone 7, criterion 4) | [ADR 0065](../../decisions/0065-milestone-8-implementation-decisions.md) | 8 | observed (`DecisionQueryCountIT`; branch `m-8`, local run 2026-11-24, CI pending) |
 
 ## Deviations the owner has called out
 
