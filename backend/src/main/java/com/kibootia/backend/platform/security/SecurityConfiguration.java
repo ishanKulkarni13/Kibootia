@@ -61,11 +61,15 @@ class SecurityConfiguration {
 				tenantResolver.getIfAvailable(TenantResolver::singleTenant));
 		// Binds the tenant once the bearer token has authenticated the caller (ADR 0028).
 		http.addFilterAfter(tenantFilter, BearerTokenAuthenticationFilter.class);
-		// Then the module that owns user profiles admits or refuses the caller (ADR 0041).
+		// Then the module that owns user profiles admits or refuses the caller (ADR 0041). The gate is what refuses a
+		// disabled or deleted user, so a missing one is a wiring defect that would let them in: fail at startup instead
+		// of skipping the check (finding S11 of the security review, ADR 0064).
 		RequestGate requestGate = gate.getIfAvailable();
-		if (requestGate != null) {
-			http.addFilterAfter(new RequestGateFilter(requestGate, problemFactory), TenantContextFilter.class);
+		if (requestGate == null) {
+			throw new IllegalStateException("No RequestGate bean: the identity module must admit every API request. "
+					+ "Without it a disabled or deleted user would be let in.");
 		}
+		http.addFilterAfter(new RequestGateFilter(requestGate, problemFactory), TenantContextFilter.class);
 		http
 			.authorizeHttpRequests((requests) -> requests.anyRequest().authenticated())
 			.sessionManagement((sessions) -> sessions.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
