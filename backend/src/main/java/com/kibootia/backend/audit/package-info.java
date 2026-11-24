@@ -1,7 +1,7 @@
 /**
  * Audit module. See kibootia-docs/engineering/conventions/package-structure.md.
  */
-@ApplicationModule(displayName = "Audit")
+@ApplicationModule(displayName = "Audit", allowedDependencies = { "platform :: *" })
 package com.kibootia.backend.audit;
 
 import org.springframework.modulith.ApplicationModule;
