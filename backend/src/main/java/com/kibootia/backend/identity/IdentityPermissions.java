@@ -38,9 +38,9 @@ public class IdentityPermissions implements PermissionProvider {
 		return List.of(Permission.restricted(VIEW_PROFILES, "See other users and their profiles"),
 				Permission.restricted(INVITE_USERS, "Invite users by email"),
 				Permission.restricted(DISABLE_USERS, "Disable and enable accounts"),
-				Permission.restricted(DELETE_USERS, "Delete accounts"),
+				Permission.restricted(DELETE_USERS, "Delete accounts").asSensitive(),
 				Permission.restricted(RESTORE_USERS, "Restore deleted accounts"),
-				Permission.restricted(ERASE_USERS, "Erase deleted accounts for good"));
+				Permission.restricted(ERASE_USERS, "Erase deleted accounts for good").asSensitive());
 	}
 
 }

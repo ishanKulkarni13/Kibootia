@@ -26,9 +26,9 @@ public class AuditPermissions implements PermissionProvider {
 	@Override
 	public List<Permission> permissions() {
 		return List.of(Permission.restricted(VIEW_ENTRIES, "View the audit log"),
-				Permission.restricted(PURGE_ENTRIES, "Remove audit entries older than the retention period"),
+				Permission.restricted(PURGE_ENTRIES, "Remove audit entries older than the retention period").asSensitive(),
 				Permission.restricted(VIEW_FAILED_EVENTS, "View events whose delivery keeps failing"),
-				Permission.restricted(RETRY_FAILED_EVENTS, "Retry a failed event"));
+				Permission.restricted(RETRY_FAILED_EVENTS, "Retry a failed event").asSensitive());
 	}
 
 }

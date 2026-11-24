@@ -14,6 +14,9 @@ import com.kibootia.backend.platform.authorization.PermissionProvider;
 @Component
 public class NotesPermissions implements PermissionProvider {
 
+	/** The resource type of a note, as the decision point sees it (ADR 0055). */
+	public static final String NOTE = "notes.note";
+
 	public static final String CREATE = "notes.notes.create";
 
 	public static final String VIEW = "notes.notes.view";
@@ -42,7 +45,7 @@ public class NotesPermissions implements PermissionProvider {
 				Permission.forEveryUser(DELETE, "Delete your own notes"),
 				Permission.restricted(DELETE_ANY, "Delete anyone's notes"),
 				Permission.restricted(RESTORE, "Restore deleted notes"),
-				Permission.restricted(PURGE, "Permanently remove notes whose retention period has passed"));
+				Permission.restricted(PURGE, "Permanently remove notes whose retention period has passed").asSensitive());
 	}
 
 }

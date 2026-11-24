@@ -80,10 +80,7 @@ public class NoteAttachmentService {
 	 */
 	public Note upload(UUID noteId, InputStream content) {
 		StoredFiles storage = storage();
-		Note note = this.notes.find(noteId).orElseThrow(NoteAttachmentService::noteNotFound);
-		if (!this.authorization.can(NotesPermissions.VIEW, note)) {
-			throw noteNotFound();
-		}
+		Note note = visible(noteId);
 		this.authorization.require(NotesPermissions.UPDATE, note);
 		this.rateLimiter.acquire(RateLimitCategory.UPLOADS);
 		StoredFileRef stored = storage.store(CATEGORY, note.ownerId(), content);
@@ -100,10 +97,7 @@ public class NoteAttachmentService {
 	/** Removes the picture of the note. Does nothing when it has none. */
 	public void remove(UUID noteId) {
 		StoredFiles storage = storage();
-		Note note = this.notes.find(noteId).orElseThrow(NoteAttachmentService::noteNotFound);
-		if (!this.authorization.can(NotesPermissions.VIEW, note)) {
-			throw noteNotFound();
-		}
+		Note note = visible(noteId);
 		this.authorization.require(NotesPermissions.UPDATE, note);
 		this.notes.replaceAttachment(noteId, null).ifPresent((change) -> discardQuietly(storage, change.previousFileId()));
 	}
@@ -116,10 +110,8 @@ public class NoteAttachmentService {
 	 */
 	public Optional<View> view(UUID noteId, NoteAttachmentSize size, String ifNoneMatch) {
 		StoredFiles storage = storage();
-		Note note = this.notes.find(noteId).orElseThrow(NoteAttachmentService::noteNotFound);
-		if (!this.authorization.can(NotesPermissions.VIEW, note)) {
-			throw noteNotFound();
-		}
+		Note note = this.authorization.requireVisible(NotesPermissions.VIEW, this.notes.find(noteId),
+				NoteAttachmentService::noteNotFound);
 		if (note.attachmentFileId() == null) {
 			return Optional.empty();
 		}
@@ -128,6 +120,12 @@ public class NoteAttachmentService {
 			return Optional.of(new NotModified(etag));
 		}
 		return storage.open(note.attachmentFileId(), size.rendition()).map((content) -> new Image(etag, content));
+	}
+
+	/** The note, when the caller may see it: 403 without any view grant, otherwise 404 alike for missing and hidden. */
+	private Note visible(UUID noteId) {
+		return this.authorization.requireVisible(NotesPermissions.VIEW, this.notes.find(noteId),
+				NoteAttachmentService::noteNotFound);
 	}
 
 	/** The answer to a request for a picture. */

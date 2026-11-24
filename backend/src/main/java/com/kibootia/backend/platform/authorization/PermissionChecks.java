@@ -22,10 +22,8 @@ public class PermissionChecks {
 	 * runtime exception through unchanged.
 	 */
 	public boolean holds(String permission) {
-		if (this.authorization.can(permission)) {
-			return true;
-		}
-		throw this.authorization.denied(permission);
+		this.authorization.require(permission);
+		return true;
 	}
 
 }
