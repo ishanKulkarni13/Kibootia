@@ -36,7 +36,7 @@ class FileEvents {
 	 * retention period. The objects first, then the rows; if the storage server is down the handler fails and is tried
 	 * again, and deleting what is already gone is harmless.
 	 */
-	@DurableEventListener
+	@DurableEventListener(transactional = false)
 	void on(UserErased event) {
 		List<StoredFile> owned = this.files.findByOwner(event.userId());
 		if (owned.isEmpty()) {

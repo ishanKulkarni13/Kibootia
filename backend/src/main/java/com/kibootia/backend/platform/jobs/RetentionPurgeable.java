@@ -16,4 +16,13 @@ public interface RetentionPurgeable {
 	/** Removes what has expired and returns how many rows it removed. */
 	int purge();
 
+	/**
+	 * Whether {@link #purge()} opens its own short transactions, in which case the job calls it with none open. A purge that
+	 * calls another system, such as object storage, must say so: no database transaction may be open across such a call
+	 * (ADR 0058). The default, false, is a purge that only touches the database, which the job runs in one transaction.
+	 */
+	default boolean ownsTransactions() {
+		return false;
+	}
+
 }
