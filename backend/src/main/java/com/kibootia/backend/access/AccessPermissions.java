@@ -25,9 +25,9 @@ public class AccessPermissions implements PermissionProvider {
 
 	@Override
 	public List<Permission> permissions() {
-		return List.of(Permission.restricted(VIEW_ROLES, "View roles, their permissions and who holds them"),
-				Permission.restricted(MANAGE_ROLES, "Create, change and delete roles").asSensitive(),
-				Permission.restricted(ASSIGN_ROLES, "Give users roles and take them away").asSensitive());
+		return List.of(Permission.onCollection(VIEW_ROLES, "View roles, their permissions and who holds them"),
+				Permission.onCollection(MANAGE_ROLES, "Create, change and delete roles").asSensitive(),
+				Permission.onCollection(ASSIGN_ROLES, "Give users roles and take them away").asSensitive());
 	}
 
 }

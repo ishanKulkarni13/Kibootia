@@ -156,10 +156,8 @@ public abstract class AdminApiTest {
 	}
 
 	/** Creates a role as the administrator and returns its ID. */
-	protected String createRole(String name, String... permissions) throws Exception {
-		String list = String.join("\",\"", permissions);
-		String body = "{\"name\":\"" + name + "\",\"description\":\"Test role\",\"permissions\":["
-				+ (permissions.length == 0 ? "" : "\"" + list + "\"") + "]}";
+	protected String createRole(String name, String... grants) throws Exception {
+		String body = "{\"name\":\"" + name + "\",\"description\":\"Test role\",\"grants\":" + grants(grants) + "}";
 		return read(post(admin(), "/api/v1/roles", body).andExpect(status().isCreated()), "$.id");
 	}
 
@@ -184,6 +182,18 @@ public abstract class AdminApiTest {
 
 	protected int count(String sql, Object... args) {
 		return this.jdbc.queryForObject(sql, Integer.class, args);
+	}
+
+	/**
+	 * Grants as JSON: {@code "action"} reaches every record, {@code "action/relation:owner"} the holder's own (ADR 0054).
+	 */
+	protected static String grants(String... grants) {
+		java.util.List<String> items = new java.util.ArrayList<>();
+		for (String grant : grants) {
+			String[] parts = grant.split("/", 2);
+			items.add("{\"action\":\"" + parts[0] + "\",\"reach\":\"" + (parts.length == 2 ? parts[1] : "all") + "\"}");
+		}
+		return "[" + String.join(",", items) + "]";
 	}
 
 	protected static String hex(UUID id) {

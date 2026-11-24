@@ -87,7 +87,7 @@ class NoteAttachmentRateLimitIT extends AdminApiTest {
 		String daves = noteOf(dave);
 		ensureAdmin();
 		signIn(CAROL);
-		setRoles(CAROL, builtInRoleId("USER"), createRole("Viewers", "notes.notes.view-any"));
+		setRoles(CAROL, builtInRoleId("USER"), createRole("Viewers", "notes.notes.view"));
 
 		for (int i = 0; i < 5; i++) {
 			attach(user(CAROL), daves).andExpect(status().isForbidden());

@@ -211,7 +211,7 @@ class NotesApiIT {
 	@DisplayName("a caller who may view any note reads someone else's")
 	void viewAnyReadsOthers() throws Exception {
 		String id = created(ALICE, "Shared with admins");
-		GrantedPermissions.grant(NotesPermissions.VIEW_ANY);
+		GrantedPermissions.grant(NotesPermissions.VIEW);
 
 		mvc.perform(as(ADMIN, get("/api/v1/notes/" + id))).andExpect(status().isOk());
 	}
@@ -274,7 +274,7 @@ class NotesApiIT {
 
 		update(BOB, id, "Hijacked", 0).andExpect(status().isNotFound());
 
-		GrantedPermissions.grant(NotesPermissions.VIEW_ANY);
+		GrantedPermissions.grant(NotesPermissions.VIEW);
 		update(BOB, id, "Hijacked", 0).andExpect(status().isForbidden())
 			.andExpect(jsonPath("$.code").value("platform.forbidden"));
 		assertThat(jdbc.queryForObject("select title from note", String.class)).isEqualTo("Alice's");
@@ -284,7 +284,7 @@ class NotesApiIT {
 	@DisplayName("a caller who may update any note changes someone else's")
 	void updateAny() throws Exception {
 		String id = created(ALICE, "Alice's");
-		GrantedPermissions.grant(NotesPermissions.VIEW_ANY, NotesPermissions.UPDATE_ANY);
+		GrantedPermissions.grant(NotesPermissions.VIEW, NotesPermissions.UPDATE);
 
 		update(ADMIN, id, "Moderated", 0).andExpect(status().isOk()).andExpect(jsonPath("$.title").value("Moderated"));
 		assertThat(jdbc.queryForObject("select hex(owner_id) from note", String.class)).isEqualTo(hex(ALICE).toUpperCase());
@@ -316,7 +316,7 @@ class NotesApiIT {
 		String id = created(ALICE, "Alice's");
 
 		mvc.perform(as(BOB, delete("/api/v1/notes/" + id))).andExpect(status().isNotFound());
-		GrantedPermissions.grant(NotesPermissions.VIEW_ANY);
+		GrantedPermissions.grant(NotesPermissions.VIEW);
 		mvc.perform(as(BOB, delete("/api/v1/notes/" + id))).andExpect(status().isForbidden());
 
 		assertThat(count("select count(*) from note where deleted_at is null")).isEqualTo(1);
@@ -327,7 +327,7 @@ class NotesApiIT {
 	@DisplayName("a caller who may delete any note deletes someone else's")
 	void deleteAny() throws Exception {
 		String id = created(ALICE, "Alice's");
-		GrantedPermissions.grant(NotesPermissions.VIEW_ANY, NotesPermissions.DELETE_ANY);
+		GrantedPermissions.grant(NotesPermissions.VIEW, NotesPermissions.DELETE);
 
 		mvc.perform(as(ADMIN, delete("/api/v1/notes/" + id))).andExpect(status().isNoContent());
 
@@ -366,7 +366,7 @@ class NotesApiIT {
 	void listAll() throws Exception {
 		created(ALICE, "Alice one");
 		created(BOB, "Bob one");
-		GrantedPermissions.grant(NotesPermissions.VIEW_ANY);
+		GrantedPermissions.grant(NotesPermissions.VIEW);
 
 		mvc.perform(as(ADMIN, get("/api/v1/notes"))).andExpect(jsonPath("$.page.totalElements").value(2));
 		mvc.perform(as(ADMIN, get("/api/v1/notes?owner=" + BOB))).andExpect(jsonPath("$.page.totalElements").value(1))
@@ -445,7 +445,7 @@ class NotesApiIT {
 	void tenantIsolation() throws Exception {
 		String foreign = noteOfAnotherTenant("Foreign");
 		created(ALICE, "Mine");
-		GrantedPermissions.grant(NotesPermissions.VIEW_ANY, NotesPermissions.UPDATE_ANY, NotesPermissions.DELETE_ANY);
+		GrantedPermissions.grant(NotesPermissions.VIEW, NotesPermissions.UPDATE, NotesPermissions.DELETE);
 
 		mvc.perform(as(ADMIN, get("/api/v1/notes"))).andExpect(jsonPath("$.page.totalElements").value(1));
 		mvc.perform(as(ADMIN, get("/api/v1/notes/" + foreign))).andExpect(status().isNotFound());
@@ -561,7 +561,7 @@ class NotesApiIT {
 	void listDeletedDenied() throws Exception {
 		String id = created(ALICE, "Mine and deleted");
 		mvc.perform(as(ALICE, delete("/api/v1/notes/" + id))).andExpect(status().isNoContent());
-		GrantedPermissions.grant(NotesPermissions.VIEW_ANY);
+		GrantedPermissions.grant(NotesPermissions.VIEW);
 
 		mvc.perform(as(ALICE, get("/api/v1/notes?deleted=true"))).andExpect(status().isForbidden())
 			.andExpect(jsonPath("$.code").value("platform.forbidden"));

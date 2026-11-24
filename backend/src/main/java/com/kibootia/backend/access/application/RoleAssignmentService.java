@@ -24,6 +24,8 @@ import com.kibootia.backend.access.domain.PermissionRegistry;
 import com.kibootia.backend.audit.AuditEntry;
 import com.kibootia.backend.audit.AuditLog;
 import com.kibootia.backend.platform.authorization.Authorization;
+import com.kibootia.backend.platform.authorization.Grant;
+import com.kibootia.backend.platform.authorization.Reach;
 import com.kibootia.backend.platform.authorization.NoAuthorization;
 import com.kibootia.backend.platform.authorization.RequiresPermission;
 import com.kibootia.backend.platform.directory.UserDirectory;
@@ -132,16 +134,40 @@ public class RoleAssignmentService implements RoleAssignments {
 	@Transactional(readOnly = true)
 	@NoAuthorization("callers authorize; a user reads their own permissions and an administrator reads another's")
 	public Set<String> permissionsOf(UUID userId) {
-		Set<String> permissions = new TreeSet<>();
+		return new TreeSet<>(effectiveGrantsOf(userId).keySet());
+	}
+
+	/**
+	 * The same rule as the decision point (ADR 0054): grants of every role the user holds that fit the declarations; an
+	 * action that any of them denies is not held at all; for the rest, the reaches the allows have, widest first.
+	 */
+	@Override
+	@Transactional(readOnly = true)
+	@NoAuthorization("callers authorize; a user reads their own grants and an administrator reads another's")
+	public Map<String, List<Reach>> effectiveGrantsOf(UUID userId) {
+		Set<String> denied = new TreeSet<>();
+		Map<String, Set<Reach>> allowed = new java.util.TreeMap<>();
 		for (Role role : this.roles.findAll(this.roles.roleIdsOf(userId))) {
-			if (role.builtIn() == Role.BuiltIn.ADMIN) {
-				this.registry.all().forEach((permission) -> permissions.add(permission.name()));
-			}
-			else {
-				role.permissions().stream().filter(this.registry::isRegistered).forEach(permissions::add);
+			for (Grant grant : role.grants()) {
+				if (!this.registry.isValid(grant)) {
+					continue;
+				}
+				if (grant.allows()) {
+					allowed.computeIfAbsent(grant.action(), (key) -> new LinkedHashSet<>()).add(grant.reach());
+				}
+				else {
+					denied.add(grant.action());
+				}
 			}
 		}
-		return permissions;
+		Map<String, List<Reach>> effective = new java.util.TreeMap<>();
+		allowed.forEach((action, reaches) -> {
+			if (!denied.contains(action)) {
+				effective.put(action, reaches.contains(Reach.ALL) ? List.of(Reach.ALL)
+						: reaches.stream().sorted(Comparator.comparing(Reach::code)).toList());
+			}
+		});
+		return effective;
 	}
 
 	@Override
@@ -256,21 +282,17 @@ public class RoleAssignmentService implements RoleAssignments {
 	}
 
 	/**
-	 * A caller can give a role only if they hold every permission it carries, the same rule that limits what a role
-	 * editor can put into a role ({@code RoleService}); without it, {@code access.roles.assign} alone would let someone
-	 * acquire any role. The administrator role is left to {@link #requireAdministrator}: its permissions are computed,
-	 * not stored.
+	 * A caller can give a role only if they hold every grant it carries, at least as far as it reaches: the same rule
+	 * that limits what a role editor can put into a role ({@code RoleService}). Without it, {@code access.roles.assign}
+	 * alone would let someone acquire any role. The administrator role is left to {@link #requireAdministrator}.
 	 */
 	private void requireHoldsWhatTheyGive(Collection<Role> given) {
 		for (Role role : given) {
 			if (role.builtIn() == Role.BuiltIn.ADMIN) {
 				continue;
 			}
-			for (String permission : role.permissions()) {
-				if (this.registry.isRegistered(permission)) {
-					this.authorization.require(permission);
-				}
-			}
+			Grantable.requireHeld(this.authorization,
+					role.grants().stream().filter(this.registry::isValid).filter(Grant::allows).toList());
 		}
 	}
 

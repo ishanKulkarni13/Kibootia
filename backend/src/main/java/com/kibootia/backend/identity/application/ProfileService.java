@@ -1,6 +1,7 @@
 package com.kibootia.backend.identity.application;
 
-import java.util.Set;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.beans.factory.ObjectProvider;
@@ -11,6 +12,7 @@ import com.kibootia.backend.access.RoleAssignments;
 import com.kibootia.backend.platform.files.StoredFiles;
 import com.kibootia.backend.platform.authorization.Authorization;
 import com.kibootia.backend.platform.authorization.NoAuthorization;
+import com.kibootia.backend.platform.authorization.Reach;
 import com.kibootia.backend.platform.errors.ApiException;
 import com.kibootia.backend.platform.ratelimit.RateLimitCategory;
 import com.kibootia.backend.platform.ratelimit.RateLimiter;
@@ -55,10 +57,10 @@ public class ProfileService {
 		UUID id = this.authorization.currentUserId();
 		UserProfile profile = this.profiles.find(id).orElseThrow(ProfileService::notFound);
 		boolean verified = this.authorization.isEmailVerified();
-		Set<String> permissions = verified ? this.roleAssignments.permissionsOf(id) : Set.of();
+		Map<String, List<Reach>> reaches = verified ? this.roleAssignments.effectiveGrantsOf(id) : Map.of();
 		boolean filesRunning = this.files.getIfAvailable() != null;
-		return new MyProfile(profile, verified, permissions, this.roleAssignments.rolesOf(id), filesRunning,
-				filesRunning);
+		return new MyProfile(profile, verified, reaches.keySet(), reaches, this.roleAssignments.rolesOf(id),
+				filesRunning, filesRunning);
 	}
 
 	@Transactional

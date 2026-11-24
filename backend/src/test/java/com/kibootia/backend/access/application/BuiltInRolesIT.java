@@ -1,13 +1,19 @@
 package com.kibootia.backend.access.application;
 
+import java.util.List;
+
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.kibootia.backend.AdminApiTest;
+import com.kibootia.backend.platform.tenancy.TenantContext;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -28,22 +34,71 @@ class BuiltInRolesIT extends AdminApiTest {
 		String userRole = builtInRoleId("USER");
 		String current = get(admin(), "/api/v1/roles/" + userRole).andReturn().getResponse().getContentAsString();
 		long version = ((Number) JsonPath.read(current, "$.version")).longValue();
-		put(admin(), "/api/v1/roles/" + userRole, "{\"name\":\"User\",\"description\":\"x\",\"permissions\":"
-				+ "[\"widgets.widgets.view\",\"widgets.widgets.update\",\"widgets.widgets.delete\"],\"version\":" + version + "}")
+		put(admin(), "/api/v1/roles/" + userRole, "{\"name\":\"User\",\"description\":\"x\",\"grants\":"
+				+ "[{\"action\":\"widgets.widgets.view\",\"reach\":\"relation:owner\"},{\"action\":\"widgets.widgets.update\",\"reach\":\"relation:owner\"},{\"action\":\"widgets.widgets.delete\",\"reach\":\"relation:owner\"}],\"version\":" + version + "}")
 			.andExpect(status().isOk());
 
 		// A permission the user role was never offered, as when a module adds one in a new release.
 		this.jdbc.update("delete from role_permission_seed where permission = 'widgets.widgets.update'");
-		this.jdbc.update("delete from role_permission where permission = 'widgets.widgets.update'");
+		this.jdbc.update("delete from role_grant where action = 'widgets.widgets.update'");
 
 		this.builtInRoles.run(null);
 
 		get(admin(), "/api/v1/roles/" + userRole).andExpect(status().isOk())
-			.andExpect(jsonPath("$.permissions", hasItem("widgets.widgets.update")))
-			.andExpect(jsonPath("$.permissions", not(hasItem("widgets.widgets.create"))));
+			.andExpect(jsonPath("$.grants[*].action", hasItem("widgets.widgets.update")))
+			.andExpect(jsonPath("$.grants[*].action", not(hasItem("widgets.widgets.create"))));
 
 		this.builtInRoles.run(null);
-		get(admin(), "/api/v1/roles/" + userRole).andExpect(jsonPath("$.permissions", not(hasItem("widgets.widgets.create"))));
+		get(admin(), "/api/v1/roles/" + userRole).andExpect(jsonPath("$.grants[*].action", not(hasItem("widgets.widgets.create"))));
+	}
+
+	@Test
+	@DisplayName("the administrator role holds every declared action for every record, and a missing grant is back after a start")
+	void administratorGrantsAreKeptComplete() throws Exception {
+		ensureAdmin();
+		String adminRole = builtInRoleId("ADMIN");
+		// As when a module adds an action in a new release: the administrator has no grant for it yet.
+		this.jdbc.update("delete from role_grant where role_id = unhex(?) and action = 'widgets.widgets.restore'",
+				adminRole.replace("-", ""));
+		get(admin(), "/api/v1/roles/" + adminRole)
+			.andExpect(jsonPath("$.grants[*].action", not(hasItem("widgets.widgets.restore"))));
+
+		this.builtInRoles.run(null);
+		get(admin(), "/api/v1/roles/" + adminRole)
+			.andExpect(jsonPath("$.grants[?(@.action == 'widgets.widgets.restore')].reach", contains("all")))
+			.andExpect(jsonPath("$.grants[?(@.reach != 'all')]", hasSize(0)))
+			.andExpect(jsonPath("$.grants[?(@.effect != 'ALLOW')]", hasSize(0)));
+		int declared = JsonPath.read(get(admin(), "/api/v1/permissions").andReturn().getResponse().getContentAsString(),
+				"$.permissions.length()");
+		assertThat(count("select count(*) from role_grant where role_id = unhex(?)", adminRole.replace("-", "")))
+			.isEqualTo(declared);
+	}
+
+	@Test
+	@DisplayName("permissions stored by contract version 1 become grants at startup; a name no module declares is left for later")
+	void legacyPermissionsAreConverted() throws Exception {
+		ensureAdmin();
+		String role = createRole("Converted");
+		String hex = role.replace("-", "");
+		for (String legacy : List.of("widgets.widgets.view-any", "widgets.widgets.update", "widgets.widgets.restore",
+				"gone.things.read")) {
+			this.jdbc.update("insert into role_permission (tenant_id, role_id, permission) values (unhex(?), unhex(?), ?)",
+					hex(TenantContext.DEFAULT_TENANT), hex, legacy);
+		}
+
+		this.builtInRoles.run(null);
+
+		get(admin(), "/api/v1/roles/" + role)
+			.andExpect(jsonPath("$.grants[?(@.action == 'widgets.widgets.view')].reach", contains("all")))
+			.andExpect(jsonPath("$.grants[?(@.action == 'widgets.widgets.update')].reach", contains("relation:owner")))
+			.andExpect(jsonPath("$.grants[?(@.action == 'widgets.widgets.restore')].reach", contains("all")))
+			.andExpect(jsonPath("$.grants", hasSize(3)));
+		assertThat(this.jdbc.queryForList("select permission from role_permission where role_id = unhex(?)", String.class,
+				hex)).containsExactly("gone.things.read");
+
+		// Running again converts nothing twice.
+		this.builtInRoles.run(null);
+		get(admin(), "/api/v1/roles/" + role).andExpect(jsonPath("$.grants", hasSize(3)));
 	}
 
 	@Test

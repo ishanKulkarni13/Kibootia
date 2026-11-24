@@ -1,46 +1,77 @@
 package com.kibootia.backend.platform.authorization;
 
+import java.util.Objects;
+
 /**
- * A permission a module defines in code (ADR 0044). The name is {@code <module>.<resource>.<action>}, for example
- * {@code identity.users.invite}. A permission whose name ends in {@code -any} widens the one without the suffix from
- * "records I own" to "every record" (see {@link AccessFilter}): {@code notes.notes.update} lets a caller change their
- * own notes, {@code notes.notes.update-any} lets them change anyone's.
+ * An action a module declares in code (ADR 0044, ADR 0054); administrators see it as a permission in the role editor and
+ * grant it with a reach. The name is {@code <module>.<resource>.<action>}, for example {@code identity.users.invite}.
  *
- * @param name the permission name
- * @param description what it allows, shown to administrators in the role editor
- * @param grantedToUserRole whether the built-in {@code user} role holds it
- * @param allowedBeforeVerification whether a caller who has not verified their email address may still use it
- *        (ADR 0041); false for everything a module declares unless it says otherwise
+ * <p>Two kinds (ADR 0055, point 5):
+ * <ul>
+ * <li>an action <strong>on the collection</strong> ({@link #onCollection}): creating, an administrative action, anything
+ * decided without a record. Its only reach is {@link Reach#ALL}, so it may be checked with {@link RequiresPermission};</li>
+ * <li>an action <strong>on a record</strong> ({@link #onRecord}) of a declared {@link ResourceType}: it can be granted
+ * for every record or, by the type's relations, only for some, so it is checked with the record, never with
+ * {@code @RequiresPermission}. Startup refuses the annotation on such an action.</li>
+ * </ul>
+ *
+ * @param resourceType the resource type of an action on a record, or null for an action on the collection
+ * @param userRoleReach the reach the built-in {@code user} role is offered this action with, or null when it is not
+ * @param allowedBeforeVerification whether a caller who has not verified their email address may still use it (ADR 0041)
  * @param sensitive whether allowed uses are written as decision records too, not only refusals (ADR 0055, point 6)
  */
-public record Permission(String name, String description, boolean grantedToUserRole,
+public record Permission(String name, String description, String resourceType, Reach userRoleReach,
 		boolean allowedBeforeVerification, boolean sensitive) {
 
-	public Permission(String name, String description, boolean grantedToUserRole) {
-		this(name, description, grantedToUserRole, false, false);
+	public Permission {
+		Objects.requireNonNull(name, "name");
+		Objects.requireNonNull(description, "description");
+		if (resourceType == null && userRoleReach != null && !(userRoleReach instanceof Reach.All)) {
+			throw new IllegalArgumentException(name + " is an action on the collection; its only reach is 'all'");
+		}
 	}
 
-	/** A permission the built-in {@code user} role holds. */
-	public static Permission forEveryUser(String name, String description) {
-		return new Permission(name, description, true);
+	/** An action decided without a record. Granted through roles until {@link #forEveryUser} says otherwise. */
+	public static Permission onCollection(String name, String description) {
+		return new Permission(name, description, null, null, false, false);
 	}
 
-	/** A permission that must be granted through a role. */
-	public static Permission restricted(String name, String description) {
-		return new Permission(name, description, false);
+	/** An action on one record of the type. Granted through roles until {@link #forEveryUser} says otherwise. */
+	public static Permission onRecord(String name, String resourceType, String description) {
+		return new Permission(name, description, Objects.requireNonNull(resourceType, "resourceType"), null, false, false);
 	}
 
-	/** The same permission, usable by a caller who has not verified their email address yet. */
+	/** The built-in {@code user} role is offered the action for every record (or for the collection). */
+	public Permission forEveryUser() {
+		return forEveryUser(Reach.ALL);
+	}
+
+	/** The built-in {@code user} role is offered the action with this reach, for example {@link Reach#owner()}. */
+	public Permission forEveryUser(Reach reach) {
+		return new Permission(this.name, this.description, this.resourceType, Objects.requireNonNull(reach, "reach"),
+				this.allowedBeforeVerification, this.sensitive);
+	}
+
+	/** The same action, usable by a caller who has not verified their email address yet. */
 	public Permission beforeVerification() {
-		return new Permission(this.name, this.description, this.grantedToUserRole, true, this.sensitive);
+		return new Permission(this.name, this.description, this.resourceType, this.userRoleReach, true, this.sensitive);
 	}
 
 	/**
-	 * The same permission, with its allowed uses recorded as well as its refusals. For actions whose every use should be
+	 * The same action, with its allowed uses recorded as well as its refusals. For actions whose every use should be
 	 * reviewable afterwards: erasing, purging, granting.
 	 */
 	public Permission asSensitive() {
-		return new Permission(this.name, this.description, this.grantedToUserRole, this.allowedBeforeVerification, true);
+		return new Permission(this.name, this.description, this.resourceType, this.userRoleReach,
+				this.allowedBeforeVerification, true);
+	}
+
+	public boolean isOnRecord() {
+		return this.resourceType != null;
+	}
+
+	public boolean grantedToUserRole() {
+		return this.userRoleReach != null;
 	}
 
 }

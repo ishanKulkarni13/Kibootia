@@ -9,14 +9,16 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import com.kibootia.backend.platform.authorization.Grant;
+
 /**
  * Where roles, what they allow and who holds them are kept. The use cases depend on this port, never on JPA or SQL
- * (ADR 0003). Everything acts on the current tenant. Taking a permission off a role and taking a role off a user delete
+ * (ADR 0003). Everything acts on the current tenant. Taking a grant off a role and taking a role off a user delete
  * the row; the audit log keeps the history (ADR 0050).
  */
 public interface RoleStore {
 
-	Role insert(String name, String description, Set<String> permissions);
+	Role insert(String name, String description, Set<Grant> grants);
 
 	Optional<Role> find(UUID id);
 
@@ -30,9 +32,9 @@ public interface RoleStore {
 
 	/**
 	 * Changes a role if it is still at {@code expectedVersion}, otherwise fails with an optimistic locking failure. A
-	 * change to the permissions alone also advances the version.
+	 * change to the grants alone also advances the version.
 	 */
-	Role update(UUID id, long expectedVersion, String name, String description, Set<String> permissions);
+	Role update(UUID id, long expectedVersion, String name, String description, Set<Grant> grants);
 
 	/** Marks the role deleted. The caller has checked that nobody holds it. */
 	void softDelete(UUID id);
@@ -40,8 +42,19 @@ public interface RoleStore {
 	/** Permanently removes roles deleted before the cutoff, with what they allowed. Returns how many. */
 	int purgeDeletedBefore(java.time.Instant cutoff);
 
-	/** Creates the two built-in roles if they are missing and offers the user role any permission it has not seen. */
-	void ensureBuiltInRoles(Set<String> userRolePermissions);
+	/**
+	 * Creates the two built-in roles if they are missing, gives the administrator role every grant in {@code administrator}
+	 * it lacks, and offers the user role each grant in {@code userRole} whose action it has not been offered before.
+	 */
+	void ensureBuiltInRoles(Set<Grant> administrator, Set<Grant> userRole);
+
+	/**
+	 * Moves the rows of the contract-version-1 table {@code role_permission}, in every tenant, into grants: each stored
+	 * name that {@code conversion} maps to a grant is written as that grant of the same role and removed. A name it does
+	 * not map (an action no module declares now) is left where it is, so it is converted once its module is back.
+	 * Returns how many rows were converted. A milestone 8 step; see {@code BuiltInRoles}.
+	 */
+	int convertLegacyPermissions(java.util.function.Function<String, Optional<Grant>> conversion);
 
 	/** Locks the role's row until the transaction ends, so concurrent changes to who holds it take turns. */
 	void lock(UUID roleId);

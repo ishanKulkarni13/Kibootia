@@ -62,11 +62,11 @@ class RateLimitIT extends AdminApiTest {
 		makeAdministrator(SECOND_ADMIN);
 		var second = user(SECOND_ADMIN);
 		for (int i = 1; i <= 3; i++) {
-			post(second, "/api/v1/roles", "{\"name\":\"Role " + i + "\",\"description\":\"\",\"permissions\":[]}")
+			post(second, "/api/v1/roles", "{\"name\":\"Role " + i + "\",\"description\":\"\",\"grants\":[]}")
 				.andExpect(status().isCreated());
 		}
 
-		post(second, "/api/v1/roles", "{\"name\":\"Role 4\",\"description\":\"\",\"permissions\":[]}")
+		post(second, "/api/v1/roles", "{\"name\":\"Role 4\",\"description\":\"\",\"grants\":[]}")
 			.andExpect(status().isTooManyRequests())
 			.andExpect(header().string("Retry-After", org.hamcrest.Matchers.matchesPattern("[1-9][0-9]*")));
 		org.assertj.core.api.Assertions.assertThat(count("select count(*) from role where name = 'Role 4'")).isZero();

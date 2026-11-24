@@ -1,29 +1,61 @@
 package com.kibootia.backend.access.domain;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import com.kibootia.backend.platform.authorization.Grant;
 import com.kibootia.backend.platform.authorization.Permission;
+import com.kibootia.backend.platform.authorization.Reach;
+import com.kibootia.backend.platform.authorization.ResourceType;
 
 /**
- * Every permission the modules declare in code (ADR 0044), collected at startup. The role editor lists from it and the
- * decision point refuses permissions that are not in it, so a typo in {@code @RequiresPermission} is found at startup
- * or on first use instead of silently denying forever.
+ * Every action and resource type the modules declare in code (ADR 0044, ADR 0054), collected at startup. The role editor
+ * lists from it and the decision point refuses actions that are not in it, so a typo in {@code @RequiresPermission} is
+ * found at startup or on first use instead of silently denying forever.
+ *
+ * <p>Startup fails on a malformed or duplicate name, an action on a resource type nobody declared, a user-role reach the
+ * type does not offer, and a relation that is not a valid name.
  */
 public final class PermissionRegistry {
 
-	static final String ANY_SUFFIX = "-any";
-
 	private static final Pattern NAME = Pattern.compile("[a-z][a-z0-9]*\\.[a-z][a-z0-9]*(-[a-z0-9]+)*\\.[a-z][a-z0-9]*(-[a-z0-9]+)*");
+
+	private static final Pattern TYPE = Pattern.compile("[a-z][a-z0-9]*\\.[a-z][a-z0-9]*(-[a-z0-9]+)*");
 
 	private final Map<String, Permission> byName = new LinkedHashMap<>();
 
+	private final Map<String, ResourceType> types = new LinkedHashMap<>();
+
 	public PermissionRegistry(Collection<Permission> permissions) {
+		this(permissions, List.of());
+	}
+
+	public PermissionRegistry(Collection<Permission> permissions, Collection<ResourceType> resourceTypes) {
+		List<String> problems = new ArrayList<>();
+		for (ResourceType type : resourceTypes) {
+			if (!TYPE.matcher(type.name()).matches()) {
+				problems.add("resource type '" + type.name() + "' is not named <module>.<resource>");
+			}
+			for (String relation : type.relations()) {
+				try {
+					Reach.relation(relation);
+				}
+				catch (IllegalArgumentException ex) {
+					problems.add("resource type '" + type.name() + "' declares the invalid relation '" + relation + "'");
+				}
+			}
+			if (this.types.putIfAbsent(type.name(), type) != null) {
+				problems.add("resource type '" + type.name() + "' is declared more than once");
+			}
+		}
 		Set<String> duplicates = new LinkedHashSet<>();
 		for (Permission permission : permissions) {
 			if (!NAME.matcher(permission.name()).matches()) {
@@ -37,11 +69,18 @@ public final class PermissionRegistry {
 		if (!duplicates.isEmpty()) {
 			throw new IllegalStateException("Permissions declared more than once: " + duplicates);
 		}
-		for (String name : this.byName.keySet()) {
-			if (name.endsWith(ANY_SUFFIX) && !this.byName.containsKey(name.substring(0, name.length() - ANY_SUFFIX.length()))) {
-				throw new IllegalStateException("Permission '" + name + "' widens '"
-						+ name.substring(0, name.length() - ANY_SUFFIX.length()) + "', which is not declared");
+		for (Permission permission : this.byName.values()) {
+			if (permission.isOnRecord() && !this.types.containsKey(permission.resourceType())) {
+				problems.add("'" + permission.name() + "' acts on the resource type '" + permission.resourceType()
+						+ "', which no module declares");
 			}
+			else if (permission.userRoleReach() != null && !reachesOf(permission).contains(permission.userRoleReach())) {
+				problems.add("'" + permission.name() + "' offers the user role the reach '"
+						+ permission.userRoleReach().code() + "', which its resource type does not have");
+			}
+		}
+		if (!problems.isEmpty()) {
+			throw new IllegalStateException("Invalid authorization declarations: " + problems);
 		}
 	}
 
@@ -49,15 +88,70 @@ public final class PermissionRegistry {
 		return Collections.unmodifiableCollection(this.byName.values());
 	}
 
+	public Collection<ResourceType> resourceTypes() {
+		return Collections.unmodifiableCollection(this.types.values());
+	}
+
 	public boolean isRegistered(String name) {
 		return this.byName.containsKey(name);
 	}
 
-	/** The permissions the built-in {@code user} role holds. */
-	public Set<String> userRolePermissions() {
-		Set<String> names = new LinkedHashSet<>();
-		this.byName.values().stream().filter(Permission::grantedToUserRole).forEach((p) -> names.add(p.name()));
-		return Collections.unmodifiableSet(names);
+	public Optional<Permission> find(String name) {
+		return Optional.ofNullable(this.byName.get(name));
+	}
+
+	/** The grants the built-in {@code user} role is offered, with the reach each action declares for it. */
+	public Set<Grant> userRoleGrants() {
+		Set<Grant> grants = new LinkedHashSet<>();
+		this.byName.values()
+			.stream()
+			.filter(Permission::grantedToUserRole)
+			.forEach((permission) -> grants.add(Grant.allow(permission.name(), permission.userRoleReach())));
+		return Collections.unmodifiableSet(grants);
+	}
+
+	/** The grants of the built-in administrator role: every declared action, for every record (ADR 0054). */
+	public Set<Grant> administratorGrants() {
+		Set<Grant> grants = new LinkedHashSet<>();
+		this.byName.keySet().forEach((name) -> grants.add(Grant.allow(name, Reach.ALL)));
+		return Collections.unmodifiableSet(grants);
+	}
+
+	/** The reaches a grant of the action can have: every record, plus each relation of its resource type. */
+	public List<Reach> reachesOf(String action) {
+		Permission permission = this.byName.get(action);
+		return (permission == null) ? List.of() : reachesOf(permission);
+	}
+
+	private List<Reach> reachesOf(Permission permission) {
+		List<Reach> reaches = new ArrayList<>();
+		reaches.add(Reach.ALL);
+		if (permission.isOnRecord()) {
+			ResourceType type = this.types.get(permission.resourceType());
+			if (type != null) {
+				type.relations().stream().sorted().forEach((relation) -> reaches.add(Reach.relation(relation)));
+			}
+		}
+		return reaches;
+	}
+
+	/**
+	 * Whether the grant fits the declarations: a declared action, a reach its resource type offers, and, for a deny, the
+	 * reach {@code all} (a deny that removes only some records would need a filter that excludes, which lists cannot
+	 * apply yet).
+	 */
+	public boolean isValid(Grant grant) {
+		Permission permission = this.byName.get(grant.action());
+		if (permission == null || !reachesOf(permission).contains(grant.reach())) {
+			return false;
+		}
+		return grant.allows() || grant.reach() instanceof Reach.All;
+	}
+
+	/** Whether the action is checked with a record and can be granted for only some records. */
+	public boolean isOnRecord(String name) {
+		Permission permission = this.byName.get(name);
+		return permission != null && permission.isOnRecord();
 	}
 
 	/** Whether a caller who has not verified their email address may use the permission (ADR 0041). */
@@ -70,11 +164,6 @@ public final class PermissionRegistry {
 	public boolean isSensitive(String name) {
 		Permission permission = this.byName.get(name);
 		return permission != null && permission.sensitive();
-	}
-
-	/** Whether the action has a {@code -any} variant, which makes the plain permission mean "records I own". */
-	public boolean hasAnyVariant(String action) {
-		return this.byName.containsKey(action + ANY_SUFFIX);
 	}
 
 }
