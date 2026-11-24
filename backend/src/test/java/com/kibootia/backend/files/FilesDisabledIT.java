@@ -8,6 +8,8 @@ import javax.imageio.ImageIO;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.health.contributor.Health;
+import org.springframework.boot.health.contributor.Status;
 import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpMethod;
 import org.springframework.mock.web.MockMultipartFile;
@@ -37,6 +39,9 @@ class FilesDisabledIT extends AdminApiTest {
 
 	@Autowired
 	ApplicationContext context;
+
+	@Autowired
+	FilesDisabledHealthIndicator guard;
 
 	@Test
 	@DisplayName("starts with the module off and no storage keys, and none of its beans exist")
@@ -77,5 +82,33 @@ class FilesDisabledIT extends AdminApiTest {
 		get(admin(), "/api/v1/users").andExpect(status().isOk());
 		get(user(ALICE), "/api/v1/me").andExpect(status().isOk());
 	}
+
+	@Test
+	@DisplayName("the guard stays quiet while no stored file exists (ADR 0059)")
+	void guardIsQuietWithoutFiles() {
+		Health health = this.guard.health();
+
+		assertThat(health.getStatus()).isEqualTo(Status.UP);
+		assertThat(health.getDetails()).containsEntry("storedFiles", 0L).doesNotContainKey("warning");
+	}
+
+	@Test
+	@DisplayName("the guard reports files that nothing can clean up while the module is off, and stays up (ADR 0059)")
+	void guardReportsRemainingFiles() {
+		this.jdbc.update("""
+				insert into stored_file (id, tenant_id, version, created_at, created_by, updated_at, updated_by, owner_id,
+				  category, content_type, renditions)
+				values (unhex('0191f3a07c4d7c4d9b1e2f6a4c8d0e11'), unhex('00000000000070008000000000000001'), 0,
+				  utc_timestamp(6), unhex('11111111111171118111111111111111'), utc_timestamp(6),
+				  unhex('11111111111171118111111111111111'), unhex('11111111111171118111111111111111'), 'avatar',
+				  'image/png', 'small,large')
+				""");
+
+		Health health = this.guard.health();
+
+		assertThat(health.getStatus()).as("the application still works, so it stays up").isEqualTo(Status.UP);
+		assertThat(health.getDetails()).containsEntry("storedFiles", 1L).containsKey("warning");
+	}
+
 
 }
