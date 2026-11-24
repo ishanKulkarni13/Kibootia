@@ -52,12 +52,12 @@ describe("serverApi", () => {
 
     await serverApi("http://api.test", "t", api.fetch).PUT("/api/v1/roles/{id}", {
       params: { path: { id } },
-      body: { name: "T", description: "B", permissions: [], version: 3 },
+      body: { name: "T", description: "B", grants: [], version: 3 },
     });
 
     expect(api.requests[0]?.url).toBe(`http://api.test/api/v1/roles/${id}`);
     expect(api.requests[0]?.method).toBe("PUT");
-    expect(await api.requests[0]?.json()).toEqual({ name: "T", description: "B", permissions: [], version: 3 });
+    expect(await api.requests[0]?.json()).toEqual({ name: "T", description: "B", grants: [], version: 3 });
   });
 });
 
@@ -78,7 +78,7 @@ describe("unwrap", () => {
     const problem = { title: "Conflict", status: 409, code: "access.role_exists", traceId: "abc" };
     const api = recording(() => json(problem, { status: 409, headers: { "Content-Type": "application/problem+json" } }));
 
-    const result = await serverApi("http://api.test", "t", api.fetch).POST("/api/v1/roles", { body: { name: "T", description: "B", permissions: [] } });
+    const result = await serverApi("http://api.test", "t", api.fetch).POST("/api/v1/roles", { body: { name: "T", description: "B", grants: [] } });
 
     const error = captured(() => unwrap(result));
     expect(error).toBeInstanceOf(ApiError);

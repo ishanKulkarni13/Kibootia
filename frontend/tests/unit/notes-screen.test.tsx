@@ -33,7 +33,7 @@ function page(items: unknown[]) {
 
 const lists = (calls: Call[]) => calls.filter((call) => call.method === "GET" && call.path === "/api/v1/notes");
 
-const reader = () => meWith(["notes.notes.create", "notes.notes.view"]);
+const reader = () => meWith(["notes.notes.create", "notes.notes.view/relation:owner"]);
 
 describe("the notes list", () => {
   beforeEach(() => success.mockClear());
@@ -55,7 +55,7 @@ describe("the notes list", () => {
 
   it("shows no picture marker where files are switched off", async () => {
     stubApi(() => json(page([note("n-2", "Ideas", { attachmentVersion: "v-1" })])));
-    renderScreen(<NotesScreen />, meWith(["notes.notes.view"], { filesEnabled: false }));
+    renderScreen(<NotesScreen />, meWith(["notes.notes.view/relation:owner"], { filesEnabled: false }));
 
     await screen.findByRole("link", { name: "Ideas" });
     expect(screen.queryByText("Picture")).not.toBeInTheDocument();
@@ -68,7 +68,7 @@ describe("the notes list", () => {
     unmount();
 
     stubApi(() => json(page([])));
-    renderScreen(<NotesScreen />, meWith(["notes.notes.view"]));
+    renderScreen(<NotesScreen />, meWith(["notes.notes.view/relation:owner"]));
     await screen.findByText("There are no notes yet.");
     expect(screen.queryByRole("link", { name: "New note" })).not.toBeInTheDocument();
   });
@@ -85,7 +85,7 @@ describe("the notes list", () => {
     const stub = stubApi((call) =>
       call.query.has("owner") ? json(page([note("n-1", "Mine")])) : json(page([note("n-1", "Mine"), note("n-3", "Theirs", { ownerId: OTHER })])),
     );
-    renderScreen(<NotesScreen />, meWith(["notes.notes.view", "notes.notes.view-any"]));
+    renderScreen(<NotesScreen />, meWith(["notes.notes.view"]));
     await screen.findByRole("link", { name: "Mine" });
 
     await userEvent.click(screen.getByLabelText("Show"));
@@ -108,7 +108,7 @@ describe("the notes list", () => {
       if (call.query.get("deleted") === "true") return json(page(restored ? [] : [note("n-9", "Gone", { ownerId: OTHER })]));
       return json(page([]));
     });
-    renderScreen(<NotesScreen />, meWith(["notes.notes.view", "notes.notes.restore"]));
+    renderScreen(<NotesScreen />, meWith(["notes.notes.view/relation:owner", "notes.notes.restore"]));
     await screen.findByText("There are no notes yet.");
 
     await userEvent.click(screen.getByLabelText("Show"));

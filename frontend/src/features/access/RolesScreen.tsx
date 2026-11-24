@@ -54,7 +54,7 @@ export function RolesScreen() {
                     {role.builtIn && <Badge variant="secondary">built in</Badge>}
                   </TableCell>
                   <TableCell className="text-muted-foreground">{role.description}</TableCell>
-                  <TableCell className="text-right">{role.permissions.length}</TableCell>
+                  <TableCell className="text-right">{role.grants.length}</TableCell>
                   <TableCell className="text-right">{role.assignedUsers}</TableCell>
                 </TableRow>
               ))}

@@ -403,8 +403,8 @@ export interface components {
         };
         CreateRoleRequest: {
             description: string;
+            grants: components["schemas"]["GrantBody"][];
             name: string;
-            permissions: string[];
         };
         FailedEventResponse: {
             /** Format: int32 */
@@ -418,6 +418,16 @@ export interface components {
             /** Format: date-time */
             publishedAt: string;
             retriesExhausted: boolean;
+        };
+        GrantBody: {
+            action: string;
+            /**
+             * @default ALLOW
+             * @enum {string}
+             */
+            effect: "ALLOW" | "DENY";
+            /** @example relation:owner */
+            reach: string;
         };
         InviteUserRequest: {
             email: string;
@@ -440,6 +450,10 @@ export interface components {
             /** @description The name to show; never an email address. */
             name: string;
             permissions: string[];
+            /** @description For each permission held, how far it reaches: all, or a relation such as relation:owner (my own records). */
+            reaches: {
+                [key: string]: string[];
+            };
             roles: components["schemas"]["UserRoleResponse"][];
             /** @enum {string} */
             status: "INVITED" | "ACTIVE" | "DISABLED";
@@ -496,10 +510,21 @@ export interface components {
             items: components["schemas"]["UserResponse"][];
             page: components["schemas"]["PageInfo"];
         };
+        PermissionCatalogueResponse: {
+            /** @description Whether roles may be given new deny grants (kibootia.access.deny-grants-enabled). */
+            denyGrantsEnabled: boolean;
+            permissions: components["schemas"]["PermissionResponse"][];
+        };
         PermissionResponse: {
             description: string;
-            grantedToUserRole: boolean;
             name: string;
+            reaches: string[];
+            /** @description The resource type of an action on a record; null for an action on the collection. */
+            resourceType?: string | null;
+            /** @description Whether allowed uses are recorded as well as refusals. */
+            sensitive: boolean;
+            /** @description The reach the built-in user role is offered it with; null when it is not. */
+            userRoleReach?: string | null;
         };
         PersonResponse: {
             /** Format: uuid */
@@ -544,10 +569,10 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
             description: string;
+            grants: components["schemas"]["GrantBody"][];
             /** Format: uuid */
             id: string;
             name: string;
-            permissions: string[];
             /** Format: date-time */
             updatedAt: string;
             /** Format: int64 */
@@ -571,8 +596,8 @@ export interface components {
         };
         UpdateRoleRequest: {
             description: string;
+            grants: components["schemas"]["GrantBody"][];
             name: string;
-            permissions: string[];
             /** Format: int64 */
             version: number;
         };
@@ -1758,7 +1783,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PermissionResponse"][];
+                    "application/json": components["schemas"]["PermissionCatalogueResponse"];
                 };
             };
             /** @description No valid bearer token. */

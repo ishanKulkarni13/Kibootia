@@ -105,8 +105,8 @@ describe("inviting a user", () => {
       call.path === "/api/v1/roles"
         ? json({
             items: [
-              { id: "r-user", name: "User", builtIn: "USER", description: "", permissions: [], assignedUsers: 3, version: 0, createdAt: "", updatedAt: "" },
-              { id: "r-editor", name: "Editors", builtIn: null, description: "", permissions: [], assignedUsers: 0, version: 0, createdAt: "", updatedAt: "" },
+              { id: "r-user", name: "User", builtIn: "USER", description: "", grants: [], assignedUsers: 3, version: 0, createdAt: "", updatedAt: "" },
+              { id: "r-editor", name: "Editors", builtIn: null, description: "", grants: [], assignedUsers: 0, version: 0, createdAt: "", updatedAt: "" },
             ],
             page: { number: 0, size: 100, totalElements: 2, totalPages: 1 },
           })

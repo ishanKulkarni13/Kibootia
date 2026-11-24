@@ -11,11 +11,22 @@ const { success, push } = vi.hoisted(() => ({ success: vi.fn(), push: vi.fn() })
 vi.mock("sonner", () => ({ toast: { success, error: vi.fn() } }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push, refresh: vi.fn() }) }));
 
-const catalogue = [
-  { name: "access.roles.view", description: "View roles", grantedToUserRole: false },
-  { name: "access.roles.manage", description: "Create, change and delete roles", grantedToUserRole: false },
-  { name: "identity.users.invite", description: "Invite users by email", grantedToUserRole: false },
+const permissions = [
+  { name: "access.roles.view", description: "View roles", resourceType: null, reaches: ["all"], userRoleReach: null, sensitive: false },
+  { name: "access.roles.manage", description: "Create, change and delete roles", resourceType: null, reaches: ["all"], userRoleReach: null, sensitive: true },
+  { name: "identity.users.invite", description: "Invite users by email", resourceType: null, reaches: ["all"], userRoleReach: null, sensitive: false },
+  {
+    name: "notes.notes.view",
+    description: "View notes",
+    resourceType: "notes.note",
+    reaches: ["all", "relation:owner"],
+    userRoleReach: "relation:owner",
+    sensitive: false,
+  },
 ];
+const catalogue = { permissions, denyGrantsEnabled: false };
+
+const all = (action: string) => ({ action, reach: "all", effect: "ALLOW" });
 
 function role(overrides: Record<string, unknown> = {}) {
   return {
@@ -23,7 +34,7 @@ function role(overrides: Record<string, unknown> = {}) {
     name: "Reviewers",
     description: "Review things",
     builtIn: null,
-    permissions: ["access.roles.view"],
+    grants: [all("access.roles.view")],
     assignedUsers: 2,
     version: 4,
     createdAt: "2026-11-01T10:00:00Z",
@@ -40,7 +51,10 @@ function api(current: ReturnType<typeof role>, onSave?: (call: Call) => Response
   });
 }
 
-const manager = () => meWith(["access.roles.view", "access.roles.manage"]);
+const manager = () => meWith(["access.roles.view", "access.roles.manage", "notes.notes.view/relation:owner"]);
+
+type Grants = { action: string; reach: string; effect?: string }[];
+const sorted = (grants: Grants) => [...grants].sort((a, b) => a.action.localeCompare(b.action));
 
 describe("the role editor", () => {
   beforeEach(() => {
@@ -49,7 +63,7 @@ describe("the role editor", () => {
   });
 
   it("shows the administrator role read-only: it holds every permission and cannot be changed", async () => {
-    api(role({ builtIn: "ADMIN", name: "Administrator", permissions: catalogue.map((permission) => permission.name) }));
+    api(role({ builtIn: "ADMIN", name: "Administrator", grants: permissions.map((permission) => all(permission.name)) }));
     renderScreen(<RoleEditor roleId="r-1" />, meWith(["access.roles.view", "access.roles.manage", "identity.users.invite"]));
 
     expect(await screen.findByText(/cannot be changed or deleted/)).toBeInTheDocument();
@@ -70,7 +84,7 @@ describe("the role editor", () => {
   });
 
   it("does not let an editor add a permission they do not hold themselves, though they may remove one", async () => {
-    api(role({ permissions: ["access.roles.view", "identity.users.invite"] }));
+    api(role({ grants: [all("access.roles.view"), all("identity.users.invite")] }));
     renderScreen(<RoleEditor roleId="r-1" />, manager());
 
     await screen.findByRole("heading", { name: "Reviewers" });
@@ -79,6 +93,56 @@ describe("the role editor", () => {
     expect(screen.getByRole("checkbox", { name: /Invite users/ })).toBeEnabled();
     await userEvent.click(screen.getByRole("checkbox", { name: /Invite users/ }));
     expect(screen.getByRole("checkbox", { name: /Invite users/ })).toBeDisabled();
+  });
+
+  it("gives a permission only as far as the editor's own grant reaches", async () => {
+    const stub = api(role());
+    renderScreen(<RoleEditor roleId="r-1" />, manager());
+    await screen.findByRole("heading", { name: "Reviewers" });
+
+    // The editor views only their own notes, so ticking it offers that reach and not "every record".
+    await userEvent.click(screen.getByRole("checkbox", { name: /View notes/ }));
+    const reach = screen.getByRole("combobox", { name: "How far: View notes" });
+    expect(reach).toHaveValue("relation:owner");
+    expect(screen.getByRole("option", { name: "Every record" })).toBeDisabled();
+    await userEvent.click(screen.getByRole("button", { name: "Save role" }));
+
+    await waitFor(() => expect(success).toHaveBeenCalledWith("Role saved"));
+    const save = stub.calls.find((call) => call.method === "PUT");
+    expect(sorted((save?.body as { grants: Grants }).grants)).toEqual([
+      { action: "access.roles.view", reach: "all", effect: "ALLOW" },
+      { action: "notes.notes.view", reach: "relation:owner", effect: "ALLOW" },
+    ]);
+  });
+
+  it("lets an editor who holds a permission for every record choose its reach", async () => {
+    const stub = api(role());
+    renderScreen(<RoleEditor roleId="r-1" />, meWith(["access.roles.view", "access.roles.manage", "notes.notes.view"]));
+    await screen.findByRole("heading", { name: "Reviewers" });
+
+    await userEvent.click(screen.getByRole("checkbox", { name: /View notes/ }));
+    expect(screen.getByRole("combobox", { name: "How far: View notes" })).toHaveValue("all");
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: "How far: View notes" }), "relation:owner");
+    await userEvent.click(screen.getByRole("button", { name: "Save role" }));
+
+    await waitFor(() => expect(success).toHaveBeenCalled());
+    const save = stub.calls.find((call) => call.method === "PUT");
+    expect((save?.body as { grants: Grants }).grants).toContainEqual({ action: "notes.notes.view", reach: "relation:owner", effect: "ALLOW" });
+  });
+
+  it("keeps a role's deny grants as they are when it is saved, and says it has them", async () => {
+    const deny = { action: "identity.users.invite", reach: "all", effect: "DENY" };
+    const stub = api(role({ grants: [all("access.roles.view"), deny] }));
+    renderScreen(<RoleEditor roleId="r-1" />, manager());
+    await screen.findByRole("heading", { name: "Reviewers" });
+
+    expect(screen.getByText(/also has a deny grant/)).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: /Invite users/ })).not.toBeChecked();
+    await userEvent.click(screen.getByRole("button", { name: "Save role" }));
+
+    await waitFor(() => expect(success).toHaveBeenCalled());
+    const save = stub.calls.find((call) => call.method === "PUT");
+    expect((save?.body as { grants: Grants }).grants).toContainEqual(deny);
   });
 
   it("saves with the version it started from, so a change made meanwhile is not overwritten", async () => {
@@ -97,7 +161,10 @@ describe("the role editor", () => {
       path: "/api/v1/roles/r-1",
       body: { name: "Auditors", description: "Review things", version: 4 },
     });
-    expect((save?.body as { permissions: string[] }).permissions.sort()).toEqual(["access.roles.manage", "access.roles.view"]);
+    expect(sorted((save?.body as { grants: Grants }).grants)).toEqual([
+      { action: "access.roles.manage", reach: "all", effect: "ALLOW" },
+      { action: "access.roles.view", reach: "all", effect: "ALLOW" },
+    ]);
   });
 
   it("says so under the name when another role has it, and when someone else changed the role meanwhile", async () => {
@@ -117,7 +184,7 @@ describe("the role editor", () => {
   it("creates a role without asking for one that does not exist yet, and opens it afterwards", async () => {
     const stub = stubApi((call) => {
       if (call.path === "/api/v1/permissions") return json(catalogue);
-      return json(role({ id: "r-new", name: "Inviters", permissions: [], version: 0 }), 201);
+      return json(role({ id: "r-new", name: "Inviters", grants: [], version: 0 }), 201);
     });
     renderScreen(<RoleEditor />, manager());
 
@@ -127,7 +194,7 @@ describe("the role editor", () => {
     await waitFor(() => expect(push).toHaveBeenCalledWith("/admin/roles/r-new"));
     expect(stub.calls.find((call) => call.method === "POST")).toMatchObject({
       path: "/api/v1/roles",
-      body: { name: "Inviters", description: "", permissions: [] },
+      body: { name: "Inviters", description: "", grants: [] },
     });
     expect(stub.calls.filter((call) => call.method === "GET").map((call) => call.path)).toEqual(["/api/v1/permissions"]);
   });
