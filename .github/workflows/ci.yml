@@ -338,8 +338,9 @@ jobs:
             docker run --rm -i hadolint/hadolint@sha256:32dac94127fd60b7b7e3fbfc65e1383b9b5e25c9bfd7b8536de7a539fe68a12d hadolint --failure-threshold warning - < "$f"
           done
 
-  # Known vulnerabilities in what a pull request adds, and its licences (ADR 0061). The dependency graph is on for a
-  # public repository.
+  # Known vulnerabilities in what a pull request adds (ADR 0061). It needs the repository's dependency graph, which is a
+  # repository setting (Settings > Advanced Security). When the graph is off the review cannot run, and this job says so
+  # in a warning and skips the review instead of failing every pull request; turn the graph on and it becomes a gate.
   dependency-review:
     name: Dependency review
     if: github.event_name == 'pull_request' && github.event.action != 'labeled'
@@ -347,7 +348,21 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/dependency-review-action@bbc44d14a204704ccc493733616cd1e93a0321ec # v5.0.1
+      - name: Check that the dependency graph is on
+        id: graph
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if gh api "repos/$GITHUB_REPOSITORY/dependency-graph/compare/$BASE...$HEAD" > /dev/null 2>&1; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::warning title=Dependency review skipped::The dependency graph is off for this repository, so what this pull request adds was not reviewed. Turn it on under Settings > Advanced Security."
+          fi
+      - if: steps.graph.outputs.enabled == 'true'
+        uses: actions/dependency-review-action@bbc44d14a204704ccc493733616cd1e93a0321ec # v5.0.1
         with:
           fail-on-severity: high
           comment-summary-in-pr: never
