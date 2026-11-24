@@ -2,11 +2,11 @@
 
 - **Type:** adr
 - **Module:** platform
-- **Status:** draft
+- **Status:** accepted
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-24
+- **Last updated:** 2026-11-25
 
-> **Implementation:** planned. Nothing here is built. Observed today in `.github/workflows/ci.yml`: backend build, frontend pipeline, module removal matrix, image build and Trivy scan, end-to-end on a label or nightly, gitleaks.
+> **Implementation:** items 1 to 7 built on branch `m-5-1-ci` (observed; CI run pending), except that image signing waits for milestone 6, the frontend coverage floor waits for two milestones of data, and item 8 is not adopted (see Status). Observed in `.github/workflows/ci.yml` and `codeql.yml`.
 
 ## Context
 
@@ -46,9 +46,16 @@ Adopt the gates in stages, so that each is first a report and becomes a gate onl
 - Pinning by SHA needs Renovate to open update pull requests, which is already installed.
 - Some CodeQL findings will be false positives; the project keeps a short, reviewed suppression list, as it does for gitleaks.
 
-## Status
+accepted on the owner's delegation of 2026-11-25. Delivered in [milestone 5.1](../product/roadmap/milestone-5-1-architecture-hardening.md), except signing, which waits for milestone 6.
 
-draft. Awaiting the owner. Delivered in [milestone 5.1](../product/roadmap/milestone-5-1-architecture-hardening.md), except signing, which waits for milestone 6.
+**Changes made while building** (2026-11-25):
+
+- **Item 8, Spring Java Format, is not adopted.** The ADR said the code already follows the Spring style. It does not: in validate mode 285 of the main and test Java files fail, because the code is written to about 120 columns and the formatter wraps comments and code at 90. Adopting it would rewrap nearly every file, against the style the project uses and with a diff that conflicts with every branch in flight. If the owner wants a formatter, the choice is to adopt the Spring style in one commit between milestones, or to configure a formatter for the existing style.
+- **A pin that was not an upstream commit was found and replaced.** The Trivy action was pinned to `a9c7b0f…`, commented as v0.36.0. That commit does not exist in `aquasecurity/trivy-action` (the GitHub API answers 404 for it), and release v0.36.0 is `ed142fd…`. GitHub still runs such a SHA when it exists somewhere in the repository's fork network, so the scan job passed while running code that could not be tied to upstream. It is replaced by the signed upstream commit of v0.36.0, and the header of `ci.yml` says how to check a new pin.
+- **`pnpm audit --prod` and the dependency review are gates from the start**, because the baseline is clean (no known vulnerabilities on 2026-11-25). Coverage has no threshold.
+- **A documentation check was added** (`scripts/check-docs.mjs`, the `docs` job): every relative link in a Markdown file resolves, and the decision index agrees with each ADR's own status line. This is the check ADR 0060 asks for.
+- **The OpenTofu formatting** of `infra/keycloak/base/main.tf` did not pass `tofu fmt -check`; it was formatted.
+- **A labelled pull request runs only the end-to-end job**, and only for the `e2e` label; other labels run nothing.
 
 ## Related
 
