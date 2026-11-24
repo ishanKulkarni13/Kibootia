@@ -30,6 +30,7 @@
 		<java.version>25</java.version>
 		<spring-modulith.version>2.1.2</spring-modulith.version>
 		<archunit.version>1.5.1</archunit.version>
+		<jacoco.version>0.8.16</jacoco.version>
 		<shedlock.version>7.11.0</shedlock.version>
 		<springdoc.version>3.2.0</springdoc.version>
 		<!-- 8.16.1 is the newest line that has had a patch release (ADR 0035). -->
@@ -234,6 +235,28 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+			<!-- Coverage of both the fast tests and the integration tests, in one file; reported, not gated (ADR 0061). The
+			     agent sets the argLine property that Surefire and Failsafe pass to their forks. -->
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>${jacoco.version}</version>
+				<executions>
+					<execution>
+						<id>prepare-agent</id>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>report</id>
+						<phase>post-integration-test</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 			<!-- Fast tests (*Test) run in Surefire; tests that start Spring or containers (*IT) run in Failsafe. -->
 			<plugin>

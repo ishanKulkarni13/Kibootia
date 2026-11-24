@@ -2,7 +2,8 @@ name: CI
 
 on:
   pull_request:
-    # `labeled` so that adding the `e2e` label starts the end-to-end job.
+    # `labeled` so that adding the `e2e` label starts the end-to-end job. Only that job runs on a `labeled` event, and only
+    # for the `e2e` label (ADR 0061), so labelling a pull request does not rebuild everything.
     types: [opened, synchronize, reopened, labeled]
   push:
     branches: [main]
@@ -14,22 +15,29 @@ on:
 permissions:
   contents: read
 
+# A newer push to a pull request cancels the older run. A run on `main` is never cancelled: its result is the record that
+# the verification standard asks for.
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
+# Every action is pinned by the commit SHA of an upstream release, with the release in the comment; Renovate keeps the
+# pins current (renovate.json, helpers:pinGitHubActionDigests). Check a new pin with
+# `gh api repos/<owner>/<repo>/commits/<sha>`: a SHA that only exists in a fork is refused by that call.
 jobs:
   backend:
     name: Backend build and test
+    if: github.event.action != 'labeled'
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
           distribution: temurin
           java-version: "25"
           cache: maven
-      # Testcontainers starts MySQL on the runner's Docker daemon.
+      # Testcontainers starts MySQL on the runner's Docker daemon. JaCoCo records coverage on the way (reported, not gated).
       - name: Build and test
         working-directory: backend
         run: ./mvnw -B verify
@@ -42,19 +50,40 @@ jobs:
             echo "::error file=backend/openapi.json::The committed OpenAPI description is out of date. Run ./mvnw verify in backend/ and commit the result."
             exit 1
           fi
+      - name: Summarise the coverage
+        if: always()
+        run: |
+          csv=backend/target/site/jacoco/jacoco.csv
+          if [ -f "$csv" ]; then
+            awk -F, 'NR>1 { m+=$4; c+=$5; bm+=$6; bc+=$7 } END {
+              printf "### Backend coverage\n\nInstructions: %.1f%% (%d of %d)  \nBranches: %.1f%% (%d of %d)\n", 100*c/(m+c), c, m+c, 100*bc/(bm+bc), bc, bm+bc }' "$csv" >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Keep the coverage report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: backend-coverage
+          path: backend/target/site/jacoco
+          if-no-files-found: ignore
+          retention-days: 14
 
   frontend:
     name: Frontend lint, type check, test and build
+    if: github.event.action != 'labeled'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # The pnpm version comes from "packageManager" in the root package.json.
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v7
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "24"
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # Known vulnerabilities in the production dependencies of the workspace (ADR 0061). Clean when this was added.
+      - name: Audit the production dependencies
+        run: pnpm audit --prod
       # The client is generated from backend/openapi.json (ADR 0038). A change here means schema.gen.ts is stale: run
       # `pnpm --filter kibootia-frontend api:generate` and commit it.
       - name: Check the generated API client is up to date
@@ -69,8 +98,30 @@ jobs:
         run: pnpm --filter kibootia-frontend lint
       - name: Type check
         run: pnpm --filter kibootia-frontend typecheck
-      - name: Unit tests
-        run: pnpm --filter kibootia-frontend test
+      # Coverage is reported, not gated (ADR 0061).
+      - name: Unit tests with coverage
+        run: pnpm --filter kibootia-frontend test:coverage
+      - name: Summarise the coverage
+        if: always()
+        run: |
+          f=frontend/coverage/coverage-summary.json
+          if [ -f "$f" ]; then
+            # The ${...} in the node program below is JavaScript, not shell.
+            # shellcheck disable=SC2016
+            node -e '
+              const t = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")).total;
+              const line = (n, k) => `${n}: ${t[k].pct}% (${t[k].covered} of ${t[k].total})`;
+              console.log(["### Frontend coverage", "", line("Statements", "statements") + "  ", line("Branches", "branches")].join("\n"));
+            ' "$f" >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Keep the coverage report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: frontend-coverage
+          path: frontend/coverage
+          if-no-files-found: ignore
+          retention-days: 14
       - name: Build
         run: pnpm --filter kibootia-frontend build
 
@@ -81,8 +132,9 @@ jobs:
   # deletes code runs every backend test, which must still pass without it.
   module-removal:
     name: Without ${{ matrix.name }}
+    if: github.event.action != 'labeled'
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -111,14 +163,14 @@ jobs:
       KIBOOTIA_FILES_ENABLED: ${{ matrix.files }}
       KIBOOTIA_OBSERVABILITY_ENABLED: ${{ matrix.observability }}
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
           distribution: temurin
           java-version: "25"
           cache: maven
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v7
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "24"
           cache: pnpm
@@ -149,23 +201,45 @@ jobs:
 
   images:
     name: Build and scan container images
+    if: github.event.action != 'labeled'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Build the backend image
         run: docker build --tag kibootia-backend:ci backend
       - name: Build the frontend image
         run: docker build --file frontend/Dockerfile --tag kibootia-frontend:ci .
+      # A software bill of materials per image, in CycloneDX form, kept as a build artifact (ADR 0061). Made before the
+      # scans so that it exists even when a scan fails.
+      - name: List the contents of the backend image
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: kibootia-backend:ci
+          format: cyclonedx
+          output: sbom-backend.cdx.json
+      - name: List the contents of the frontend image
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: kibootia-frontend:ci
+          format: cyclonedx
+          output: sbom-frontend.cdx.json
+      - name: Keep the bills of materials
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: sbom
+          path: sbom-*.cdx.json
+          retention-days: 30
       # Fails on known HIGH or CRITICAL vulnerabilities that have a fix available (ADR 0047).
       - name: Scan the backend image
-        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: kibootia-backend:ci
           severity: HIGH,CRITICAL
           ignore-unfixed: true
           exit-code: "1"
       - name: Scan the frontend image
-        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: kibootia-frontend:ci
           severity: HIGH,CRITICAL
@@ -174,16 +248,18 @@ jobs:
 
   e2e:
     name: End-to-end sign-in test
-    # Nightly, on demand, and on pull requests labelled `e2e` (verification standard).
+    # Nightly, on demand, and on pull requests labelled `e2e` (verification standard). On a `labeled` event it runs only
+    # when the label just added is `e2e`.
     if: >-
       github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'e2e'))
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'e2e') &&
+      (github.event.action != 'labeled' || github.event.label.name == 'e2e'))
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "24"
           cache: pnpm
@@ -201,7 +277,7 @@ jobs:
         run: docker compose --profile "*" logs --no-color --tail 200
       - name: Keep the Playwright report after a failure
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: playwright-report
           path: frontend/playwright-report
@@ -211,23 +287,80 @@ jobs:
   # The shipped guardrail policy (ADR 0066) compiles and passes its own tests, with the OPA version Compose runs.
   policy:
     name: Guardrail policy tests
+    if: github.event.action != 'labeled'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Check and test the policy
         run: docker run --rm -v "$PWD/infra/opa:/policies:ro" openpolicyagent/opa:1.22.2 test -v /policies
 
+  # The documentation is part of the product (ADR 0060): relative links resolve, and the ADR index agrees with each ADR.
+  docs:
+    name: Documentation check
+    if: github.event.action != 'labeled'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+      - run: node scripts/check-docs.mjs
+
+  # The files that are not application code (ADR 0061): the OpenTofu realm, the Compose file and the Dockerfiles. The
+  # OpenTofu and hadolint versions are the ones Compose and the images already use.
+  infra:
+    name: Infrastructure files
+    if: github.event.action != 'labeled'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Check the OpenTofu formatting
+        run: docker run --rm -v "$PWD/infra/keycloak:/work:ro" -w /work ghcr.io/opentofu/opentofu:1.13.9 fmt -check -recursive -diff
+      - name: Validate the realm configuration
+        run: |
+          docker run --rm --entrypoint sh -v "$PWD/infra/keycloak:/work:ro" ghcr.io/opentofu/opentofu:1.13.9 -c \
+            'cp -r /work /tmp/w && cd /tmp/w/overlays/local && tofu init -backend=false -input=false >/dev/null && tofu validate'
+      # Compose rejects the whole file when a required variable is missing, so the generated .env is needed.
+      - name: Validate the Compose file with every profile
+        run: |
+          node scripts/bootstrap.mjs
+          docker compose --profile "*" config --quiet
+      - name: Lint the Dockerfiles
+        run: |
+          for f in backend/Dockerfile frontend/Dockerfile; do
+            echo "== $f"
+            docker run --rm -i hadolint/hadolint@sha256:32dac94127fd60b7b7e3fbfc65e1383b9b5e25c9bfd7b8536de7a539fe68a12d hadolint --failure-threshold warning - < "$f"
+          done
+
+  # Known vulnerabilities in what a pull request adds, and its licences (ADR 0061). The dependency graph is on for a
+  # public repository.
+  dependency-review:
+    name: Dependency review
+    if: github.event_name == 'pull_request' && github.event.action != 'labeled'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/dependency-review-action@bbc44d14a204704ccc493733616cd1e93a0321ec # v5.0.1
+        with:
+          fail-on-severity: high
+          comment-summary-in-pr: never
+
   secret-scan:
     name: Secret scan
+    if: github.event.action != 'labeled'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
       pull-requests: read
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@v2
+      - uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
