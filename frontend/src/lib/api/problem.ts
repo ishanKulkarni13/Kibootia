@@ -49,6 +49,7 @@ export function fieldErrors(problem: Problem | undefined): Record<string, FieldE
  */
 const MESSAGES: Record<string, string> = {
   "platform.unauthenticated": "Your session has ended. Sign in again.",
+  "bff.unauthenticated": "Your session has ended. Sign in again.",
   "platform.forbidden": "You are not allowed to do that.",
   "platform.not_found": "That could not be found.",
   "platform.validation_failed": "Some of the information is not valid.",
