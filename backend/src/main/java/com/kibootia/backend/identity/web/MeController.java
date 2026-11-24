@@ -63,11 +63,18 @@ class MeController {
 		}
 	}
 
+	private static java.util.Map<String, List<String>> reaches(MyProfile me) {
+		java.util.Map<String, List<String>> reaches = new java.util.TreeMap<>();
+		me.reaches().forEach((action, held) -> reaches.put(action,
+				held.stream().map(com.kibootia.backend.platform.authorization.Reach::code).toList()));
+		return reaches;
+	}
+
 	static MeResponse toResponse(MyProfile me) {
 		UserProfile profile = me.profile();
 		return new MeResponse(profile.id(), profile.username(), profile.email(), me.emailVerified(),
 				profile.displayName(), profile.status().name(), profile.theme().name(),
-				me.permissions().stream().sorted().toList(),
+				me.permissions().stream().sorted().toList(), reaches(me),
 				UserRoleResponse.of(me.roles()), profile.avatarFileId(), me.avatarsEnabled(), me.filesEnabled());
 	}
 

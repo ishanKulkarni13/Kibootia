@@ -70,8 +70,6 @@ class AuthorizationIT {
 
 	static final String UPDATE = "probe.items.update";
 
-	static final String UPDATE_ANY = "probe.items.update-any";
-
 	static final String PURGE = "probe.items.purge";
 
 	record Item(UUID id, UUID ownerId, UUID tenantId) implements Resource {
@@ -92,10 +90,14 @@ class AuthorizationIT {
 
 		@Override
 		public List<Permission> permissions() {
-			return List.of(Permission.forEveryUser(READ, "Read items"),
-					Permission.forEveryUser(UPDATE, "Change own items"),
-					Permission.restricted(UPDATE_ANY, "Change anyone's items"),
-					Permission.restricted(PURGE, "Purge items").asSensitive());
+			return List.of(Permission.onCollection(READ, "Read items").forEveryUser(),
+					Permission.onRecord(UPDATE, ITEM, "Change items").forEveryUser(Reach.owner()),
+					Permission.onCollection(PURGE, "Purge items").asSensitive());
+		}
+
+		@Override
+		public List<ResourceType> resourceTypes() {
+			return List.of(ResourceType.of(ITEM, "An item", ResourceRef.OWNER));
 		}
 
 	}
@@ -275,12 +277,12 @@ class AuthorizationIT {
 	}
 
 	@Test
-	@DisplayName("a list is limited to the caller's own records without the -any permission")
+	@DisplayName("a list is limited to the caller's own records with a grant reaching only their own")
 	void listFilter() {
 		signInAs(ALICE);
 		assertThat(inTenant(service::filterOfUpdates)).isEqualTo(AccessFilter.relatedTo(ResourceRef.OWNER, ALICE));
 		assertThatThrownBy(() -> inTenant(service::filterOfPurges)).isInstanceOf(AccessDeniedException.class);
-		GrantedPermissions.grant(UPDATE_ANY);
+		GrantedPermissions.grant(UPDATE);
 		assertThat(inTenant(service::filterOfUpdates)).isEqualTo(AccessFilter.EVERYTHING);
 	}
 
@@ -388,17 +390,17 @@ class AuthorizationIT {
 	void decisionsCarryReasons() {
 		signInAs(ALICE);
 		assertThat(inTenant(() -> authorization.decide(UPDATE, new Item(ALICE, TenantContext.DEFAULT_TENANT))))
-			.isEqualTo(Decision.of(Reason.GRANTED, UPDATE));
+			.isEqualTo(Decision.of(Reason.GRANTED, UPDATE + "/relation:owner"));
 		assertThat(inTenant(() -> authorization.decide(UPDATE, new Item(BOB, TenantContext.DEFAULT_TENANT))))
-			.isEqualTo(Decision.of(Reason.OUT_OF_REACH, UPDATE));
+			.isEqualTo(Decision.of(Reason.OUT_OF_REACH, UPDATE + "/relation:owner"));
 		assertThat(inTenant(() -> authorization.decide(PURGE))).isEqualTo(Decision.of(Reason.NO_GRANT));
 	}
 
 	@Test
-	@DisplayName("a module rule narrows what grants allow, even for a holder of the -any permission")
+	@DisplayName("a module rule narrows what grants allow, even for a holder of a grant reaching every record")
 	void moduleRuleNarrows() {
 		signInAs(ALICE);
-		GrantedPermissions.grant(UPDATE_ANY);
+		GrantedPermissions.grant(UPDATE);
 		Item locked = new Item(LOCKED, ALICE, TenantContext.DEFAULT_TENANT);
 		assertThat(inTenant(() -> authorization.decide(UPDATE, locked)))
 			.isEqualTo(Decision.of(Reason.REFUSED_BY_RULE, "probe.locked-items"));

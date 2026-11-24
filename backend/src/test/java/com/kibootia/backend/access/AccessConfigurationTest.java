@@ -9,6 +9,8 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 
 import com.kibootia.backend.access.domain.PermissionSource;
 import com.kibootia.backend.platform.authorization.Permission;
+import com.kibootia.backend.platform.authorization.Reach;
+import com.kibootia.backend.platform.authorization.ResourceType;
 import com.kibootia.backend.platform.authorization.PermissionProvider;
 import com.kibootia.backend.platform.authorization.RequiresPermission;
 
@@ -20,7 +22,13 @@ class AccessConfigurationTest {
 
 		@Override
 		public List<Permission> permissions() {
-			return List.of(Permission.forEveryUser("probe.items.read", "Read items"));
+			return List.of(Permission.onCollection("probe.items.read", "Read items").forEveryUser(),
+					Permission.onRecord("probe.items.update", "probe.item", "Change items").forEveryUser(Reach.owner()));
+		}
+
+		@Override
+		public List<ResourceType> resourceTypes() {
+			return List.of(ResourceType.of("probe.item", "An item", "owner"));
 		}
 
 	}
@@ -29,6 +37,15 @@ class AccessConfigurationTest {
 
 		@RequiresPermission("probe.items.read")
 		public void read() {
+		}
+
+	}
+
+	/** An action on a record checked without the record: would pass for a holder of their own items only. */
+	static class RecordActionService {
+
+		@RequiresPermission("probe.items.update")
+		public void update() {
 		}
 
 	}
@@ -43,7 +60,7 @@ class AccessConfigurationTest {
 
 	private final ApplicationContextRunner runner = new ApplicationContextRunner()
 		.withBean(Declares.class)
-		.withBean(PermissionSource.class, () -> (caller) -> Set.of())
+		.withBean(PermissionSource.class, () -> (user) -> Set.of())
 		.withUserConfiguration(AccessConfiguration.class);
 
 	@Test
@@ -60,6 +77,57 @@ class AccessConfigurationTest {
 			assertThat(context.getStartupFailure()).hasStackTraceContaining("TypoService.read")
 				.hasStackTraceContaining("probe.items.raed");
 		});
+	}
+
+	@Test
+	@DisplayName("fails at startup when @RequiresPermission names an action on a record, which needs the record (ADR 0055)")
+	void failsOnRecordActionWithoutRecord() {
+		this.runner.withBean(RecordActionService.class).run((context) -> {
+			assertThat(context).hasFailed();
+			assertThat(context.getStartupFailure()).hasStackTraceContaining("RecordActionService.update")
+				.hasStackTraceContaining("action on a record");
+		});
+	}
+
+	@Test
+	@DisplayName("fails at startup when an action acts on a resource type nobody declares")
+	void failsOnUndeclaredResourceType() {
+		new ApplicationContextRunner()
+			.withBean(com.kibootia.backend.platform.authorization.PermissionProvider.class,
+					() -> () -> List.of(Permission.onRecord("probe.items.update", "probe.ghost", "Change items")))
+			.withBean(PermissionSource.class, () -> (user) -> Set.of())
+			.withUserConfiguration(AccessConfiguration.class)
+			.run((context) -> {
+				assertThat(context).hasFailed();
+				assertThat(context.getStartupFailure()).hasStackTraceContaining("probe.ghost");
+			});
+	}
+
+	@Test
+	@DisplayName("fails at startup when the user role is offered a reach the resource type does not have")
+	void failsOnUnavailableReach() {
+		new ApplicationContextRunner()
+			.withBean(com.kibootia.backend.platform.authorization.PermissionProvider.class,
+					() -> new com.kibootia.backend.platform.authorization.PermissionProvider() {
+
+						@Override
+						public List<Permission> permissions() {
+							return List.of(Permission.onRecord("probe.items.update", "probe.item", "Change items")
+								.forEveryUser(Reach.relation("reviewer")));
+						}
+
+						@Override
+						public List<ResourceType> resourceTypes() {
+							return List.of(ResourceType.of("probe.item", "An item", "owner"));
+						}
+
+					})
+			.withBean(PermissionSource.class, () -> (user) -> Set.of())
+			.withUserConfiguration(AccessConfiguration.class)
+			.run((context) -> {
+				assertThat(context).hasFailed();
+				assertThat(context.getStartupFailure()).hasStackTraceContaining("relation:reviewer");
+			});
 	}
 
 	@Test

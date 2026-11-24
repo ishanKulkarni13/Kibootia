@@ -19,6 +19,13 @@ public interface RoleAssignments {
 	/** Every permission the user holds through their roles; for the administrator role, every declared permission. */
 	Set<String> permissionsOf(UUID userId);
 
+	/**
+	 * What the user holds, action by action, with how far each reaches, widest first ({@code all}, or relations such as
+	 * {@code relation:owner}). An action a deny grant takes away is absent. For the screens, which hide what the user
+	 * cannot do; the decision point decides.
+	 */
+	java.util.Map<String, java.util.List<com.kibootia.backend.platform.authorization.Reach>> effectiveGrantsOf(UUID userId);
+
 	/** The user's roles, built-in ones first. */
 	List<RoleSummary> rolesOf(UUID userId);
 

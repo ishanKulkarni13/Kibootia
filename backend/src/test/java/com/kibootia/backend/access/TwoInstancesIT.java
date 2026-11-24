@@ -44,20 +44,25 @@ class TwoInstancesIT extends AdminApiTest {
 					"--spring.main.banner-mode=off")) {
 			PermissionSource other = second.getBean(PermissionSource.class);
 			Principal.User alice = new Principal.User(ALICE, TenantContext.DEFAULT_TENANT, true);
-			assertThat(other.permissionsOf(alice)).doesNotContain("access.roles.view");
+			assertThat(actions(other.grantsOf(alice))).doesNotContain("access.roles.view");
 
 			String viewers = createRole("Role viewers", "access.roles.view");
 			setRoles(ALICE, builtInRoleId("USER"), viewers);
-			assertThat(other.permissionsOf(alice)).as("granted").contains("access.roles.view");
+			assertThat(actions(other.grantsOf(alice))).as("granted").contains("access.roles.view");
 
 			setRoles(ALICE, builtInRoleId("USER"));
-			assertThat(other.permissionsOf(alice)).as("taken away").doesNotContain("access.roles.view");
+			assertThat(actions(other.grantsOf(alice))).as("taken away").doesNotContain("access.roles.view");
 
 			// An administrator's role, and a disabled user, are seen as quickly.
 			makeAdminThroughApi(ALICE);
-			assertThat(other.permissionsOf(alice)).as("administrator").contains("access.roles.manage", "audit.entries.view");
+			assertThat(actions(other.grantsOf(alice))).as("administrator").contains("access.roles.manage", "audit.entries.view");
 		}
 		get(user(ALICE), "/api/v1/roles").andExpect(status().isOk());
+	}
+
+	private static java.util.Set<String> actions(java.util.Set<com.kibootia.backend.platform.authorization.Grant> grants) {
+		return grants.stream().map(com.kibootia.backend.platform.authorization.Grant::action)
+			.collect(java.util.stream.Collectors.toSet());
 	}
 
 	private void makeAdminThroughApi(UUID user) throws Exception {

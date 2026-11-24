@@ -1,6 +1,7 @@
 package com.kibootia.backend.identity.web;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -20,6 +21,7 @@ public record MeResponse(
 		@Schema(requiredMode = REQUIRED, allowableValues = { "INVITED", "ACTIVE", "DISABLED" }) String status,
 		@Schema(requiredMode = REQUIRED, allowableValues = { "SYSTEM", "LIGHT", "DARK" }) String theme,
 		@Schema(requiredMode = REQUIRED) List<String> permissions,
+		@Schema(requiredMode = REQUIRED, description = "For each permission held, how far it reaches: all, or a relation such as relation:owner (my own records).") Map<String, List<String>> reaches,
 		@Schema(requiredMode = REQUIRED) List<UserRoleResponse> roles,
 			@Schema(nullable = true, description = "Changes whenever the avatar does; null when there is none. Use it to refresh a cached image.") UUID avatarVersion,
 			@Schema(requiredMode = REQUIRED, description = "False when the files module is switched off; then there are no avatars.") boolean avatarsEnabled,

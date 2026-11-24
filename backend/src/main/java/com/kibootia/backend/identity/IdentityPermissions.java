@@ -35,12 +35,12 @@ public class IdentityPermissions implements PermissionProvider {
 
 	@Override
 	public List<Permission> permissions() {
-		return List.of(Permission.restricted(VIEW_PROFILES, "See other users and their profiles"),
-				Permission.restricted(INVITE_USERS, "Invite users by email"),
-				Permission.restricted(DISABLE_USERS, "Disable and enable accounts"),
-				Permission.restricted(DELETE_USERS, "Delete accounts").asSensitive(),
-				Permission.restricted(RESTORE_USERS, "Restore deleted accounts"),
-				Permission.restricted(ERASE_USERS, "Erase deleted accounts for good").asSensitive());
+		return List.of(Permission.onCollection(VIEW_PROFILES, "See other users and their profiles"),
+				Permission.onCollection(INVITE_USERS, "Invite users by email"),
+				Permission.onCollection(DISABLE_USERS, "Disable and enable accounts"),
+				Permission.onCollection(DELETE_USERS, "Delete accounts").asSensitive(),
+				Permission.onCollection(RESTORE_USERS, "Restore deleted accounts"),
+				Permission.onCollection(ERASE_USERS, "Erase deleted accounts for good").asSensitive());
 	}
 
 }

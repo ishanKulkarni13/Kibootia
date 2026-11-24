@@ -51,10 +51,10 @@ class AccessApiIT extends AdminApiTest {
 		get(user(ALICE), "/api/v1/roles").andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value(FORBIDDEN));
 		get(user(ALICE), "/api/v1/roles/" + roleId).andExpect(status().isForbidden());
 		get(user(ALICE), "/api/v1/permissions").andExpect(status().isForbidden());
-		post(user(ALICE), "/api/v1/roles", "{\"name\":\"X\",\"description\":\"\",\"permissions\":[]}")
+		post(user(ALICE), "/api/v1/roles", "{\"name\":\"X\",\"description\":\"\",\"grants\":[]}")
 			.andExpect(status().isForbidden());
 		put(user(ALICE), "/api/v1/roles/" + roleId,
-				"{\"name\":\"X\",\"description\":\"\",\"permissions\":[],\"version\":0}")
+				"{\"name\":\"X\",\"description\":\"\",\"grants\":[],\"version\":0}")
 			.andExpect(status().isForbidden());
 		delete(user(ALICE), "/api/v1/roles/" + roleId).andExpect(status().isForbidden());
 		get(user(ALICE), "/api/v1/users/" + BOB + "/roles").andExpect(status().isForbidden());
@@ -87,10 +87,10 @@ class AccessApiIT extends AdminApiTest {
 
 		get(admin(), "/api/v1/roles/" + adminRole).andExpect(status().isOk())
 			.andExpect(jsonPath("$.builtIn").value("ADMIN"))
-			.andExpect(jsonPath("$.permissions", hasItems("access.roles.manage", "identity.users.invite",
+			.andExpect(jsonPath("$.grants[*].action", hasItems("access.roles.manage", "identity.users.invite",
 					"audit.entries.view", "widgets.widgets.restore")));
 		put(admin(), "/api/v1/roles/" + adminRole,
-				"{\"name\":\"Administrator\",\"description\":\"x\",\"permissions\":[],\"version\":0}")
+				"{\"name\":\"Administrator\",\"description\":\"x\",\"grants\":[],\"version\":0}")
 			.andExpect(status().isConflict())
 			.andExpect(jsonPath("$.code").value("access.role_protected"));
 		delete(admin(), "/api/v1/roles/" + adminRole).andExpect(status().isConflict())
@@ -105,20 +105,20 @@ class AccessApiIT extends AdminApiTest {
 
 		String current = get(admin(), "/api/v1/roles/" + userRole).andExpect(status().isOk())
 			.andExpect(jsonPath("$.builtIn").value("USER"))
-			.andExpect(jsonPath("$.permissions", hasItems("widgets.widgets.create", "widgets.widgets.view")))
-			.andExpect(jsonPath("$.permissions", not(hasItem("identity.profiles.view"))))
+			.andExpect(jsonPath("$.grants[*].action", hasItems("widgets.widgets.create", "widgets.widgets.view")))
+			.andExpect(jsonPath("$.grants[*].action", not(hasItem("identity.profiles.view"))))
 			.andReturn()
 			.getResponse()
 			.getContentAsString();
 		long version = ((Number) JsonPath.read(current, "$.version")).longValue();
 
-		put(admin(), "/api/v1/roles/" + userRole, "{\"name\":\"Everyone\",\"description\":\"x\",\"permissions\":[],\"version\":"
+		put(admin(), "/api/v1/roles/" + userRole, "{\"name\":\"Everyone\",\"description\":\"x\",\"grants\":[],\"version\":"
 				+ version + "}").andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("access.role_protected"));
 		put(admin(), "/api/v1/roles/" + userRole,
-				"{\"name\":\"User\",\"description\":\"Edited\",\"permissions\":[\"widgets.widgets.view\"],\"version\":" + version
+				"{\"name\":\"User\",\"description\":\"Edited\",\"grants\":[{\"action\":\"widgets.widgets.view\",\"reach\":\"relation:owner\"}],\"version\":" + version
 						+ "}")
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.permissions", containsInAnyOrder("widgets.widgets.view")));
+			.andExpect(jsonPath("$.grants[*].action", containsInAnyOrder("widgets.widgets.view")));
 		delete(admin(), "/api/v1/roles/" + userRole).andExpect(status().isConflict())
 			.andExpect(jsonPath("$.code").value("access.role_protected"));
 
@@ -135,7 +135,7 @@ class AccessApiIT extends AdminApiTest {
 		ensureAdmin();
 
 		String created = post(admin(), "/api/v1/roles",
-				"{\"name\":\"Editors\",\"description\":\"Edit widgets\",\"permissions\":[\"widgets.widgets.view-any\"]}")
+				"{\"name\":\"Editors\",\"description\":\"Edit widgets\",\"grants\":[{\"action\":\"widgets.widgets.view\",\"reach\":\"all\"}]}")
 			.andExpect(status().isCreated())
 			.andExpect(header().string("Location", org.hamcrest.Matchers.startsWith("/api/v1/roles/")))
 			.andExpect(jsonPath("$.name").value("Editors"))
@@ -147,23 +147,24 @@ class AccessApiIT extends AdminApiTest {
 			.getContentAsString();
 		String id = JsonPath.read(created, "$.id");
 
-		post(admin(), "/api/v1/roles", "{\"name\":\"Editors\",\"description\":\"\",\"permissions\":[]}")
+		post(admin(), "/api/v1/roles", "{\"name\":\"Editors\",\"description\":\"\",\"grants\":[]}")
 			.andExpect(status().isConflict())
 			.andExpect(jsonPath("$.code").value("access.role_name_in_use"));
-		post(admin(), "/api/v1/roles", "{\"name\":\"a@b\",\"description\":\"\",\"permissions\":[]}")
+		post(admin(), "/api/v1/roles", "{\"name\":\"a@b\",\"description\":\"\",\"grants\":[]}")
 			.andExpect(status().isBadRequest())
 			.andExpect(jsonPath("$.errors[0].field").value("name"));
-		post(admin(), "/api/v1/roles", "{\"name\":\"Other\",\"description\":\"\",\"permissions\":[\"widgets.widgets.typo\"]}")
+		post(admin(), "/api/v1/roles", "{\"name\":\"Other\",\"description\":\"\",\"grants\":[{\"action\":\"widgets.widgets.typo\",\"reach\":\"all\"}]}")
 			.andExpect(status().isBadRequest())
 			.andExpect(jsonPath("$.errors[0].code").value("unknown_permission"));
 
 		put(admin(), "/api/v1/roles/" + id,
-				"{\"name\":\"Editors\",\"description\":\"Edit widgets\",\"permissions\":[\"widgets.widgets.view-any\",\"widgets.widgets.update-any\"],\"version\":0}")
+				"{\"name\":\"Editors\",\"description\":\"Edit widgets\",\"grants\":[{\"action\":\"widgets.widgets.view\",\"reach\":\"all\"},{\"action\":\"widgets.widgets.update\",\"reach\":\"all\"}],\"version\":0}")
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.version").value(1))
-			.andExpect(jsonPath("$.permissions", containsInAnyOrder("widgets.widgets.view-any", "widgets.widgets.update-any")));
+			.andExpect(jsonPath("$.grants[*].action", containsInAnyOrder("widgets.widgets.view", "widgets.widgets.update")))
+			.andExpect(jsonPath("$.grants[*].reach", containsInAnyOrder("all", "all")));
 		put(admin(), "/api/v1/roles/" + id,
-				"{\"name\":\"Editors\",\"description\":\"Stale\",\"permissions\":[],\"version\":0}")
+				"{\"name\":\"Editors\",\"description\":\"Stale\",\"grants\":[],\"version\":0}")
 			.andExpect(status().isConflict())
 			.andExpect(jsonPath("$.code").value("platform.concurrent_modification"));
 
@@ -181,8 +182,8 @@ class AccessApiIT extends AdminApiTest {
 	@DisplayName("a deleted role is purged with what it allowed once the retention period has passed, and not before")
 	void deletedRolesArePurged() throws Exception {
 		ensureAdmin();
-		String recent = createRole("Recently deleted", "widgets.widgets.view-any");
-		String old = createRole("Long deleted", "widgets.widgets.view-any", "widgets.widgets.update-any");
+		String recent = createRole("Recently deleted", "widgets.widgets.view");
+		String old = createRole("Long deleted", "widgets.widgets.view", "widgets.widgets.update");
 		delete(admin(), "/api/v1/roles/" + recent).andExpect(status().isNoContent());
 		delete(admin(), "/api/v1/roles/" + old).andExpect(status().isNoContent());
 		this.jdbc.update("update role set deleted_at = date_sub(utc_timestamp(6), interval 40 day) where id = unhex(?)",
@@ -191,9 +192,9 @@ class AccessApiIT extends AdminApiTest {
 		this.retention.runOnce();
 
 		assertThat(count("select count(*) from role where id = unhex(?)", old.replace("-", ""))).isZero();
-		assertThat(count("select count(*) from role_permission where role_id = unhex(?)", old.replace("-", ""))).isZero();
+		assertThat(count("select count(*) from role_grant where role_id = unhex(?)", old.replace("-", ""))).isZero();
 		assertThat(count("select count(*) from role where id = unhex(?)", recent.replace("-", ""))).isEqualTo(1);
-		assertThat(count("select count(*) from role_permission where role_id = unhex(?)", recent.replace("-", "")))
+		assertThat(count("select count(*) from role_grant where role_id = unhex(?)", recent.replace("-", "")))
 			.isEqualTo(1);
 		assertThat(count("select count(*) from audit_entry where action = 'access.role.deleted'")).as("the log stays")
 			.isEqualTo(2);
@@ -203,10 +204,10 @@ class AccessApiIT extends AdminApiTest {
 	@DisplayName("changing only what a role allows still advances its version, so a stale editor is refused")
 	void permissionOnlyChangeAdvancesTheVersion() throws Exception {
 		ensureAdmin();
-		String id = createRole("Viewers", "widgets.widgets.view-any");
+		String id = createRole("Viewers", "widgets.widgets.view");
 
 		put(admin(), "/api/v1/roles/" + id,
-				"{\"name\":\"Viewers\",\"description\":\"Test role\",\"permissions\":[],\"version\":0}")
+				"{\"name\":\"Viewers\",\"description\":\"Test role\",\"grants\":[],\"version\":0}")
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.version").value(1));
 	}
@@ -233,10 +234,10 @@ class AccessApiIT extends AdminApiTest {
 		setRoles(ALICE, builtInRoleId("USER"), manager);
 
 		post(user(ALICE), "/api/v1/roles",
-				"{\"name\":\"Inviters\",\"description\":\"\",\"permissions\":[\"identity.users.invite\"]}")
+				"{\"name\":\"Inviters\",\"description\":\"\",\"grants\":[{\"action\":\"identity.users.invite\",\"reach\":\"all\"}]}")
 			.andExpect(status().isForbidden());
 		post(user(ALICE), "/api/v1/roles",
-				"{\"name\":\"Viewers\",\"description\":\"\",\"permissions\":[\"access.roles.view\"]}")
+				"{\"name\":\"Viewers\",\"description\":\"\",\"grants\":[{\"action\":\"access.roles.view\",\"reach\":\"all\"}]}")
 			.andExpect(status().isCreated());
 		assertThat(count("select count(*) from role where name = 'Inviters'")).isZero();
 	}
@@ -439,7 +440,7 @@ class AccessApiIT extends AdminApiTest {
 		get(user(ALICE), "/api/v1/roles").andExpect(status().isOk());
 
 		put(admin(), "/api/v1/roles/" + viewers,
-				"{\"name\":\"Role viewers\",\"description\":\"Test role\",\"permissions\":[],\"version\":0}")
+				"{\"name\":\"Role viewers\",\"description\":\"Test role\",\"grants\":[],\"version\":0}")
 			.andExpect(status().isOk());
 
 		get(user(ALICE), "/api/v1/roles").andExpect(status().isForbidden());

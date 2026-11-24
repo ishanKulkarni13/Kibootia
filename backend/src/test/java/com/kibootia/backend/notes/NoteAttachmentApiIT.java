@@ -282,7 +282,7 @@ class NoteAttachmentApiIT extends AdminApiTest {
 	void viewersCannotChange() throws Exception {
 		String[] note = new String[1];
 		attachedNoteOf(ALICE, note);
-		grant(BOB, "Viewers", "notes.notes.view-any");
+		grant(BOB, "Viewers", "notes.notes.view");
 
 		get(user(BOB), "/api/v1/notes/" + note[0] + "/attachment").andExpect(status().isOk());
 		attach(user(BOB), note[0]).andExpect(status().isForbidden());
@@ -294,7 +294,7 @@ class NoteAttachmentApiIT extends AdminApiTest {
 	@DisplayName("someone who may change anyone's notes can attach a picture, and the file belongs to the note's owner")
 	void editorsAttachForTheOwner() throws Exception {
 		String note = noteOf(ALICE);
-		grant(BOB, "Editors", "notes.notes.view-any", "notes.notes.update-any");
+		grant(BOB, "Editors", "notes.notes.view", "notes.notes.update");
 
 		attach(user(BOB), note).andExpect(status().isOk());
 

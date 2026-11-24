@@ -2,6 +2,7 @@ package com.kibootia.backend.access.web;
 
 import java.util.Set;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -12,6 +13,6 @@ import jakarta.validation.constraints.Size;
  * since, the update is refused with 409 instead of overwriting the other change.
  */
 public record UpdateRoleRequest(@NotBlank @Size(max = 80) String name, @NotNull @Size(max = 255) String description,
-		@NotNull Set<@NotBlank @Size(max = 100) String> permissions, @NotNull @PositiveOrZero Long version) {
+		@NotNull @Size(max = 500) Set<@NotNull @Valid GrantBody> grants, @NotNull @PositiveOrZero Long version) {
 
 }

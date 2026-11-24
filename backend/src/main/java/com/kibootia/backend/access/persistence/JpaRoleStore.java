@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -28,18 +29,20 @@ import org.springframework.stereotype.Repository;
 
 import com.kibootia.backend.access.application.Role;
 import com.kibootia.backend.access.application.RoleStore;
+import com.kibootia.backend.platform.authorization.Grant;
+import com.kibootia.backend.platform.authorization.Reach;
 import com.kibootia.backend.platform.persistence.UuidBytes;
 import com.kibootia.backend.platform.tenancy.TenantContext;
 
 /**
- * Keeps roles in MySQL. A role is a JPA entity, with the conventions of every business table. What it allows and who
- * holds it are rows in link tables, written with SQL that names the tenant itself (ADR 0028): there is nothing in them
+ * Keeps roles in MySQL. A role is a JPA entity, with the conventions of every business table. Its grants (ADR 0054) and
+ * who holds it are rows in link tables, written with SQL that names the tenant itself (ADR 0028): there is nothing in them
  * worth a version or a soft delete, and the audit log is their history (ADR 0050).
  */
 @Repository
 class JpaRoleStore implements RoleStore {
 
-	private static final String ADMIN_DESCRIPTION = "Holds every permission. Cannot be edited or deleted.";
+	private static final String ADMIN_DESCRIPTION = "Holds every permission, for every record. Cannot be edited or deleted.";
 
 	private static final String USER_DESCRIPTION = "Given to everyone who signs in.";
 
@@ -59,10 +62,10 @@ class JpaRoleStore implements RoleStore {
 	}
 
 	@Override
-	public Role insert(String name, String description, Set<String> permissions) {
+	public Role insert(String name, String description, Set<Grant> grants) {
 		RoleEntity entity = this.roles.saveAndFlush(new RoleEntity(name, description, null));
-		insertPermissions(entity.getId(), permissions);
-		return toRole(entity, permissions, 0);
+		insertGrants(entity.getId(), grants);
+		return toRole(entity, grants, 0);
 	}
 
 	@Override
@@ -95,7 +98,7 @@ class JpaRoleStore implements RoleStore {
 	}
 
 	@Override
-	public Role update(UUID id, long expectedVersion, String name, String description, Set<String> permissions) {
+	public Role update(UUID id, long expectedVersion, String name, String description, Set<Grant> grants) {
 		RoleEntity entity = this.roles.findById(id).orElseThrow();
 		if (entity.getVersion() != expectedVersion) {
 			throw new ObjectOptimisticLockingFailureException(RoleEntity.class, id);
@@ -109,7 +112,7 @@ class JpaRoleStore implements RoleStore {
 			// new version; an optimistic force-increment would only do it at commit.
 			this.entityManager.lock(entity, LockModeType.PESSIMISTIC_FORCE_INCREMENT);
 		}
-		replacePermissions(id, permissions);
+		replaceGrants(id, grants);
 		return toRoles(List.of(entity)).get(0);
 	}
 
@@ -123,6 +126,8 @@ class JpaRoleStore implements RoleStore {
 	public int purgeDeletedBefore(java.time.Instant cutoff) {
 		this.entityManager.flush();
 		this.entityManager.clear();
+		// role_grant rows go with the role (ON DELETE CASCADE); rows a legacy installation still has in role_permission
+		// do not, so they are removed first.
 		this.jdbc.sql("""
 				delete rp from role_permission rp join role r on r.id = rp.role_id and r.tenant_id = rp.tenant_id
 				where r.tenant_id = :tenant and r.deleted_at is not null and r.deleted_at < :cutoff
@@ -138,24 +143,62 @@ class JpaRoleStore implements RoleStore {
 	}
 
 	@Override
-	public void ensureBuiltInRoles(Set<String> userRolePermissions) {
-		this.roles.findByBuiltIn(Role.BuiltIn.ADMIN)
+	public void ensureBuiltInRoles(Set<Grant> administrator, Set<Grant> userRole) {
+		RoleEntity admin = this.roles.findByBuiltIn(Role.BuiltIn.ADMIN)
 			.orElseGet(() -> this.roles.save(new RoleEntity("Administrator", ADMIN_DESCRIPTION, Role.BuiltIn.ADMIN)));
 		RoleEntity user = this.roles.findByBuiltIn(Role.BuiltIn.USER)
 			.orElseGet(() -> this.roles.save(new RoleEntity("User", USER_DESCRIPTION, Role.BuiltIn.USER)));
 		this.roles.flush();
-		for (String permission : userRolePermissions) {
-			// The seed row records that the user role has been offered this permission. Only the first offer adds it, so
-			// an administrator who takes it off is not overruled at the next start.
+		// The administrator role is not editable, so it is simply kept complete: an action a module adds later is granted
+		// to it at the next start, and administrators do not lose access to new features (milestone 8, section 8).
+		insertGrants(admin.getId(), administrator);
+		for (Grant grant : userRole) {
+			// The seed row records that the user role has been offered this action. Only the first offer adds it, so an
+			// administrator who takes it off, or narrows its reach, is not overruled at the next start.
 			int offered = this.jdbc
 				.sql("insert ignore into role_permission_seed (tenant_id, permission) values (:tenant, :permission)")
 				.param("tenant", tenant())
-				.param("permission", permission)
+				.param("permission", grant.action())
 				.update();
 			if (offered == 1) {
-				insertPermissions(user.getId(), Set.of(permission));
+				insertGrants(user.getId(), Set.of(grant));
 			}
 		}
+	}
+
+	@Override
+	public int convertLegacyPermissions(java.util.function.Function<String, Optional<Grant>> conversion) {
+		// Every tenant at once: this is a data migration, so each statement names the tenant of the row it moves.
+		record Legacy(byte[] tenant, byte[] role, String permission) {
+		}
+		// sql: every tenant, a data migration: each statement below names the tenant of the row it moves (rule 14)
+		List<Legacy> rows = this.jdbc.sql("select tenant_id, role_id, permission from role_permission")
+			.query((rs, row) -> new Legacy(rs.getBytes("tenant_id"), rs.getBytes("role_id"), rs.getString("permission")))
+			.list();
+		int converted = 0;
+		for (Legacy row : rows) {
+			Optional<Grant> grant = conversion.apply(row.permission());
+			if (grant.isEmpty()) {
+				continue;
+			}
+			this.jdbc.sql("""
+					insert ignore into role_grant (tenant_id, role_id, action, reach, effect)
+					values (:tenant, :role, :action, :reach, :effect)
+					""")
+				.param("tenant", row.tenant())
+				.param("role", row.role())
+				.param("action", grant.get().action())
+				.param("reach", grant.get().reach().code())
+				.param("effect", grant.get().effect().name())
+				.update();
+			this.jdbc.sql("delete from role_permission where tenant_id = :tenant and role_id = :role and permission = :permission")
+				.param("tenant", row.tenant())
+				.param("role", row.role())
+				.param("permission", row.permission())
+				.update();
+			converted++;
+		}
+		return converted;
 	}
 
 	@Override
@@ -240,13 +283,13 @@ class JpaRoleStore implements RoleStore {
 			return List.of();
 		}
 		List<byte[]> ids = entities.stream().map((entity) -> UuidBytes.toBytes(entity.getId())).toList();
-		Map<UUID, Set<String>> permissions = new HashMap<>();
+		Map<UUID, Set<Grant>> grants = new HashMap<>();
 		this.jdbc
-			.sql("select role_id, permission from role_permission where tenant_id = :tenant and role_id in (:ids)")
+			.sql("select role_id, action, reach, effect from role_grant where tenant_id = :tenant and role_id in (:ids)")
 			.param("tenant", tenant())
 			.param("ids", ids)
 			.query((rs, row) -> {
-				permissions.computeIfAbsent(uuid(rs, "role_id"), (key) -> new TreeSet<>()).add(rs.getString("permission"));
+				grants.computeIfAbsent(uuid(rs, "role_id"), (key) -> new TreeSet<>(GRANT_ORDER)).add(grant(rs));
 				return null;
 			})
 			.list();
@@ -264,52 +307,69 @@ class JpaRoleStore implements RoleStore {
 			.list();
 		List<Role> roles = new ArrayList<>();
 		for (RoleEntity entity : entities) {
-			roles.add(toRole(entity, permissions.getOrDefault(entity.getId(), Set.of()),
+			roles.add(toRole(entity, grants.getOrDefault(entity.getId(), Set.of()),
 					holders.getOrDefault(entity.getId(), 0)));
 		}
 		return roles;
 	}
 
-	private static Role toRole(RoleEntity entity, Set<String> permissions, int assignedUsers) {
+	private static Role toRole(RoleEntity entity, Set<Grant> grants, int assignedUsers) {
+		Set<Grant> ordered = new TreeSet<>(GRANT_ORDER);
+		ordered.addAll(grants);
 		return new Role(entity.getId(), entity.getVersion(), entity.getName(), entity.getDescription(),
-				entity.getBuiltIn(), Set.copyOf(permissions), assignedUsers, entity.getCreatedAt(),
+				entity.getBuiltIn(), java.util.Collections.unmodifiableSet(ordered), assignedUsers, entity.getCreatedAt(),
 				entity.getUpdatedAt());
 	}
 
-	private void insertPermissions(UUID roleId, Set<String> permissions) {
-		for (String permission : permissions) {
+	/** Grants in a stable order: by action, then reach, then effect, so responses and audit entries do not jump about. */
+	static final Comparator<Grant> GRANT_ORDER = Comparator.comparing(Grant::action)
+		.thenComparing((grant) -> grant.reach().code())
+		.thenComparing(Grant::effect);
+
+	private static Grant grant(ResultSet rs) throws SQLException {
+		return new Grant(rs.getString("action"), Reach.parse(rs.getString("reach")),
+				Grant.Effect.valueOf(rs.getString("effect")));
+	}
+
+	private void insertGrants(UUID roleId, Set<Grant> grants) {
+		for (Grant grant : grants) {
 			this.jdbc.sql("""
-					insert ignore into role_permission (tenant_id, role_id, permission)
-					values (:tenant, :role, :permission)
+					insert ignore into role_grant (tenant_id, role_id, action, reach, effect)
+					values (:tenant, :role, :action, :reach, :effect)
 					""")
 				.param("tenant", tenant())
 				.param("role", UuidBytes.toBytes(roleId))
-				.param("permission", permission)
+				.param("action", grant.action())
+				.param("reach", grant.reach().code())
+				.param("effect", grant.effect().name())
 				.update();
 		}
 	}
 
-	private void replacePermissions(UUID roleId, Set<String> permissions) {
-		Set<String> current = new TreeSet<>(this.jdbc
-			.sql("select permission from role_permission where tenant_id = :tenant and role_id = :role")
+	private void replaceGrants(UUID roleId, Set<Grant> grants) {
+		Set<Grant> current = new LinkedHashSet<>(this.jdbc
+			.sql("select action, reach, effect from role_grant where tenant_id = :tenant and role_id = :role")
 			.param("tenant", tenant())
 			.param("role", UuidBytes.toBytes(roleId))
-			.query((rs, row) -> rs.getString("permission"))
+			.query((rs, row) -> grant(rs))
 			.list());
-		for (String permission : current) {
-			if (!permissions.contains(permission)) {
+		for (Grant grant : current) {
+			if (!grants.contains(grant)) {
 				this.jdbc.sql("""
-						delete from role_permission where tenant_id = :tenant and role_id = :role and permission = :permission
+						delete from role_grant
+						where tenant_id = :tenant and role_id = :role and action = :action and reach = :reach and effect = :effect
 						""")
 					.param("tenant", tenant())
 					.param("role", UuidBytes.toBytes(roleId))
-					.param("permission", permission)
+					.param("action", grant.action())
+					.param("reach", grant.reach().code())
+					.param("effect", grant.effect().name())
 					.update();
 			}
 		}
-		Set<String> added = new TreeSet<>(permissions);
+		Set<Grant> added = new LinkedHashSet<>(grants);
 		added.removeAll(current);
-		insertPermissions(roleId, added);
+		insertGrants(roleId, added);
 	}
 
 	private static byte[] tenant() {

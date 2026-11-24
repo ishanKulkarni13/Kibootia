@@ -1,9 +1,9 @@
 package com.kibootia.backend.access.application;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
@@ -17,7 +17,8 @@ import com.kibootia.backend.access.domain.PermissionRegistry;
 import com.kibootia.backend.audit.AuditEntry;
 import com.kibootia.backend.audit.AuditLog;
 import com.kibootia.backend.platform.authorization.Authorization;
-import com.kibootia.backend.platform.authorization.Permission;
+import com.kibootia.backend.platform.authorization.Grant;
+import com.kibootia.backend.platform.authorization.NoAuthorization;
 import com.kibootia.backend.platform.authorization.RequiresPermission;
 import com.kibootia.backend.platform.errors.ApiException;
 import com.kibootia.backend.platform.errors.ApiFieldError;
@@ -26,9 +27,9 @@ import com.kibootia.backend.platform.ratelimit.RateLimitCategory;
 import com.kibootia.backend.platform.ratelimit.RateLimiter;
 
 /**
- * The use cases for roles (ADR 0025, ADR 0044). Every change is audited in its own transaction, and two rules stop role
- * editing from becoming a way to escalate privilege: an editor can only give a role permissions they hold themselves,
- * and the administrator role cannot be edited at all.
+ * The use cases for roles (ADR 0025, ADR 0044, ADR 0054). A role is a set of grants. Every change is audited in its own
+ * transaction, and two rules stop role editing from becoming a way to escalate privilege: an editor can only give a role
+ * grants they hold themselves, at least as far as they reach, and the administrator role cannot be edited at all.
  */
 @Service
 public class RoleService {
@@ -57,31 +58,43 @@ public class RoleService {
 
 	private final RateLimiter rateLimiter;
 
+	private final AccessProperties properties;
+
 	RoleService(RoleStore roles, PermissionRegistry registry, Authorization authorization, AuditLog auditLog,
-			RateLimiter rateLimiter) {
+			RateLimiter rateLimiter, AccessProperties properties) {
 		this.roles = roles;
 		this.registry = registry;
 		this.authorization = authorization;
 		this.auditLog = auditLog;
 		this.rateLimiter = rateLimiter;
+		this.properties = properties;
 	}
 
-	/** Every permission the modules declare, for the role editor. */
+	/** Every action the modules declare, with the reaches a grant of it can have, for the role editor. */
 	@RequiresPermission(AccessPermissions.VIEW_ROLES)
-	public List<Permission> permissions() {
-		return List.copyOf(this.registry.all());
+	public List<GrantableAction> permissions() {
+		return this.registry.all()
+			.stream()
+			.map((permission) -> new GrantableAction(permission, this.registry.reachesOf(permission.name())))
+			.toList();
+	}
+
+	/** Whether the role editor may offer deny grants (ADR 0054, rule 5). */
+	@NoAuthorization("a setting of the application, the same for everyone")
+	public boolean denyGrantsEnabled() {
+		return this.properties.denyGrantsEnabled();
 	}
 
 	@Transactional(readOnly = true)
 	@RequiresPermission(AccessPermissions.VIEW_ROLES)
 	public Page<Role> list(Pageable pageable) {
-		return this.roles.list(pageable).map(this::withEffectivePermissions);
+		return this.roles.list(pageable);
 	}
 
 	@Transactional(readOnly = true)
 	@RequiresPermission(AccessPermissions.VIEW_ROLES)
 	public Role get(UUID id) {
-		return withEffectivePermissions(this.roles.find(id).orElseThrow(RoleService::notFound));
+		return this.roles.find(id).orElseThrow(RoleService::notFound);
 	}
 
 	@Transactional
@@ -89,15 +102,15 @@ public class RoleService {
 	public Role create(NewRole role) {
 		this.rateLimiter.acquire(RateLimitCategory.ADMIN_ACTIONS);
 		String name = validName(role.name());
-		Set<String> permissions = validPermissions(role.permissions());
-		requireGrantable(permissions);
+		Set<Grant> grants = validGrants(role.grants(), Set.of());
+		Grantable.requireHeld(this.authorization, grants);
 		if (this.roles.nameInUse(name, null)) {
 			throw nameInUse();
 		}
-		Role created = this.roles.insert(name, role.description().strip(), permissions);
+		Role created = this.roles.insert(name, role.description().strip(), grants);
 		this.auditLog.record(AuditEntry.of("access.role.created", "role", created.id())
 			.withChange("roleName", name)
-			.withChange("permissions", summarise(permissions, Set.of())));
+			.withChange("grants", summarise(grants, Set.of())));
 		return created;
 	}
 
@@ -107,23 +120,23 @@ public class RoleService {
 		this.rateLimiter.acquire(RateLimitCategory.ADMIN_ACTIONS);
 		Role current = this.roles.find(id).orElseThrow(RoleService::notFound);
 		if (current.builtIn() == Role.BuiltIn.ADMIN) {
-			throw protectedRole("The administrator role holds every permission and cannot be edited.");
+			throw protectedRole("The administrator role holds every permission, for every record, and cannot be edited.");
 		}
 		String name = validName(changes.name());
 		if (current.builtIn() == Role.BuiltIn.USER && !name.equals(current.name())) {
 			throw protectedRole("The user role cannot be renamed.");
 		}
-		Set<String> permissions = validPermissions(changes.permissions());
-		Set<String> added = difference(permissions, current.permissions());
-		Set<String> removed = difference(current.permissions(), permissions);
-		requireGrantable(added);
+		Set<Grant> grants = validGrants(changes.grants(), current.grants());
+		Set<Grant> added = difference(grants, current.grants());
+		Set<Grant> removed = difference(current.grants(), grants);
+		Grantable.requireHeld(this.authorization, added);
 		if (!name.equals(current.name()) && this.roles.nameInUse(name, id)) {
 			throw nameInUse();
 		}
-		Role updated = this.roles.update(id, changes.expectedVersion(), name, changes.description().strip(), permissions);
+		Role updated = this.roles.update(id, changes.expectedVersion(), name, changes.description().strip(), grants);
 		AuditEntry entry = AuditEntry.of("access.role.updated", "role", id).withChange("roleName", name);
 		if (!added.isEmpty() || !removed.isEmpty()) {
-			entry = entry.withChange("permissions", summarise(added, removed));
+			entry = entry.withChange("grants", summarise(added, removed));
 		}
 		this.auditLog.record(entry);
 		return updated;
@@ -144,24 +157,6 @@ public class RoleService {
 		this.auditLog.record(AuditEntry.of("access.role.deleted", "role", id).withChange("roleName", role.name()));
 	}
 
-	/** The administrator role holds every declared permission without rows of its own, so the editor shows them all. */
-	private Role withEffectivePermissions(Role role) {
-		if (role.builtIn() != Role.BuiltIn.ADMIN) {
-			return role;
-		}
-		Set<String> all = new TreeSet<>();
-		this.registry.all().forEach((permission) -> all.add(permission.name()));
-		return new Role(role.id(), role.version(), role.name(), role.description(), role.builtIn(), all,
-				role.assignedUsers(), role.createdAt(), role.updatedAt());
-	}
-
-	/** A role can only be given what its editor holds, or editing roles would be a way to gain permissions. */
-	private void requireGrantable(Set<String> permissions) {
-		for (String permission : permissions) {
-			this.authorization.require(permission);
-		}
-	}
-
 	private String validName(String name) {
 		String stripped = (name == null) ? "" : name.strip();
 		if (!NAME.matcher(stripped).matches()) {
@@ -172,39 +167,51 @@ public class RoleService {
 		return stripped;
 	}
 
-	private Set<String> validPermissions(Set<String> requested) {
-		Set<String> permissions = new TreeSet<>();
+	/**
+	 * The grants as asked for, each checked against the declarations: a declared action, a reach its resource type
+	 * offers, and a deny only while deny grants are switched on. A deny the role already has may stay when they are off,
+	 * because taking it away would widen access as a side effect of an unrelated edit.
+	 */
+	private Set<Grant> validGrants(Set<Grant> requested, Set<Grant> existing) {
+		Set<Grant> grants = new LinkedHashSet<>();
 		List<ApiFieldError> errors = new ArrayList<>();
-		for (String name : (requested == null) ? Set.<String>of() : requested) {
-			if (this.registry.isRegistered(name)) {
-				permissions.add(name);
+		for (Grant grant : (requested == null) ? Set.<Grant>of() : requested) {
+			if (!this.registry.isRegistered(grant.action())) {
+				errors.add(new ApiFieldError("grants", "unknown_permission", "'" + grant.action() + "' is not a permission"));
+			}
+			else if (!this.registry.isValid(grant)) {
+				errors.add(new ApiFieldError("grants", "invalid_reach",
+						"'" + grant.action() + "' cannot be granted with the reach '" + grant.reach().code() + "'"));
+			}
+			else if (!grant.allows() && !this.properties.denyGrantsEnabled() && !existing.contains(grant)) {
+				errors.add(new ApiFieldError("grants", "deny_grants_disabled", "Deny grants are switched off"));
 			}
 			else {
-				errors.add(new ApiFieldError("permissions", "unknown_permission", "'" + name + "' is not a permission"));
+				grants.add(grant);
 			}
 		}
 		if (!errors.isEmpty()) {
 			throw ApiException.invalid(ProblemCodes.VALIDATION_FAILED, "The request contains invalid fields.", errors);
 		}
-		return permissions;
+		return grants;
 	}
 
-	private static Set<String> difference(Set<String> from, Set<String> minus) {
-		Set<String> result = new TreeSet<>(from);
+	private static Set<Grant> difference(Set<Grant> from, Set<Grant> minus) {
+		Set<Grant> result = new LinkedHashSet<>(from);
 		result.removeAll(minus);
 		return result;
 	}
 
-	/** {@code +a,+b,-c}, or a count when that would not fit in an audit value. */
-	static String summarise(Set<String> added, Set<String> removed) {
+	/** {@code +a/all,+b/relation:owner,-c/all}, or a count when that would not fit in an audit value. */
+	static String summarise(Set<Grant> added, Set<Grant> removed) {
 		List<String> parts = new ArrayList<>();
-		added.forEach((name) -> parts.add("+" + name));
-		removed.forEach((name) -> parts.add("-" + name));
+		added.stream().map(Grant::describe).sorted().forEach((text) -> parts.add("+" + text));
+		removed.stream().map(Grant::describe).sorted().forEach((text) -> parts.add("-" + text));
 		String text = String.join(",", parts);
 		if (text.length() <= AUDIT_VALUE_LIMIT) {
 			return text.isEmpty() ? "none" : text;
 		}
-		return "+" + added.size() + " -" + removed.size() + " permissions";
+		return "+" + added.size() + " -" + removed.size() + " grants";
 	}
 
 	private static ApiException notFound() {
