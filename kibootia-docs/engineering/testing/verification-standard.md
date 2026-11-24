@@ -37,8 +37,10 @@ A milestone is complete when each of its criteria is verified under this rule. C
 Owner decisions of 2026-10-28. The jobs exist and run (backend, frontend, module removal, images and scan, secret scan, end-to-end on a label or nightly); what they do not yet check is listed in [ADR 0061](../../decisions/0061-ci-quality-and-supply-chain-gates.md).
 
 - **Platform:** GitHub Actions.
-- **On every pull request:** backend build with unit, ArchUnit and Testcontainers integration tests (including migrate-from-empty, tenant isolation and soft-delete filtering); frontend lint, type check and unit tests; the module-removal job ([ADR 0024](../../decisions/0024-package-modules-with-infrastructure-toggles.md)); secret scanning.
-- **Images:** built and scanned for known vulnerabilities.
+- **On every pull request:** backend build with unit, ArchUnit and Testcontainers integration tests (including migrate-from-empty, tenant isolation and soft-delete filtering); frontend lint, type check, unit tests and a production-dependency audit; the module-removal job ([ADR 0024](../../decisions/0024-package-modules-with-infrastructure-toggles.md)); the documentation check (links and the decision index); the infrastructure check (OpenTofu format and validation, Compose configuration, Dockerfile lint); dependency review of what the pull request adds; CodeQL; secret scanning.
+- **Coverage:** JaCoCo (backend) and Vitest (frontend) report on every run and are kept as build artifacts. They are reported, not gated; a floor for new and changed code is set after two milestones of data ([ADR 0061](../../decisions/0061-ci-quality-and-supply-chain-gates.md)).
+- **Images:** built and scanned for known vulnerabilities, with a CycloneDX bill of materials kept per image. Signing waits for the first release.
+- **Pipeline rules:** every action is pinned by the commit SHA of an upstream release; every job has a timeout; a run on `main` is never cancelled; adding a label other than `e2e` runs nothing.
 - **Dependencies:** automated grouped update pull requests, with security updates first ([ADR 0035](../../decisions/0035-version-adoption-policy.md)).
 - **End-to-end tests:** nightly, before release tags, and on pull requests labelled `e2e`.
 - **Workflow:** trunk-based, with short-lived branches and pull requests into `main`. Commit messages follow Conventional Commits, which generates the changelog. Releases are SemVer tags ([ADR 0023](../../decisions/0023-template-fork-adoption-model.md)).

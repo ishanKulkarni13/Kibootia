@@ -74,7 +74,7 @@ Accepted does not mean implemented: see [implementation status](../product/roadm
 | 0058 | No external call inside a database transaction | platform | draft | 2026-11-24 | [0058](0058-no-external-call-inside-a-database-transaction.md) |
 | 0059 | Data integrity in the database | platform | draft | 2026-11-24 | [0059](0059-data-integrity-in-the-database.md) |
 | 0060 | Implementation status in one place | platform | accepted | 2026-11-24 | [0060](0060-implementation-status-in-one-place.md) |
-| 0061 | CI quality and supply-chain gates | platform | draft | 2026-11-24 | [0061](0061-ci-quality-and-supply-chain-gates.md) |
+| 0061 | CI quality and supply-chain gates | platform | accepted | 2026-11-24 | [0061](0061-ci-quality-and-supply-chain-gates.md) |
 | 0062 | Reassess the application database before multi-tenancy | platform | draft | 2026-11-24 | [0062](0062-reassess-the-application-database-before-multi-tenancy.md) |
 | 0063 | BFF and edge hardening | platform | draft | 2026-11-24 | [0063](0063-bff-and-edge-hardening.md) |
 | 0064 | Milestone 7 implementation decisions | platform | accepted | 2026-11-24 | [0064](0064-milestone-7-implementation-decisions.md) |

@@ -145,6 +145,17 @@ The Level column was added on 2026-11-09.
 | Shipped guardrail policy with its own tests; OPA in the Compose profile `policy` | ADR 0066 | none | verified (`opa test infra/opa`, 4 tests; CI run 45385703846, 2026-11-24; local run first) |
 | Every read of the audit log leaves a decision record naming the reader (finding S10, in part) | [ADR 0064](../../decisions/0064-milestone-7-implementation-decisions.md) (sensitive permissions) | none | verified (`AuditViewerIT.readingIsRecorded`, with a negative control; CI run 45385703846, 2026-11-24; local run first) |
 
+## Capabilities added on branch `m-5-1-ci` (2026-11-25)
+
+| Capability | Decision | Milestone | Level |
+|---|---|---|---|
+| Coverage reports: JaCoCo for the backend (instructions and branches in the run summary) and Vitest for the frontend (68% of statements on 2026-11-25), kept as artifacts, no threshold | [ADR 0061](../../decisions/0061-ci-quality-and-supply-chain-gates.md) item 1 | 5.1 | observed (local run 2026-11-25: `DefaultDecisionPointTest` covers 435 of 444 instructions of its class; frontend 207 tests; CI run pending) |
+| CodeQL for Java and TypeScript; dependency review on pull requests; `pnpm audit --prod` | ADR 0061 items 2 and 3 | 5.1 | observed (workflows written and linted with actionlint; CI run pending) |
+| A CycloneDX bill of materials per image; every action pinned by upstream commit SHA (the Trivy pin that was not an upstream commit is replaced); job timeouts; no cancelling on `main`; a label other than `e2e` runs nothing | ADR 0061 items 4, 5 and 6 | 5.1 | observed (actionlint; CI run pending) |
+| Infrastructure checks: `tofu fmt -check` and `validate`, `docker compose config` with every profile, hadolint | ADR 0061 item 7 | 5.1 | observed (each run locally on 2026-11-25; one formatting fix in `infra/keycloak/base/main.tf`; CI run pending) |
+| Documentation check: relative links resolve and the decision index agrees with each ADR (`scripts/check-docs.mjs`, shown to fire on a broken link and on a wrong status) | [ADR 0060](../../decisions/0060-implementation-status-in-one-place.md), ADR 0061 | 5.1 | observed (local run 2026-11-25: 203 files, 66 decision records; CI run pending) |
+| Spring Java Format | ADR 0061 item 8 | 5.1 | not adopted: 285 files fail it because the code is written to about 120 columns (recorded in ADR 0061) |
+
 ## Deviations the owner has called out
 
 - Reference feature: a backend-only `notes` module ([ADR 0049](../../decisions/0049-milestone-2-implementation-decisions.md)); completed in milestone 5 with a picture, screens, a copy guide and removal recipes.
