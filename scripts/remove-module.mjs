@@ -62,6 +62,22 @@ const MODULES = {
   },
 };
 
+// The Open Policy Agent guardrail (ADR 0066) is a removable module of its own: a package that nothing else uses, its
+// settings, and its tests. Nothing in the frontend or the database belongs to it.
+MODULES.policy = {
+  directories: [
+    "backend/src/main/java/com/kibootia/backend/policy",
+    "backend/src/test/java/com/kibootia/backend/policy",
+    "backend/src/test/resources/opa",
+  ],
+  prefixed: [],
+  removals: [],
+  tagged: ["backend/src/main/resources/application.properties"],
+  leftovers: ["com.kibootia.backend.policy", "kibootia.policy."],
+  scan: ["backend/src", "frontend/src", "frontend/tests"],
+  allowed: {},
+};
+
 const args = process.argv.slice(2);
 const dryRun = args.includes("--dry-run");
 const name = args.find((arg) => !arg.startsWith("--"));

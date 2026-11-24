@@ -106,7 +106,7 @@ class ArchitectureTest {
 		ArchRule rule = noClasses().that().resideInAPackage(ROOT + ".platform..")
 				.should().dependOnClassesThat().resideInAnyPackage(
 						ROOT + ".identity..", ROOT + ".access..", ROOT + ".audit..",
-						ROOT + ".files..", ROOT + ".notes..");
+						ROOT + ".files..", ROOT + ".notes..", ROOT + ".policy..");
 		rule.check(classes);
 	}
 

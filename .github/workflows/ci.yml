@@ -157,8 +157,13 @@ jobs:
             files: "true"
             observability: "false"
             tests: startup
-          - name: notes, files and observability (all)
-            remove: notes
+          - name: policy (removed)
+            remove: policy
+            files: "true"
+            observability: "true"
+            tests: all
+          - name: notes, policy, files and observability (all)
+            remove: notes policy
             files: "false"
             observability: "false"
             tests: startup
@@ -178,9 +183,14 @@ jobs:
           node-version: "24"
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Remove the module
+      - name: Remove the module or modules
         if: matrix.remove != ''
-        run: node scripts/remove-module.mjs "${{ matrix.remove }}"
+        env:
+          MODULES: ${{ matrix.remove }}
+        run: |
+          for module in $MODULES; do
+            node scripts/remove-module.mjs "$module"
+          done
       # Testcontainers starts MySQL on the runner's Docker daemon. The build rewrites backend/openapi.json, which is
       # expected to change in the rows that remove a module, so it is not compared here.
       - name: Build and test the backend
