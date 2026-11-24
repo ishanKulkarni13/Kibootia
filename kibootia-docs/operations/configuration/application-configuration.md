@@ -95,6 +95,12 @@ Names only.
 | `spring.servlet.multipart.max-file-size`, `.max-request-size`, `server.tomcat.max-swallow-size` | Backend | `6MB`, `7MB`, `16MB`: above the 5 MB limit so the module can answer with a clear message, and Tomcat reads on through a refused upload so the client receives the 413 instead of a reset | No |
 | `COMPOSE_PROFILES` | Compose | New environments start with `observability,files`. An existing `.env` keeps its value: add `files` by hand to start RustFS | No |
 
+## Settings added by milestone 8 (observed, branch `m-8`)
+
+| Setting | Read by | Default and notes | Secret |
+|---|---|---|---|
+| `kibootia.access.deny-grants-enabled` (`KIBOOTIA_ACCESS_DENY_GRANTS_ENABLED`) | Backend | `false`. With `true`, roles may be given deny grants ([recipe](../../recipes/enable-deny-grants.md)). Switching it off stops new ones and keeps applying existing ones | No |
+
 ## Naming (owner decision of 2026-11-08)
 
 - Kibootia's own settings are named `kibootia.<module>.<setting>` and bound to typed configuration classes with validation. A missing or invalid required setting stops startup with a message naming the setting.
