@@ -123,6 +123,18 @@ The Level column was added on 2026-11-09.
 | The request gate is required at startup (closes S11) | ADR 0064 | 7 | verified (every integration test starts with it; CI run 45354823982) |
 | Administration sections guarded one by one; an ended session sends the user to sign in (closes S13) | ADR 0064 | 7 | verified (`admin-frame.test.tsx`, `session-expiry.test.ts`, 204 unit tests; CI run 45354823982) |
 
+## Capabilities added on branch `m-8` (2026-11-24)
+
+| Capability | Decision | Milestone | Level |
+|---|---|---|---|
+| Declared actions (on the collection or on a record) and resource types with relations; startup refuses undeclared types, unavailable reaches and `@RequiresPermission` on an action on a record | [ADR 0065](../../decisions/0065-milestone-8-implementation-decisions.md) (draft) | [8](milestone-8-grant-model.md) | observed (`AccessConfigurationTest`, `DefaultDecisionPointTest`; branch `m-8`, local run 2026-11-24, CI pending) |
+| Roles as grants with a reach (`all`, `relation:owner`); the `-any` permissions removed; the administrator an explicit role kept complete at startup | ADR 0065 | 8 | observed (`GrantsApiIT`, `BuiltInRolesIT`, `AccessApiIT`, `NotesApiIT`; branch `m-8`, local run 2026-11-24, CI pending) |
+| Conversion of stored version-1 permissions into grants at startup, with every decision and list filter equal before and after | ADR 0065 | 8 | observed (`LegacyGrantEquivalenceTest`: 128 sets of stored names, every action and kind of record; `BuiltInRolesIT`; branch `m-8`, local run 2026-11-24, CI pending) |
+| Deny grants behind `kibootia.access.deny-grants-enabled`, off by default; a deny decides over every allow | ADR 0065 | 8 | observed (`DenyGrantsIT`, `DefaultDecisionPointTest`; branch `m-8`, local run 2026-11-24, CI pending) |
+| "Only what you hold" covers reach, for role editing and role assignment | ADR 0065 | 8 | observed (`GrantsApiIT`; branch `m-8`, local run 2026-11-24, CI pending) |
+| `/me` reports the reach of each held action; the role editor chooses a reach per grant and keeps deny grants | ADR 0065 | 8 | observed (`GrantsApiIT`, `role-editor.test.tsx`; branch `m-8`, local run 2026-11-24, CI pending) |
+| Architecture rule 14: hand-written SQL names the tenant (closes S7 for the code as it is) | ADR 0065 | 8 | observed (`TenantSqlRulesTest`, with a negative control; branch `m-8`, local run 2026-11-24, CI pending) |
+
 ## Deviations the owner has called out
 
 - Reference feature: a backend-only `notes` module ([ADR 0049](../../decisions/0049-milestone-2-implementation-decisions.md)); completed in milestone 5 with a picture, screens, a copy guide and removal recipes.

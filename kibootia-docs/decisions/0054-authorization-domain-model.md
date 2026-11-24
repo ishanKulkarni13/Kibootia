@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-11
 
-> **Implementation:** planned. Today's model is permissions in code, roles in the database and a role assignment per user ([authorization](../architecture/identity/authorization.md)).
+> **Implementation:** grants with a reach (`all`, `relation:owner`), deny grants behind a switch, declared resource types and actions, the explicit administrator and rule 7 ("only what you hold", including reach) are observed on branch `m-8` (local run, 2026-11-24; CI run pending), with the choices made while building in draft [ADR 0065](0065-milestone-8-implementation-decisions.md). Scope nodes, relationships beyond `owner`, groups, conditions and assignment validity are later milestones.
 
 ## Context
 

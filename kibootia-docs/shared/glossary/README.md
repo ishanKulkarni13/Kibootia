@@ -12,20 +12,23 @@
 |---|---|
 | [adapter](adapter.md) | Infrastructure code that implements a port |
 | [application-module](application-module.md) | A sub-package of the root package with a public contract and private internals |
-| [authorization-scope](authorization-scope.md) | ALL, OWN or NONE: which records a caller may see or change |
+| [authorization-scope](authorization-scope.md) | The access filter: which records a caller may see or change |
 | [backend-for-frontend](backend-for-frontend.md) | The Next.js server that signs users in and holds their tokens |
 | [capability-tier](capability-tier.md) | Core, default-on, optional, recipe or future |
 | [definition-of-done](definition-of-done.md) | The checks a feature must pass before it counts as complete |
 | [feature](feature.md) | A unit of application behavior owned by one part of the backend |
+| [grant](grant.md) | One entry of a role: an action, a reach and allow or deny |
 | [hexagonal-architecture](hexagonal-architecture.md) | Application logic depends on ports, not on infrastructure |
 | [modular-monolith](modular-monolith.md) | One deployable application with enforced internal modules |
 | [platform-package](platform-package.md) | Narrow shared package for genuinely cross-cutting capability |
 | [policy-decision-point](policy-decision-point.md) | The single place that decides whether an action is allowed |
 | [port](port.md) | An application-owned interface for a needed capability |
 | [problem-details](problem-details.md) | The standard JSON error shape, with Kibootia extensions |
+| [reach](reach.md) | How far a grant goes: every record, or records by a relation such as owner |
 | [realm-role](realm-role.md) | A Keycloak role defined at realm level |
 | [recipe](recipe.md) | A guide for integrating an optional technology |
 | [resource-server](resource-server.md) | A backend that validates bearer access tokens |
+| [resource-type](resource-type.md) | A kind of record a module protects, with the relations it can carry |
 | [soft-delete](soft-delete.md) | Marking a record deleted, restorable until a retention purge |
 | [tenant](tenant.md) | One customer organization served by an application |
 | [transactional-outbox](transactional-outbox.md) | Events saved in the same transaction as the change, delivered afterwards |

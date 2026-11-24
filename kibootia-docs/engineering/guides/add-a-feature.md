@@ -26,7 +26,7 @@ A feature module is **default-on and removable** ([ADR 0024](../../decisions/002
 
 ### 2. Permissions and who may do what
 
-Declare permissions in a `PermissionProvider` bean (`NotesPermissions`). Name them `<module>.<resource>.<action>`. For a resource owned by a user, pair each action with an `-any` sibling: `notes.notes.update` means "my own", `notes.notes.update-any` means "anyone's". Mark the ones every user should have with `Permission.forEveryUser`; the rest are granted through roles. An action with no sibling (restore, purge) is administrative and means "all".
+Declare actions and resource types in a `PermissionProvider` bean (`NotesPermissions`, [ADR 0065](../../decisions/0065-milestone-8-implementation-decisions.md)). Name actions `<module>.<resource>.<action>` and types `<module>.<resource>`. For records owned by a user, declare the type with the `owner` relation (`ResourceType.of(NOTE, "A note", ResourceRef.OWNER)`) and the actions on those records with `Permission.onRecord(VIEW, NOTE, ...)`: a role can then grant each either for every record or for the holder's own. Actions decided without a record (create, restore, purge, anything administrative) are `Permission.onCollection(...)`. Offer an action to every user with `.forEveryUser()`, or `.forEveryUser(Reach.owner())` for their own records only; the rest are granted through roles.
 
 In the use cases (`NoteService`):
 

@@ -4,9 +4,9 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-11
+- **Last updated:** 2026-11-24
 
-> **Implementation:** planned. Nothing of this milestone exists.
+> **Implementation:** observed on branch `m-8` (local run, 2026-11-24; CI run pending), built on the owner's instruction of 2026-11-24 while ADRs 0053 to 0055 await acceptance. Decisions made while building, including why the conversion runs at startup rather than in the migration, are in draft [ADR 0065](../../decisions/0065-milestone-8-implementation-decisions.md). The tenant-less SQL check of section 4 is architecture rule 14 (`TenantSqlRulesTest`). Not built: the migration that drops `role_permission`, which comes after every installation has started once.
 
 The second phase of the [authorization roadmap](authorization-roadmap.md). Decisions: draft [ADR 0054](../../decisions/0054-authorization-domain-model.md) and [ADR 0055](../../decisions/0055-authorization-decision-contract.md) (point 5).
 

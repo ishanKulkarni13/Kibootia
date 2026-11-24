@@ -15,5 +15,6 @@ Task-oriented guides for things a fork does on purpose: remove or switch off wha
 | [remove-notes.md](remove-notes.md) | Deletes the example feature, its table, screens and permissions with one script | `module-removal`, row "notes (removed)" |
 | [disable-files.md](disable-files.md) | Starts the application with the object storage module off | `module-removal`, row "files (switched off)" |
 | [disable-observability.md](disable-observability.md) | Starts the application with telemetry export off | `module-removal`, row "observability (switched off)" |
+| [enable-deny-grants.md](enable-deny-grants.md) | Lets roles take an action away whatever other roles give | `DenyGrantsIT` in the backend job |
 
 The row "notes, files and observability (all)" runs the three together.
