@@ -25,8 +25,9 @@ test.describe.configure({ mode: "serial" });
 const STAMP = Date.now().toString(36);
 const title = (name: string) => `${name} ${STAMP}`;
 // A word that only this attempt's paging notes contain: a retry starts a new worker with a new STAMP, so the notes of a
-// failed attempt are not counted again.
-const PAGING = `Paging${STAMP}`;
+// failed attempt are not counted again. It is STAMP reversed, so it does not contain STAMP: a search for STAMP (the
+// administrator's view of everyone's notes) must not find these 21 and push the story's notes onto a second page.
+const PAGING = `Paging${[...STAMP].reverse().join("")}`;
 
 let userContext: BrowserContext;
 let user: Page;
@@ -302,12 +303,16 @@ test("an administrator sees everyone's notes, deletes the user's note and restor
 });
 
 test("the story leaves nothing behind that would show in the next run", async () => {
-  const listed = await api(user, "GET", `/api/v1/notes?q=${STAMP}&size=100`);
-  expect(listed.status).toBe(200);
-  for (const note of (listed.json!.items as { id: string }[])) {
-    expect((await api(user, "DELETE", `/api/v1/notes/${note.id}`)).status).toBe(204);
+  for (const word of [STAMP, PAGING]) {
+    const listed = await api(user, "GET", `/api/v1/notes?q=${word}&size=100`);
+    expect(listed.status).toBe(200);
+    for (const note of (listed.json!.items as { id: string }[])) {
+      expect((await api(user, "DELETE", `/api/v1/notes/${note.id}`)).status).toBe(204);
+    }
   }
   expect((await api(admin, "DELETE", `/api/v1/notes/${adminNoteId}`)).status).toBe(204);
-  const after = await api(user, "GET", `/api/v1/notes?q=${STAMP}`);
-  expect(after.json).toMatchObject({ items: [] });
+  for (const word of [STAMP, PAGING]) {
+    const after = await api(user, "GET", `/api/v1/notes?q=${word}`);
+    expect(after.json).toMatchObject({ items: [] });
+  }
 });
