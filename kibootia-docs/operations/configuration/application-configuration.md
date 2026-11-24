@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-10
+- **Last updated:** 2026-11-25
 
 > **Implementation:** partly observed. No secret is in version control, `.env.example` and `pnpm bootstrap` exist, and a missing required setting stops startup with a message naming it. Typed `kibootia.*` configuration classes and the production "no development defaults" guard do not exist yet. No CI run yet.
 
@@ -43,7 +43,7 @@ Names only. Defaults are local-development values; production values come from t
 | `KEYCLOAK_WEB_CLIENT_SECRET` | Compose, OpenTofu, Next.js | Generated; secret of the `kibootia-web` client | Yes |
 | `KEYCLOAK_ADMIN_CLIENT_SECRET` | Compose, OpenTofu, backend | Generated; secret of the `kibootia-admin` service-account client (the backend uses it from milestone 3) | Yes |
 | `DEMO_USER_PASSWORD` | Compose, OpenTofu, Playwright | Generated; password of the local `demo` user. Local overlay only | Yes |
-| `SESSION_SECRET` | Next.js | Generated; at least 32 characters; the session cookie key is derived from it | Yes |
+| `SESSION_SECRET` | Next.js | Generated; at least 32 characters; the session cookie key is derived from it. A list separated by commas, newest first, to rotate ([ADR 0063](../../decisions/0063-bff-and-edge-hardening.md)) | Yes |
 | `COMPOSE_PROFILES` | Compose | `observability`; remove it to leave out the Grafana LGTM container | No |
 | `kibootia.security.issuer` (`KIBOOTIA_SECURITY_ISSUER`) | Backend | The public Keycloak realm URL; the exact `iss` of tokens | No |
 | `kibootia.security.jwk-set-uri` (`KIBOOTIA_SECURITY_JWK_SET_URI`) | Backend | Where signing keys are fetched; internal in the `apps` profile | No |
@@ -51,15 +51,19 @@ Names only. Defaults are local-development values; production values come from t
 | `management.server.port` | Backend | 8090, bound to loopback; health only | No |
 | `kibootia.observability.enabled` (`KIBOOTIA_OBSERVABILITY_ENABLED`) | Backend, Next.js | `true`; `false` stops the OTLP export (trace IDs are still created and logged) ([recipe](../../recipes/disable-observability.md)) | No |
 | `management.opentelemetry.tracing.export.otlp.endpoint` | Backend | The local LGTM traces endpoint | No |
-| `PUBLIC_BASE_URL` | Next.js | `http://localhost:3470`; the web app's public origin, used for redirect URIs and the CSRF Origin check | No |
-| `KEYCLOAK_ISSUER` | Next.js | Public realm URL; browsers are sent here | No |
+| `PUBLIC_BASE_URL` | Next.js | `http://localhost:3470`; the web app's public origin, used for redirect URIs and the CSRF Origin check; `https` turns on `Secure` and `__Host-` cookies and HSTS | No (required in production) |
+| `KEYCLOAK_ISSUER` | Next.js | Public realm URL; browsers are sent here | No (required in production) |
 | `KEYCLOAK_INTERNAL_ISSUER` | Next.js | Realm URL for the server's own token and key requests; defaults to `KEYCLOAK_ISSUER` | No |
 | `KEYCLOAK_WEB_CLIENT_ID` | Next.js | `kibootia-web` | No |
-| `API_BASE_URL` | Next.js | `http://localhost:8080`; the fixed upstream of the `/api` proxy | No |
+| `API_BASE_URL` | Next.js | `http://localhost:8080`; the fixed upstream of the `/api` proxy | No (required in production) |
+| `API_PROXY_TIMEOUT_MS`, `API_PROXY_UPLOAD_TIMEOUT_MS` | Next.js | `30000`, `120000`; how long the `/api` proxy waits for the API, and for an upload; then 504 | No |
+| `API_PROXY_MAX_BODY_BYTES` | Next.js | `6291456` (6 MiB); the largest request body the proxy passes on; then 413 | No |
+| `TRUSTED_PROXY_HOPS` | Next.js | `0`; how many proxies in front of the server are trusted to append the client's address to `X-Forwarded-For`. With 0 no address is passed on | No |
+| `CSP_MODE` | Next.js | `report-only`; `enforce` makes the browser block what the Content-Security-Policy forbids, `off` sends no policy | No |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | Next.js | `http://localhost:4318` (set by `pnpm dev`) | No |
 | `LOG_LEVEL` | Next.js | `info` | No |
 
-The Next.js server fails a request with a message naming the setting when `SESSION_SECRET` or `KEYCLOAK_WEB_CLIENT_SECRET` is missing (unit-tested).
+The Next.js server fails a request with a message naming the setting when `SESSION_SECRET` or `KEYCLOAK_WEB_CLIENT_SECRET` is missing (unit-tested). With `NODE_ENV=production` it also refuses to start without `PUBLIC_BASE_URL`, `KEYCLOAK_ISSUER` and `API_BASE_URL`: nothing falls back to localhost in production ([ADR 0063](../../decisions/0063-bff-and-edge-hardening.md), unit-tested).
 
 ## Settings added by milestone 3 (verified, CI run 42780048416)
 

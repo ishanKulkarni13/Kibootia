@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-10
+- **Last updated:** 2026-11-25
 
 > **Implementation:** verified (CI run 42780048416, 2026-11-10). Keycloak 26.8.2 on PostgreSQL 17.11 runs in `compose.yaml`; OpenTofu applies the realm (`infra/keycloak`); the Next.js server signs a user in with Authorization Code and PKCE, refreshes the session (on demand as well, through `/auth/refresh`) and signs out; Playwright tests against the real Keycloak cover sign-in, self-registration with email verification and invitations. Registration, email-verification enforcement and invitations are milestone 3; the administration client's audience scope is described below.
 
@@ -32,7 +32,7 @@ The backend calls the Admin API with the `kibootia-admin` service-account client
 
 ## How the session is built
 
-- **Format.** The session is one encrypted token (JWE, `A256GCM`, a key derived with HKDF from `SESSION_SECRET`) holding the access, refresh and ID tokens and their expiry times. It is split into cookies named `kibootia_session.<n>` of at most 3,600 bytes each, at most eight, so about 28 KB. All are `HttpOnly` and `SameSite=Lax`; `Secure` is set when `PUBLIC_BASE_URL` is `https`. There is one key and no rotation: changing `SESSION_SECRET` signs everyone out.
+- **Format.** The session is one encrypted token (JWE, `A256GCM`, a key derived with HKDF from `SESSION_SECRET`) holding the access, refresh and ID tokens and their expiry times. It is split into cookies named `kibootia_session.<n>` of at most 3,600 bytes each, at most eight, so about 28 KB. All are `HttpOnly` and `SameSite=Lax`; `Secure` is set when `PUBLIC_BASE_URL` is `https`, and then the names also carry the `__Host-` prefix, which makes the browser refuse a cookie of that name unless it is Secure, from this host and without a Domain ([ADR 0063](../../decisions/0063-bff-and-edge-hardening.md)). `SESSION_SECRET` is a list of keys separated by commas, newest first: the first seals, every one opens, and the token's header names the key that sealed it, so a rotation signs no one out. To rotate, put the new key in front of the old one, restart, and remove the old one after ten hours, the longest a session lasts.
 - **Lifetime.** The session ends at most ten hours after sign-in, however often it is refreshed. The ID token is kept in the cookie so that sign-out needs no confirmation page.
 - **Refresh.** A session is refreshed 30 seconds before its access token expires, once at a time per refresh token within one Next.js process, in the middleware for pages (`proxy.ts`) and in the API proxy. A failed refresh clears the cookies and forces sign-in. `POST /auth/refresh` forces a refresh, which the unverified-email notice uses.
 - **Sign-out** is initiated by the application (front-channel). It clears the cookies and sends the browser to Keycloak's end-session address with the ID token as a hint. There is no back-channel logout, so a session ended in Keycloak reaches the cookie only at the next refresh.

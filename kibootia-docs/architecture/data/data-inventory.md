@@ -17,8 +17,8 @@ Where every piece of data lives, who owns it, how long it stays and how it is re
 | MySQL 8.4, schema `kibootia` (volume `kibootia_mysql_data`) | Every table below | The module named per table | Yes | None |
 | PostgreSQL 17 (volume `kibootia_keycloak_db_data`) | Keycloak's realm, users, credentials, sessions | Keycloak. Kibootia never reads it | Yes | None |
 | S3-compatible store, RustFS locally (volume `kibootia_rustfs_data`) | File bytes, key `<tenant>/<category>/<file id>/<rendition>` | `files` | Yes | None |
-| Browser cookies `kibootia_session.0` to `.7` (chunks of 3,600 bytes) | Encrypted access, refresh and ID tokens, expiry times | The Next.js server (sealed with `SESSION_SECRET`) | Until sign-out or 10 hours | n/a |
-| Browser cookie `kibootia_login` | Sign-in state, nonce, PKCE verifier | The Next.js server | 10 minutes | n/a |
+| Browser cookies `kibootia_session.0` to `.7` (chunks of 3,600 bytes); over https `__Host-kibootia_session.0` to `.7` | Encrypted access, refresh and ID tokens, expiry times | The Next.js server (sealed with `SESSION_SECRET`) | Until sign-out or 10 hours | n/a |
+| Browser cookie `kibootia_login` (`__Host-kibootia_login` over https) | Sign-in state, nonce, PKCE verifier | The Next.js server | 10 minutes | n/a |
 | Backend process memory | Rate-limit buckets (Bucket4j and Caffeine), the cached Keycloak admin token | `platform.ratelimit`, `identity` | No; per instance | n/a |
 | Next.js process memory | The single-flight map for token refresh | `frontend/src/lib/bff/refresh.ts` | No; per instance | n/a |
 | OpenTofu state (volume `kibootia_tofu_state`) | State of the Keycloak realm resources | The `keycloak-config` step | Yes | None; no remote backend |

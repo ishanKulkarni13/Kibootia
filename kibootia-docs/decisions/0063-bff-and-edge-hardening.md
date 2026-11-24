@@ -2,11 +2,11 @@
 
 - **Type:** adr
 - **Module:** platform
-- **Status:** draft
+- **Status:** accepted
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-24
+- **Last updated:** 2026-11-25
 
-> **Implementation:** planned. Nothing here is built. Observed in `frontend/next.config.ts`, `frontend/src/lib/bff/proxy.ts`, `session.ts` and `config.ts`.
+> **Implementation:** items 1 to 6 and 8 built on branch `m-5-1-edge` (observed; CI run pending); item 7 waits for milestone 6. Observed in `frontend/src/proxy.ts`, `lib/security-headers.ts`, `lib/session.ts`, `lib/config.ts` and `lib/bff/proxy.ts`.
 
 ## Context
 
@@ -43,9 +43,17 @@ The Next.js server is the only thing a browser talks to ([ADR 0026](0026-nextjs-
 - The `__Host-` names change the cookie names between local and production, so tests and the data inventory name both.
 - Trusting forwarded addresses is a deployment decision: the number of hops is documented in the deployment guide.
 
-## Status
+accepted on the owner's delegation of 2026-11-25. Delivered in [milestone 5.1](../product/roadmap/milestone-5-1-architecture-hardening.md), except item 7, which waits for milestone 6.
 
-draft. Awaiting the owner. Delivered in [milestone 5.1](../product/roadmap/milestone-5-1-architecture-hardening.md), except item 7, which waits for milestone 6.
+**Changes made while building** (2026-11-25):
+
+- **Item 1.** The policy is built and starts in report-only mode, as decided (`CSP_MODE`: `report-only` by default, `enforce`, `off`). The middleware now runs for every page, not for a list of paths: the matcher excludes only the BFF routes, the API proxy and the files Next.js serves, because a page without the middleware has no nonce. Whether the policy blocks anything it should not is visible in the browser's console; there is no report endpoint, because an unauthenticated endpoint that logs what it is sent is a way to fill the log. The step from report-only to enforcing is the one-line `CSP_MODE=enforce`, to be taken after a release has shown nothing is reported. Styles keep `'unsafe-inline'`, because components position elements with inline `style` attributes, which a nonce cannot cover. HSTS is sent only when `PUBLIC_BASE_URL` is https.
+- **Item 2.** Over https the cookies are `__Host-kibootia_session.<n>` and `__Host-kibootia_login`; over http, which only local development uses, the names are unchanged. A session is read only from the cookie of its own mode, so a plain cookie cannot stand in for a prefixed one. Everyone is signed in again once, when a deployment moves to https.
+- **Item 3.** `API_PROXY_TIMEOUT_MS` (30 s) and `API_PROXY_UPLOAD_TIMEOUT_MS` (120 s, for `multipart/form-data`) end a call with 504 `bff.upstream_timeout`. `API_PROXY_MAX_BODY_BYTES` (6 MiB, the API's 5 MB upload limit plus the envelope) refuses a declared length over the limit with 413 before the session is read, and stops a streamed body that passes it. The timeout also ends a response that is still streaming after that long, which is acceptable for the sizes served today.
+- **Item 4.** The allow-list is `accept`, `accept-encoding`, `accept-language`, `content-type`, `if-match`, `if-modified-since`, `if-none-match` and `user-agent`. The body's length is not forwarded, as before: the body is streamed.
+- **Item 5.** `TRUSTED_PROXY_HOPS` (default 0) says how many proxies in front of the server are trusted to append the client's address to `X-Forwarded-For`; the proxy passes on the address that many places from the right and nothing else, and only if it looks like an address. With 0 it passes none, and the API sees the server's address. **Not built: the backend side.** The audit log has no address column and the rate limiter is per user, so there is nothing yet that reads the address; trusting it in Spring (`server.forward-headers-strategy`) is left to the deployment of milestone 6 and the milestone that adds an address to audit entries.
+- **Item 6.** `SESSION_SECRET` is a list separated by commas, newest first. The first key seals, every key opens, and the token's header carries a short identifier of the key that sealed it. A token that was sealed before this change has no identifier and is opened by trying each key, so no one is signed out by the upgrade.
+- **Item 8.** In production (`NODE_ENV=production`) a missing `PUBLIC_BASE_URL`, `KEYCLOAK_ISSUER`, `API_BASE_URL`, `SESSION_SECRET` or `KEYCLOAK_WEB_CLIENT_SECRET`, or an empty one, stops the server with a message that names the setting and no value. The `apps` Compose profile sets all of them.
 
 ## Related
 

@@ -167,6 +167,18 @@ The Level column was added on 2026-11-09.
 | A warning and a health detail when files are switched off while stored files remain | ADR 0059 item 6 | 5.1 | observed (`FilesDisabledIT`; CI run pending) |
 | A unique email key on `user_profile` | ADR 0059 item 2 | 5.1 | not built, with the reason recorded in the ADR: Keycloak already refuses a second account with an address, and a unique key on the refreshed copy would fail sign-ins |
 
+## Capabilities added on branch `m-5-1-edge` (2026-11-25)
+
+| Capability | Decision | Milestone | Level |
+|---|---|---|---|
+| Content-Security-Policy with a nonce per page (report-only by default, `CSP_MODE`), HSTS over https and Cross-Origin-Opener-Policy, on every page | [ADR 0063](../../decisions/0063-bff-and-edge-hardening.md) item 1 | 5.1 | observed (`security-headers.test.ts`; branch `m-5-1-edge`; CI run pending). Also seen on a local production build with `curl` on 2026-11-25: the policy and the opener policy on pages, none on `/healthz`, and the header's nonce equal to the nonce on the page's scripts (15 of its 16 script tags carry one). No browser has loaded the page, and no end-to-end test reads the headers, so what a browser would report is not known |
+| `__Host-` cookie names over https; a session is read only from the cookie of its own mode | ADR 0063 item 2 | 5.1 | observed (`session-keys.test.ts`; CI run pending) |
+| A timeout (504) and a size limit (413) on the `/api` proxy; an allow-list of request headers | ADR 0063 items 3 and 4 | 5.1 | observed (`proxy-hardening.test.ts`; CI run pending) |
+| The client's address passed on only from trusted proxies (`TRUSTED_PROXY_HOPS`) | ADR 0063 item 5 | 5.1 | observed in the frontend (`proxy-hardening.test.ts`); the backend does not read it yet (recorded in the ADR) |
+| A session key ring: the first key seals, every key opens, a key identifier in the header; existing sessions stay readable | ADR 0063 item 6 | 5.1 | observed (`session-keys.test.ts`, including a token sealed as the old code did; CI run pending) |
+| The server refuses to start in production without its addresses and secrets | ADR 0063 item 8 | 5.1 | observed (`config.test.ts`; CI run pending) |
+| Back-channel logout | ADR 0063 item 7 | 6 | planned: it needs a server-side session store |
+
 ## Deviations the owner has called out
 
 - Reference feature: a backend-only `notes` module ([ADR 0049](../../decisions/0049-milestone-2-implementation-decisions.md)); completed in milestone 5 with a picture, screens, a copy guide and removal recipes.
