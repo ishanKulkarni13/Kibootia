@@ -63,7 +63,7 @@ class KeycloakAdminAdapterIT {
 	private static KeycloakAdminAdapter adapter(String baseUrl, String clientId, String secret) {
 		IdentityProperties properties = new IdentityProperties(null, "http://localhost:3470", Duration.ofDays(1),
 				new IdentityProperties.Keycloak(baseUrl, "kibootia", "kibootia-web", clientId, secret,
-						Duration.ofSeconds(2), Duration.ofSeconds(30)));
+						Duration.ofSeconds(2), Duration.ofSeconds(30), 2, Duration.ofMillis(100)));
 		return new KeycloakAdminAdapter(properties, Clock.systemUTC());
 	}
 

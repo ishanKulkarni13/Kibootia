@@ -283,12 +283,29 @@ public class UserAdministration {
 		}
 	}
 
+	/**
+	 * Removes the account an invitation created, after the rest of the invitation failed. If Keycloak cannot be reached
+	 * now either, the removal is recorded as a durable event, so that it is retried until it works (ADR 0058).
+	 */
 	private void removeAccountAfterFailure(UUID id) {
 		try {
 			this.keycloak.delete(id);
 		}
 		catch (RuntimeException ex) {
-			log.error("An invitation failed and Keycloak account {} could not be removed afterwards", id, ex);
+			log.error("An invitation failed and Keycloak account {} could not be removed afterwards; "
+					+ "recording the removal to be retried", id, ex);
+			recordAbandonedAccount(id);
+		}
+	}
+
+	private void recordAbandonedAccount(UUID id) {
+		try {
+			this.transactions.executeWithoutResult(
+					(status) -> this.events.publishEvent(new InvitationAbandoned(id, this.eventContexts.capture())));
+		}
+		catch (RuntimeException ex) {
+			// The database is not available either, so nothing can be recorded. The account has no profile and no role.
+			log.error("The removal of Keycloak account {} could not be recorded either; remove it in Keycloak", id, ex);
 		}
 	}
 

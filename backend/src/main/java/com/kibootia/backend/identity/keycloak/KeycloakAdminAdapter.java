@@ -14,12 +14,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.core.retry.RetryPolicy;
+import org.springframework.core.retry.RetryTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
@@ -52,6 +56,9 @@ class KeycloakAdminAdapter implements IdentityProviderAdmin {
 
 	private final RestClient http;
 
+	/** Repeats a call that is safe to repeat, a bounded number of times, after a failure that may be temporary. */
+	private final RetryTemplate retries;
+
 	private volatile CachedToken token;
 
 	KeycloakAdminAdapter(IdentityProperties properties, Clock clock) {
@@ -62,6 +69,14 @@ class KeycloakAdminAdapter implements IdentityProviderAdmin {
 		requests.setConnectTimeout(settings.connectTimeout());
 		requests.setReadTimeout(settings.readTimeout());
 		this.http = RestClient.builder().baseUrl(settings.baseUrl()).requestFactory(requests).build();
+		this.retries = new RetryTemplate(RetryPolicy.builder()
+			.maxRetries(settings.retries())
+			.delay(settings.retryDelay())
+			.jitter(settings.retryDelay().dividedBy(2))
+			.multiplier(2.0)
+			.maxDelay(settings.retryDelay().multipliedBy(10))
+			.predicate(KeycloakAdminAdapter::mayBeTemporary)
+			.build());
 	}
 
 	@Override
@@ -96,7 +111,7 @@ class KeycloakAdminAdapter implements IdentityProviderAdmin {
 	@Override
 	public Optional<Account> find(UUID id) {
 		try {
-			Map<String, Object> user = authorized((bearer) -> this.http.get()
+			Map<String, Object> user = idempotent((bearer) -> this.http.get()
 				.uri("/admin/realms/{realm}/users/{id}", realm(), id)
 				.headers((headers) -> headers.setBearerAuth(bearer))
 				.retrieve()
@@ -119,7 +134,7 @@ class KeycloakAdminAdapter implements IdentityProviderAdmin {
 	@Override
 	public void setEnabled(UUID id, boolean enabled) {
 		try {
-			Map<String, Object> user = authorized((bearer) -> this.http.get()
+			Map<String, Object> user = idempotent((bearer) -> this.http.get()
 				.uri("/admin/realms/{realm}/users/{id}", realm(), id)
 				.headers((headers) -> headers.setBearerAuth(bearer))
 				.retrieve()
@@ -128,7 +143,7 @@ class KeycloakAdminAdapter implements IdentityProviderAdmin {
 				return;
 			}
 			user.put("enabled", enabled);
-			authorized((bearer) -> this.http.put()
+			idempotent((bearer) -> this.http.put()
 				.uri("/admin/realms/{realm}/users/{id}", realm(), id)
 				.headers((headers) -> headers.setBearerAuth(bearer))
 				.contentType(MediaType.APPLICATION_JSON)
@@ -147,7 +162,7 @@ class KeycloakAdminAdapter implements IdentityProviderAdmin {
 	@Override
 	public void endSessions(UUID id) {
 		try {
-			authorized((bearer) -> this.http.post()
+			idempotent((bearer) -> this.http.post()
 				.uri("/admin/realms/{realm}/users/{id}/logout", realm(), id)
 				.headers((headers) -> headers.setBearerAuth(bearer))
 				.retrieve()
@@ -185,7 +200,7 @@ class KeycloakAdminAdapter implements IdentityProviderAdmin {
 	@Override
 	public void delete(UUID id) {
 		try {
-			authorized((bearer) -> this.http.delete()
+			idempotent((bearer) -> this.http.delete()
 				.uri("/admin/realms/{realm}/users/{id}", realm(), id)
 				.headers((headers) -> headers.setBearerAuth(bearer))
 				.retrieve()
@@ -225,6 +240,25 @@ class KeycloakAdminAdapter implements IdentityProviderAdmin {
 
 	private String realm() {
 		return this.properties.keycloak().realm();
+	}
+
+	/**
+	 * {@link #authorized} for a call that has the same effect when it is made twice, so that a connection error or a 5xx
+	 * answer is tried again a few times before it is reported (ADR 0058). A 404 is an answer, not a failure, and is never
+	 * repeated. Emails are not sent through this: a repeat would send a second one.
+	 */
+	private <T> T idempotent(Function<String, T> call) {
+		return this.retries.invoke(() -> authorized(call));
+	}
+
+	/** Whether a failure may be gone a moment later: the server could not be reached, or it answered 5xx or 429. */
+	private static boolean mayBeTemporary(Throwable failure) {
+		if (!(failure instanceof Unavailable unavailable)) {
+			return false;
+		}
+		Throwable cause = unavailable.getCause();
+		return cause instanceof ResourceAccessException || cause instanceof HttpServerErrorException
+				|| cause instanceof HttpClientErrorException.TooManyRequests;
 	}
 
 	/**
