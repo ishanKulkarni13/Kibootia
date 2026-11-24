@@ -1,6 +1,8 @@
 package com.kibootia.backend.access.domain;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -8,16 +10,21 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import com.kibootia.backend.platform.authorization.Caller;
-import com.kibootia.backend.platform.authorization.Owned;
+import com.kibootia.backend.platform.authorization.AccessFilter;
+import com.kibootia.backend.platform.authorization.Decision;
 import com.kibootia.backend.platform.authorization.Permission;
-import com.kibootia.backend.platform.authorization.ResourcePolicy;
-import com.kibootia.backend.platform.authorization.Scope;
-import com.kibootia.backend.platform.authorization.TenantBound;
+import com.kibootia.backend.platform.authorization.Principal;
+import com.kibootia.backend.platform.authorization.Reason;
+import com.kibootia.backend.platform.authorization.ResourceRef;
+import com.kibootia.backend.platform.authorization.ResourceRule;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+/**
+ * The combination rule of the decision point (contract version 2, ADR 0055). Every case of contract version 1 is kept
+ * with its expected outcome; only the module-rule cases changed, because a rule can no longer widen access (finding S3).
+ */
 class DefaultDecisionPointTest {
 
 	static final UUID TENANT = UUID.fromString("00000000-0000-7000-8000-000000000001");
@@ -28,6 +35,8 @@ class DefaultDecisionPointTest {
 
 	static final UUID BOB = UUID.fromString("22222222-2222-7222-8222-222222222222");
 
+	static final String WIDGET = "widgets.widget";
+
 	static final String UPDATE = "widgets.widgets.update";
 
 	static final String UPDATE_ANY = "widgets.widgets.update-any";
@@ -37,18 +46,45 @@ class DefaultDecisionPointTest {
 	static final PermissionRegistry REGISTRY = new PermissionRegistry(List.of(
 			Permission.forEveryUser(UPDATE, "Change own widgets"),
 			Permission.restricted(UPDATE_ANY, "Change anyone's widgets"),
-			Permission.restricted(RESTORE, "Restore deleted widgets")));
+			Permission.restricted(RESTORE, "Restore deleted widgets").asSensitive()));
 
-	record Note(UUID ownerId, UUID tenantId) implements Owned, TenantBound {
-
+	static ResourceRef widget(UUID owner, UUID tenant) {
+		return ResourceRef.of(WIDGET, UUID.randomUUID(), tenant).ownedBy(owner);
 	}
 
-	static Caller alice() {
-		return Caller.user(ALICE, TENANT, true);
+	static Principal alice() {
+		return new Principal.User(ALICE, TENANT, true);
 	}
 
-	static DefaultDecisionPoint pointFor(Set<String> held, ResourcePolicy... policies) {
-		return new DefaultDecisionPoint(REGISTRY, (caller) -> held, List.of(policies));
+	static Principal system() {
+		return new Principal.System(TENANT, "test: a job");
+	}
+
+	static DefaultDecisionPoint pointFor(Set<String> held, ResourceRule... rules) {
+		return new DefaultDecisionPoint(REGISTRY, (user) -> held, List.of(rules));
+	}
+
+	/** A rule that objects to every action on widgets, or to none. */
+	static ResourceRule rule(String name, boolean objects, List<String> consulted) {
+		return new ResourceRule() {
+
+			@Override
+			public String name() {
+				return name;
+			}
+
+			@Override
+			public boolean appliesTo(String resourceType, String action) {
+				return WIDGET.equals(resourceType);
+			}
+
+			@Override
+			public Optional<String> objection(Principal principal, String action, ResourceRef resource) {
+				consulted.add(name);
+				return objects ? Optional.of(name + " objects") : Optional.empty();
+			}
+
+		};
 	}
 
 	@Nested
@@ -56,12 +92,14 @@ class DefaultDecisionPointTest {
 	class Registry {
 
 		@Test
-		@DisplayName("lists what modules declare and which the user role holds")
+		@DisplayName("lists what modules declare, which the user role holds, and which are sensitive")
 		void listsPermissions() {
 			assertThat(REGISTRY.all()).extracting(Permission::name).containsExactly(UPDATE, UPDATE_ANY, RESTORE);
 			assertThat(REGISTRY.userRolePermissions()).containsExactly(UPDATE);
 			assertThat(REGISTRY.hasAnyVariant(UPDATE)).isTrue();
 			assertThat(REGISTRY.hasAnyVariant(RESTORE)).isFalse();
+			assertThat(REGISTRY.isSensitive(RESTORE)).isTrue();
+			assertThat(REGISTRY.isSensitive(UPDATE)).isFalse();
 		}
 
 		@Test
@@ -94,55 +132,68 @@ class DefaultDecisionPointTest {
 	}
 
 	@Nested
-	@DisplayName("the scope of an action")
-	class Scopes {
+	@DisplayName("the access filter of an action (was: its scope)")
+	class Filters {
 
 		@Test
-		@DisplayName("is NONE without the permission")
+		@DisplayName("is nothing without the permission (was NONE)")
 		void none() {
-			assertThat(pointFor(Set.of()).scopeFor(alice(), UPDATE)).isEqualTo(Scope.NONE);
-			assertThat(pointFor(Set.of()).scopeFor(alice(), RESTORE)).isEqualTo(Scope.NONE);
+			assertThat(pointFor(Set.of()).filter(alice(), UPDATE)).isEqualTo(AccessFilter.NOTHING);
+			assertThat(pointFor(Set.of()).filter(alice(), RESTORE)).isEqualTo(AccessFilter.NOTHING);
 		}
 
 		@Test
-		@DisplayName("is OWN for a permission that has an -any variant")
+		@DisplayName("is the caller's own records for a permission that has an -any variant (was OWN)")
 		void own() {
-			assertThat(pointFor(Set.of(UPDATE)).scopeFor(alice(), UPDATE)).isEqualTo(Scope.OWN);
+			AccessFilter filter = pointFor(Set.of(UPDATE)).filter(alice(), UPDATE);
+			assertThat(filter).isEqualTo(AccessFilter.relatedTo(ResourceRef.OWNER, ALICE));
+			assertThat(filter.ownerOnly()).contains(ALICE);
 		}
 
 		@Test
-		@DisplayName("is ALL for the -any permission")
+		@DisplayName("is everything for the -any permission (was ALL)")
 		void all() {
-			assertThat(pointFor(Set.of(UPDATE, UPDATE_ANY)).scopeFor(alice(), UPDATE)).isEqualTo(Scope.ALL);
-			assertThat(pointFor(Set.of(UPDATE_ANY)).scopeFor(alice(), UPDATE)).isEqualTo(Scope.ALL);
+			assertThat(pointFor(Set.of(UPDATE, UPDATE_ANY)).filter(alice(), UPDATE)).isEqualTo(AccessFilter.EVERYTHING);
+			assertThat(pointFor(Set.of(UPDATE_ANY)).filter(alice(), UPDATE)).isEqualTo(AccessFilter.EVERYTHING);
+			assertThat(AccessFilter.EVERYTHING.ownerOnly()).isEmpty();
 		}
 
 		@Test
-		@DisplayName("is ALL for an administrative permission that has no -any variant")
+		@DisplayName("is everything for an administrative permission that has no -any variant")
 		void administrativePermission() {
-			assertThat(pointFor(Set.of(RESTORE)).scopeFor(alice(), RESTORE)).isEqualTo(Scope.ALL);
+			assertThat(pointFor(Set.of(RESTORE)).filter(alice(), RESTORE)).isEqualTo(AccessFilter.EVERYTHING);
 		}
 
 		@Test
 		@DisplayName("holding the -any variant of another action grants nothing")
 		void otherActionGrantsNothing() {
-			assertThat(pointFor(Set.of(UPDATE_ANY)).scopeFor(alice(), RESTORE)).isEqualTo(Scope.NONE);
+			assertThat(pointFor(Set.of(UPDATE_ANY)).filter(alice(), RESTORE)).isEqualTo(AccessFilter.NOTHING);
 		}
 
 		@Test
-		@DisplayName("is ALL for the system")
+		@DisplayName("is everything for the system")
 		void system() {
-			Caller system = Caller.user(UUID.randomUUID(), TENANT, true);
-			assertThat(pointFor(Set.of()).scopeFor(new Caller(system.userId(), TENANT, true, true), RESTORE))
-				.isEqualTo(Scope.ALL);
+			assertThat(pointFor(Set.of()).filter(DefaultDecisionPointTest.system(), RESTORE))
+				.isEqualTo(AccessFilter.EVERYTHING);
 		}
 
 		@Test
 		@DisplayName("is an error for a permission nobody declared")
 		void unknownPermission() {
-			assertThatThrownBy(() -> pointFor(Set.of()).scopeFor(alice(), "widgets.widgets.typo"))
+			assertThatThrownBy(() -> pointFor(Set.of()).filter(alice(), "widgets.widgets.typo"))
 				.isInstanceOf(IllegalStateException.class)
 				.hasMessageContaining("widgets.widgets.typo");
+		}
+
+		@Test
+		@DisplayName("a store that understands only ownership refuses a filter it does not know, rather than ignore it")
+		void unknownShapeIsRefused() {
+			AccessFilter twoOwners = new AccessFilter.AnyOf(List.of(new AccessFilter.RelatedTo(ResourceRef.OWNER, ALICE),
+					new AccessFilter.RelatedTo(ResourceRef.OWNER, BOB)));
+			assertThatThrownBy(twoOwners::ownerOnly).isInstanceOf(IllegalStateException.class);
+			assertThatThrownBy(AccessFilter.relatedTo("reviewer", ALICE)::ownerOnly)
+				.isInstanceOf(IllegalStateException.class);
+			assertThatThrownBy(AccessFilter.NOTHING::ownerOnly).isInstanceOf(IllegalStateException.class);
 		}
 
 	}
@@ -158,44 +209,35 @@ class DefaultDecisionPointTest {
 				Permission.restricted(UPDATE_ANY, "Change anyone's widgets"),
 				Permission.forEveryUser(BEFORE, "Read own widgets").beforeVerification()));
 
-		Caller unverified() {
-			return Caller.user(ALICE, TENANT, false);
+		Principal unverified() {
+			return new Principal.User(ALICE, TENANT, false);
 		}
 
 		@Test
 		@DisplayName("holds nothing, even what the user role grants")
 		void holdsNothing() {
-			DefaultDecisionPoint point = new DefaultDecisionPoint(this.registry, (caller) -> Set.of(UPDATE, UPDATE_ANY, BEFORE),
+			DefaultDecisionPoint point = new DefaultDecisionPoint(this.registry, (user) -> Set.of(UPDATE, UPDATE_ANY, BEFORE),
 					List.of());
-
-			assertThat(point.scopeFor(unverified(), UPDATE)).isEqualTo(Scope.NONE);
-			assertThat(point.scopeFor(unverified(), UPDATE_ANY)).isEqualTo(Scope.NONE);
-			assertThat(point.can(unverified(), UPDATE, new Note(ALICE, TENANT))).isFalse();
+			assertThat(point.filter(unverified(), UPDATE)).isEqualTo(AccessFilter.NOTHING);
+			assertThat(point.filter(unverified(), UPDATE_ANY)).isEqualTo(AccessFilter.NOTHING);
+			Decision decision = point.decide(unverified(), UPDATE, widget(ALICE, TENANT));
+			assertThat(decision.allowed()).isFalse();
+			assertThat(decision.reason()).isEqualTo(Reason.EMAIL_NOT_VERIFIED);
 		}
 
 		@Test
 		@DisplayName("holds a permission marked as allowed before verification")
 		void holdsMarkedPermission() {
-			DefaultDecisionPoint point = new DefaultDecisionPoint(this.registry, (caller) -> Set.of(BEFORE), List.of());
-
-			assertThat(point.scopeFor(unverified(), BEFORE)).isEqualTo(Scope.ALL);
-			assertThat(point.scopeFor(Caller.user(ALICE, TENANT, true), BEFORE)).isEqualTo(Scope.ALL);
+			DefaultDecisionPoint point = new DefaultDecisionPoint(this.registry, (user) -> Set.of(BEFORE), List.of());
+			assertThat(point.filter(unverified(), BEFORE)).isEqualTo(AccessFilter.EVERYTHING);
+			assertThat(point.filter(new Principal.User(ALICE, TENANT, true), BEFORE)).isEqualTo(AccessFilter.EVERYTHING);
 		}
 
 		@Test
 		@DisplayName("is still denied a marked permission it was never granted")
 		void markedPermissionStillNeedsGranting() {
-			DefaultDecisionPoint point = new DefaultDecisionPoint(this.registry, (caller) -> Set.of(), List.of());
-
-			assertThat(point.scopeFor(unverified(), BEFORE)).isEqualTo(Scope.NONE);
-		}
-
-		@Test
-		@DisplayName("is not affected for the system")
-		void systemIgnoresVerification() {
-			DefaultDecisionPoint point = new DefaultDecisionPoint(this.registry, (caller) -> Set.of(), List.of());
-
-			assertThat(point.scopeFor(new Caller(ALICE, TENANT, false, true), UPDATE_ANY)).isEqualTo(Scope.ALL);
+			DefaultDecisionPoint point = new DefaultDecisionPoint(this.registry, (user) -> Set.of(), List.of());
+			assertThat(point.filter(unverified(), BEFORE)).isEqualTo(AccessFilter.NOTHING);
 		}
 
 	}
@@ -205,84 +247,163 @@ class DefaultDecisionPointTest {
 	class Records {
 
 		@Test
-		@DisplayName("allows an owner with the plain permission and denies someone else's record")
+		@DisplayName("allows an owner with the plain permission and denies someone else's record as out of reach")
 		void ownership() {
 			DefaultDecisionPoint point = pointFor(Set.of(UPDATE));
-
-			assertThat(point.can(alice(), UPDATE, new Note(ALICE, TENANT))).isTrue();
-			assertThat(point.can(alice(), UPDATE, new Note(BOB, TENANT))).isFalse();
+			assertThat(point.decide(alice(), UPDATE, widget(ALICE, TENANT)))
+				.isEqualTo(Decision.of(Reason.GRANTED, UPDATE));
+			assertThat(point.decide(alice(), UPDATE, widget(BOB, TENANT)))
+				.isEqualTo(Decision.of(Reason.OUT_OF_REACH, UPDATE));
 		}
 
 		@Test
-		@DisplayName("denies an own-scope permission on a record that has no owner")
+		@DisplayName("denies an own-records permission on a record that has no owner")
 		void recordWithoutOwner() {
-			assertThat(pointFor(Set.of(UPDATE)).can(alice(), UPDATE, new Object())).isFalse();
+			ResourceRef ownerless = ResourceRef.of(WIDGET, UUID.randomUUID(), TENANT);
+			assertThat(pointFor(Set.of(UPDATE)).decide(alice(), UPDATE, ownerless).reason())
+				.isEqualTo(Reason.OUT_OF_REACH);
 		}
 
 		@Test
-		@DisplayName("allows any record in the tenant with the -any permission")
+		@DisplayName("allows any record in the tenant with the -any permission, and names the grant that decided")
 		void anyPermission() {
-			assertThat(pointFor(Set.of(UPDATE_ANY)).can(alice(), UPDATE, new Note(BOB, TENANT))).isTrue();
+			assertThat(pointFor(Set.of(UPDATE, UPDATE_ANY)).decide(alice(), UPDATE, widget(BOB, TENANT)))
+				.isEqualTo(Decision.of(Reason.GRANTED, UPDATE_ANY));
 		}
 
 		@Test
 		@DisplayName("denies without the permission, even for the owner")
 		void withoutPermission() {
-			assertThat(pointFor(Set.of()).can(alice(), UPDATE, new Note(ALICE, TENANT))).isFalse();
+			assertThat(pointFor(Set.of()).decide(alice(), UPDATE, widget(ALICE, TENANT)))
+				.isEqualTo(Decision.of(Reason.NO_GRANT));
 		}
 
 		@Test
 		@DisplayName("denies a record of another tenant even with the -any permission")
 		void otherTenant() {
-			assertThat(pointFor(Set.of(UPDATE_ANY)).can(alice(), UPDATE, new Note(ALICE, OTHER_TENANT))).isFalse();
-			assertThat(pointFor(Set.of(UPDATE)).can(alice(), UPDATE, new Note(ALICE, OTHER_TENANT))).isFalse();
+			assertThat(pointFor(Set.of(UPDATE_ANY)).decide(alice(), UPDATE, widget(ALICE, OTHER_TENANT)).reason())
+				.isEqualTo(Reason.OTHER_TENANT);
+			assertThat(pointFor(Set.of(UPDATE)).decide(alice(), UPDATE, widget(ALICE, OTHER_TENANT)).reason())
+				.isEqualTo(Reason.OTHER_TENANT);
 		}
 
 		@Test
 		@DisplayName("lets the system act on a record of its own tenant")
 		void system() {
-			Caller system = new Caller(new UUID(0L, 0L), TENANT, true, true);
-			assertThat(pointFor(Set.of()).can(system, RESTORE, new Note(BOB, TENANT))).isTrue();
+			assertThat(pointFor(Set.of()).decide(DefaultDecisionPointTest.system(), RESTORE, widget(BOB, TENANT)))
+				.isEqualTo(Decision.of(Reason.SYSTEM, "system"));
 		}
 
 		@Test
-		@DisplayName("lets a module's own policy decide for the records it supports")
-		void modulePolicy() {
-			ResourcePolicy sharedWidgets = new ResourcePolicy() {
-				@Override
-				public boolean supports(Object resource) {
-					return resource instanceof Note;
-				}
-
-				@Override
-				public boolean allows(Caller caller, String action, Object resource, Scope scope) {
-					return scope == Scope.OWN && ((Note) resource).ownerId().equals(BOB);
-				}
-			};
-			DefaultDecisionPoint point = pointFor(Set.of(UPDATE), sharedWidgets);
-
-			assertThat(point.can(alice(), UPDATE, new Note(BOB, TENANT))).isTrue();
-			assertThat(point.can(alice(), UPDATE, new Note(ALICE, TENANT))).isFalse();
+		@DisplayName("decides an action on the collection from grants alone: any reach allows")
+		void collectionAction() {
+			assertThat(pointFor(Set.of(UPDATE)).decide(alice(), UPDATE, null)).isEqualTo(Decision.of(Reason.GRANTED, UPDATE));
+			assertThat(pointFor(Set.of()).decide(alice(), RESTORE, null)).isEqualTo(Decision.of(Reason.NO_GRANT));
 		}
 
 		@Test
-		@DisplayName("does not ask a module's policy when the caller lacks the permission")
-		void policyIsNotConsultedWithoutPermission() {
-			ResourcePolicy allowAll = new ResourcePolicy() {
+		@DisplayName("is an error for a permission nobody declared, even for the system")
+		void unknownPermission() {
+			assertThatThrownBy(() -> pointFor(Set.of()).decide(DefaultDecisionPointTest.system(), "widgets.widgets.typo", null))
+				.isInstanceOf(IllegalStateException.class);
+		}
+
+	}
+
+	@Nested
+	@DisplayName("module rules, which can only narrow (finding S3)")
+	class Rules {
+
+		@Test
+		@DisplayName("a rule cannot widen: someone else's record stays out of reach, and the rule is not even asked")
+		void ruleCannotWiden() {
+			List<String> consulted = new ArrayList<>();
+			DefaultDecisionPoint point = pointFor(Set.of(UPDATE), rule("allows-everything", false, consulted));
+			assertThat(point.decide(alice(), UPDATE, widget(BOB, TENANT)).reason()).isEqualTo(Reason.OUT_OF_REACH);
+			assertThat(pointFor(Set.of(), rule("allows-everything", false, consulted))
+				.decide(alice(), UPDATE, widget(ALICE, TENANT)).reason()).isEqualTo(Reason.NO_GRANT);
+			assertThat(consulted).as("a rule is never consulted where grants refused").isEmpty();
+		}
+
+		@Test
+		@DisplayName("a rule narrows what grants allow, and the decision names it")
+		void ruleNarrows() {
+			List<String> consulted = new ArrayList<>();
+			DefaultDecisionPoint point = pointFor(Set.of(UPDATE_ANY, UPDATE), rule("locked-widgets", true, consulted));
+			assertThat(point.decide(alice(), UPDATE, widget(BOB, TENANT)))
+				.isEqualTo(Decision.of(Reason.REFUSED_BY_RULE, "locked-widgets"));
+		}
+
+		@Test
+		@DisplayName("every applicable rule is consulted until one objects, and any objection refuses")
+		void allRulesApply() {
+			List<String> consulted = new ArrayList<>();
+			DefaultDecisionPoint point = pointFor(Set.of(UPDATE), rule("first", false, consulted),
+					rule("second", true, consulted));
+			assertThat(point.decide(alice(), UPDATE, widget(ALICE, TENANT)))
+				.isEqualTo(Decision.of(Reason.REFUSED_BY_RULE, "second"));
+			assertThat(consulted).containsExactly("first", "second");
+
+			List<String> both = new ArrayList<>();
+			assertThat(pointFor(Set.of(UPDATE), rule("first", false, both), rule("second", false, both))
+				.decide(alice(), UPDATE, widget(ALICE, TENANT)).allowed()).isTrue();
+			assertThat(both).containsExactly("first", "second");
+		}
+
+		@Test
+		@DisplayName("a rule that throws refuses, as an evaluation error, and later rules do not override it")
+		void failingRuleRefuses() {
+			ResourceRule broken = new ResourceRule() {
+
 				@Override
-				public boolean supports(Object resource) {
+				public String name() {
+					return "broken";
+				}
+
+				@Override
+				public boolean appliesTo(String resourceType, String action) {
 					return true;
 				}
 
 				@Override
-				public boolean allows(Caller caller, String action, Object resource, Scope scope) {
-					return true;
+				public Optional<String> objection(Principal principal, String action, ResourceRef resource) {
+					throw new IllegalStateException("missing data");
 				}
-			};
 
-			assertThat(pointFor(Set.of(), allowAll).can(alice(), UPDATE, new Note(ALICE, TENANT))).isFalse();
+			};
+			List<String> consulted = new ArrayList<>();
+			assertThat(pointFor(Set.of(UPDATE), broken, rule("after", false, consulted))
+				.decide(alice(), UPDATE, widget(ALICE, TENANT))).isEqualTo(Decision.of(Reason.EVALUATION_ERROR, "broken"));
+			assertThat(consulted).isEmpty();
 		}
 
+		@Test
+		@DisplayName("a rule for another resource type is not consulted")
+		void ruleForAnotherType() {
+			List<String> consulted = new ArrayList<>();
+			ResourceRef gadget = ResourceRef.of("widgets.gadget", UUID.randomUUID(), TENANT).ownedBy(ALICE);
+			assertThat(pointFor(Set.of(UPDATE), rule("widgets-only", true, consulted)).decide(alice(), UPDATE, gadget)
+				.allowed()).isTrue();
+			assertThat(consulted).isEmpty();
+		}
+
+		@Test
+		@DisplayName("does not narrow the system")
+		void systemIsNotNarrowed() {
+			List<String> consulted = new ArrayList<>();
+			assertThat(pointFor(Set.of(), rule("locked", true, consulted))
+				.decide(DefaultDecisionPointTest.system(), UPDATE, widget(BOB, TENANT)).reason()).isEqualTo(Reason.SYSTEM);
+		}
+
+	}
+
+	@Test
+	@DisplayName("every reason a decision point can give is produced by some case above, and reasons agree with allow")
+	void reasonsAreConsistent() {
+		for (Reason reason : Reason.values()) {
+			assertThat(Decision.of(reason).allowed()).isEqualTo(reason == Reason.GRANTED || reason == Reason.SYSTEM);
+			assertThat(reason.code()).startsWith("authorization.");
+		}
 	}
 
 }

@@ -1,5 +1,6 @@
 package com.kibootia.backend.notes.application;
 
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.context.ApplicationEventPublisher;
@@ -14,7 +15,7 @@ import com.kibootia.backend.notes.NoteDeleted;
 import com.kibootia.backend.notes.NotesPermissions;
 import com.kibootia.backend.platform.authorization.Authorization;
 import com.kibootia.backend.platform.authorization.RequiresPermission;
-import com.kibootia.backend.platform.authorization.Scope;
+import com.kibootia.backend.platform.authorization.AccessFilter;
 import com.kibootia.backend.platform.errors.ApiException;
 import com.kibootia.backend.platform.events.EventContextFactory;
 
@@ -24,7 +25,7 @@ import com.kibootia.backend.platform.events.EventContextFactory;
  * <ul>
  * <li>a permission-only check with {@code @RequiresPermission} ({@link #create}, {@link #restore});</li>
  * <li>a check against the loaded record with {@code authorization.require} ({@link #update}, {@link #delete});</li>
- * <li>a list limited by {@link Scope} ({@link #list});</li>
+ * <li>a list limited by the {@link AccessFilter} of the decision point ({@link #list});</li>
  * <li>a record the caller may not see answers 404, so its existence is not revealed (ADR 0043);</li>
  * <li>an auditable change writes its audit entry, and an event that must not be lost is published, both in the
  * transaction of the change (ADR 0046, ADR 0031).</li>
@@ -69,11 +70,7 @@ public class NoteService {
 
 	@Transactional(readOnly = true)
 	public Note get(UUID id) {
-		Note note = this.notes.find(id).orElseThrow(NoteService::notFound);
-		if (!this.authorization.can(NotesPermissions.VIEW, note)) {
-			throw notFound();
-		}
-		return note;
+		return this.authorization.requireVisible(NotesPermissions.VIEW, this.notes.find(id), NoteService::notFound);
 	}
 
 	@Transactional
@@ -107,9 +104,10 @@ public class NoteService {
 			this.authorization.require(NotesPermissions.RESTORE);
 			return this.notes.searchDeleted(filter.owner(), filter.text(), pageable);
 		}
-		Scope scope = this.authorization.requireScope(NotesPermissions.VIEW);
-		UUID me = this.authorization.currentUserId();
-		if (scope == Scope.OWN) {
+		AccessFilter access = this.authorization.requireFilter(NotesPermissions.VIEW);
+		Optional<UUID> ownerOnly = access.ownerOnly();
+		if (ownerOnly.isPresent()) {
+			UUID me = ownerOnly.get();
 			if (filter.owner() != null && !filter.owner().equals(me)) {
 				return Page.empty(pageable);
 			}
@@ -129,12 +127,11 @@ public class NoteService {
 	}
 
 	/**
-	 * Loads a note the caller may see. A note that does not exist and a note the caller may not see look the same: 404.
+	 * Loads a note the caller may see (ADR 0064): 403 for a caller who may view no note at all, decided before the note is
+	 * read; otherwise a note that does not exist and a note the caller may not see look the same, 404.
 	 */
 	private Note visible(UUID id) {
-		return this.notes.find(id)
-			.filter((note) -> this.authorization.can(NotesPermissions.VIEW, note))
-			.orElseThrow(NoteService::notFound);
+		return this.authorization.requireVisible(NotesPermissions.VIEW, this.notes.find(id), NoteService::notFound);
 	}
 
 	private static ApiException notFound() {

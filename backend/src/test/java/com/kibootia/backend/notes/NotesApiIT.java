@@ -1,5 +1,6 @@
 package com.kibootia.backend.notes;
 
+import java.util.List;
 import java.util.UUID;
 
 import com.jayway.jsonpath.JsonPath;
@@ -188,6 +189,22 @@ class NotesApiIT {
 		mvc.perform(as(BOB, get("/api/v1/notes/" + UUID.randomUUID())))
 			.andExpect(status().isNotFound())
 			.andExpect(jsonPath("$.code").value("notes.not_found"));
+	}
+
+	@Test
+	@DisplayName("a caller who may view no note at all is 403 for every ID, existing or not, and for the list (ADR 0064)")
+	void withoutAnyViewGrantEveryIdAnswersAlike() throws Exception {
+		String alices = created(ALICE, "Visible to Alice");
+		GrantedPermissions.revoke(NotesPermissions.VIEW);
+
+		// Decided before any note is read, so the answer cannot say whether an ID exists.
+		for (String id : List.of(alices, UUID.randomUUID().toString())) {
+			mvc.perform(as(ALICE, get("/api/v1/notes/" + id)))
+				.andExpect(status().isForbidden())
+				.andExpect(jsonPath("$.code").value("platform.forbidden"));
+			mvc.perform(as(ALICE, get("/api/v1/notes/" + id + "/attachment"))).andExpect(status().isForbidden());
+		}
+		mvc.perform(as(ALICE, get("/api/v1/notes"))).andExpect(status().isForbidden());
 	}
 
 	@Test
@@ -562,10 +579,17 @@ class NotesApiIT {
 		mvc.perform(post("/api/v1/notes").with(unverified).contentType(MediaType.APPLICATION_JSON)
 			.content("{\"title\":\"New\",\"body\":\"b\"}")).andExpect(status().isForbidden())
 			.andExpect(jsonPath("$.code").value("platform.email_not_verified"));
-		mvc.perform(get("/api/v1/notes/" + id).with(unverified)).andExpect(status().isNotFound());
-		mvc.perform(put("/api/v1/notes/" + id).with(unverified).contentType(MediaType.APPLICATION_JSON)
-			.content("{\"title\":\"x\",\"body\":\"y\",\"version\":0}")).andExpect(status().isNotFound());
-		mvc.perform(delete("/api/v1/notes/" + id).with(unverified)).andExpect(status().isNotFound());
+		// Contract version 2 (ADR 0064): one answer for every operation, decided before the note is read, so it says
+		// what to do about it and reveals nothing about which IDs exist. Version 1 answered 404 here.
+		for (String any : List.of(id, UUID.randomUUID().toString())) {
+			mvc.perform(get("/api/v1/notes/" + any).with(unverified)).andExpect(status().isForbidden())
+				.andExpect(jsonPath("$.code").value("platform.email_not_verified"));
+			mvc.perform(put("/api/v1/notes/" + any).with(unverified).contentType(MediaType.APPLICATION_JSON)
+				.content("{\"title\":\"x\",\"body\":\"y\",\"version\":0}")).andExpect(status().isForbidden())
+				.andExpect(jsonPath("$.code").value("platform.email_not_verified"));
+			mvc.perform(delete("/api/v1/notes/" + any).with(unverified)).andExpect(status().isForbidden())
+				.andExpect(jsonPath("$.code").value("platform.email_not_verified"));
+		}
 		assertThat(count("select count(*) from note where deleted_at is null")).isEqualTo(1);
 	}
 

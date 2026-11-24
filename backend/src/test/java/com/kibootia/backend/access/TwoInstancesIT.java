@@ -14,7 +14,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import com.kibootia.backend.AdminApiTest;
 import com.kibootia.backend.BackendApplication;
 import com.kibootia.backend.access.domain.PermissionSource;
-import com.kibootia.backend.platform.authorization.Caller;
+import com.kibootia.backend.platform.authorization.Principal;
 import com.kibootia.backend.platform.tenancy.TenantContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -43,7 +43,7 @@ class TwoInstancesIT extends AdminApiTest {
 					"--spring.datasource.password=" + pool.getPassword(), "--kibootia.jobs.enabled=false",
 					"--spring.main.banner-mode=off")) {
 			PermissionSource other = second.getBean(PermissionSource.class);
-			Caller alice = Caller.user(ALICE, TenantContext.DEFAULT_TENANT, true);
+			Principal.User alice = new Principal.User(ALICE, TenantContext.DEFAULT_TENANT, true);
 			assertThat(other.permissionsOf(alice)).doesNotContain("access.roles.view");
 
 			String viewers = createRole("Role viewers", "access.roles.view");

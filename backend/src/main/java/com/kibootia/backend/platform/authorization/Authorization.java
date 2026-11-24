@@ -1,7 +1,9 @@
 package com.kibootia.backend.platform.authorization;
 
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,59 +18,115 @@ import org.springframework.stereotype.Component;
 import com.kibootia.backend.platform.tenancy.TenantContext;
 
 /**
- * The entry point for authorization checks inside use cases (ADR 0044). A permission-only check is declared with
- * {@link RequiresPermission}; a check that needs the record calls {@link #require(String, Object)} after loading it; a
- * list asks {@link #scopeFor(String)} and turns the answer into a query condition. Every denial is an {@link
- * AccessDeniedException}, which the web layer answers with 403.
+ * The entry point for authorization checks inside use cases (ADR 0044, contract version 2 of ADR 0055).
+ *
+ * <ul>
+ * <li>An action on the collection (create, an administrative action) is declared with {@link RequiresPermission}, or
+ * checked with {@link #require(String)}.</li>
+ * <li>An action on one record is checked after loading it, with {@link #require(String, Resource)}; for the read that
+ * loads it, {@link #requireVisible} applies the rule for invisible records.</li>
+ * <li>A list asks {@link #requireFilter(String)} and turns the answer into its query condition.</li>
+ * </ul>
+ *
+ * <p>Every check goes through the decision point and is recorded by {@link DecisionRecorder}. A refusal is an {@link
+ * AccessDeniedException}, which the web layer answers with 403; a caller who has not verified their email address gets
+ * {@link EmailNotVerifiedException} instead, because verifying is what they can do about it.
+ *
+ * <p><strong>403 or 404</strong> (OQ-87, decided in ADR 0064): a caller who holds no grant for the action at all is
+ * refused with 403, and that is decided without reading any record. A caller who holds the action but whose grants do
+ * not reach the record, and a record that does not exist, both answer 404, so the answer never says whether an ID exists.
  */
 @Component
 public class Authorization {
 
 	private static final Logger log = LoggerFactory.getLogger(Authorization.class);
 
-	private static final ThreadLocal<Caller> SYSTEM = new ThreadLocal<>();
+	private static final ThreadLocal<Principal.System> SYSTEM = new ThreadLocal<>();
 
 	private final PolicyDecisionPoint decisionPoint;
 
+	private final DecisionRecorder recorder;
+
 	/** With no decision point (the {@code access} module is absent) everything is denied. */
-	Authorization(ObjectProvider<PolicyDecisionPoint> decisionPoint) {
+	Authorization(ObjectProvider<PolicyDecisionPoint> decisionPoint, DecisionRecorder recorder) {
 		this.decisionPoint = decisionPoint.getIfAvailable(Authorization::denyAll);
+		this.recorder = recorder;
 	}
 
 	private static PolicyDecisionPoint denyAll() {
 		return new PolicyDecisionPoint() {
+
 			@Override
-			public boolean can(Caller caller, String action, Object resource) {
-				return false;
+			public Decision decide(Principal principal, String action, ResourceRef resource) {
+				return Decision.of(Reason.NO_DECISION_POINT);
 			}
 
 			@Override
-			public Scope scopeFor(Caller caller, String action) {
-				return Scope.NONE;
+			public AccessFilter filter(Principal principal, String action) {
+				return AccessFilter.NOTHING;
 			}
+
 		};
 	}
 
-	/** Whether the current caller holds the permission, for itself or for every record. */
-	public boolean can(String action) {
-		return this.decisionPoint.scopeFor(caller(), action) != Scope.NONE;
+	// --- decisions ---------------------------------------------------------------------------------------------------
+
+	/** The decision for an action on the collection, with its reason. */
+	public Decision decide(String action) {
+		return decide(action, (ResourceRef) null);
 	}
 
-	/** Whether the current caller may perform the action on this record. */
-	public boolean can(String action, Object resource) {
-		return this.decisionPoint.can(caller(), action, resource);
+	/** The decision for an action on one record, with its reason. */
+	public Decision decide(String action, Resource resource) {
+		return decide(action, resource.resourceRef());
+	}
+
+	private Decision decide(String action, ResourceRef resource) {
+		Principal principal = principal();
+		Decision decision = this.decisionPoint.decide(principal, action, resource);
+		this.recorder.record(principal, action, resource, decision, this.decisionPoint.isSensitive(action));
+		return decision;
+	}
+
+	/** Whether the principal holds the action at all: on the collection, or on at least some records. */
+	public boolean can(String action) {
+		return decide(action).allowed();
+	}
+
+	/** Whether the principal may perform the action on this record. */
+	public boolean can(String action, Resource resource) {
+		return decide(action, resource).allowed();
 	}
 
 	public void require(String action) {
-		if (!can(action)) {
+		Decision decision = decide(action);
+		if (!decision.allowed()) {
 			throw denied(action);
 		}
 	}
 
-	public void require(String action, Object resource) {
-		if (!can(action, resource)) {
+	public void require(String action, Resource resource) {
+		Decision decision = decide(action, resource);
+		if (!decision.allowed()) {
 			throw denied(action);
 		}
+	}
+
+	/**
+	 * The record, when the principal may perform the action on it; the rule for invisible records applied. Without any
+	 * grant for the action: 403, decided before the record is looked at. With a grant that does not reach the record, or
+	 * with no record: the exception {@code notFound} supplies, the same in both cases.
+	 */
+	public <T extends Resource> T requireVisible(String action, Optional<T> record,
+			Supplier<? extends RuntimeException> notFound) {
+		if (requireFilter(action).isNothing()) {
+			throw denied(action);
+		}
+		T found = record.orElseThrow(notFound);
+		if (!can(action, found)) {
+			throw notFound.get();
+		}
+		return found;
 	}
 
 	/**
@@ -76,44 +134,50 @@ public class Authorization {
 	 * verified their email address (ADR 0041).
 	 */
 	public void requireVerified() {
-		if (!caller().emailVerified()) {
+		if (principal() instanceof Principal.User user && !user.emailVerified()) {
 			throw new EmailNotVerifiedException();
 		}
 	}
 
-	public Scope scopeFor(String action) {
-		return this.decisionPoint.scopeFor(caller(), action);
+	// --- lists -------------------------------------------------------------------------------------------------------
+
+	/** Which records the principal may perform the action on; {@link AccessFilter#NOTHING} when none. */
+	public AccessFilter filter(String action) {
+		return this.decisionPoint.filter(principal(), action);
 	}
 
-	/** Like {@link #scopeFor} but denies when the caller may not perform the action on any record. */
-	public Scope requireScope(String action) {
-		Scope scope = scopeFor(action);
-		if (scope == Scope.NONE) {
+	/** Like {@link #filter} but refuses with 403 when the principal may perform the action on no record at all. */
+	public AccessFilter requireFilter(String action) {
+		AccessFilter filter = filter(action);
+		if (filter.isNothing()) {
+			// Recorded as a refusal of the action on the collection, so a refused list leaves a record too.
+			decide(action);
 			throw denied(action);
 		}
-		return scope;
+		return filter;
 	}
 
-	/** Whether the signed-in user's email address is verified, as the token says (ADR 0041). */
+	// --- the principal -----------------------------------------------------------------------------------------------
+
+	/** Whether the signed-in user's email address is verified, as the token says (ADR 0041). The system counts as verified. */
 	public boolean isEmailVerified() {
-		return caller().emailVerified();
+		return !(principal() instanceof Principal.User user) || user.emailVerified();
 	}
 
-	/** The id of the signed-in user, for ownership conditions in queries. */
+	/** The ID of the principal, for ownership conditions and audit columns; the nil UUID for the system. */
 	public UUID currentUserId() {
-		return caller().userId();
+		return principal().id();
 	}
 
 	/**
-	 * Runs work that no user started (a job, an event handler) with every permission. The reason is required and
-	 * logged, so the use of system authority is visible and reviewable. The tenant must already be bound.
+	 * Runs work that no user started (a job, an event handler) with system authority. The reason is required, and every
+	 * decision record of the work names it, so the use of system authority is visible and reviewable (ADR 0055, point
+	 * 7). The tenant must already be bound. Calls nest: the innermost reason applies, and the previous one is restored.
 	 */
 	public <T> T runAsSystem(String reason, Callable<T> work) {
-		if (reason == null || reason.isBlank()) {
-			throw new IllegalArgumentException("A reason is required to act as the system");
-		}
-		Caller previous = SYSTEM.get();
-		SYSTEM.set(Caller.system(TenantContext.require()));
+		Principal.System system = new Principal.System(TenantContext.require(), reason);
+		Principal.System previous = SYSTEM.get();
+		SYSTEM.set(system);
 		log.debug("Acting as the system: {}", reason);
 		try {
 			return work.call();
@@ -141,8 +205,12 @@ public class Authorization {
 		});
 	}
 
-	Caller caller() {
-		Caller system = SYSTEM.get();
+	/**
+	 * The principal of the current work: the system inside {@link #runAsSystem}, otherwise the user of the bearer token
+	 * in the bound tenant. Refuses when there is neither, or when the token's subject is not a user ID.
+	 */
+	Principal principal() {
+		Principal.System system = SYSTEM.get();
 		if (system != null) {
 			return system;
 		}
@@ -152,7 +220,7 @@ public class Authorization {
 		}
 		UUID tenant = TenantContext.current().orElseThrow(() -> new AccessDeniedException("There is no tenant"));
 		try {
-			return Caller.user(UUID.fromString(token.getSubject()), tenant,
+			return new Principal.User(UUID.fromString(token.getSubject()), tenant,
 					Boolean.TRUE.equals(token.getClaimAsBoolean("email_verified")));
 		}
 		catch (IllegalArgumentException | NullPointerException ex) {
@@ -165,8 +233,7 @@ public class Authorization {
 	 * what they can do about it; everyone else gets a plain denial.
 	 */
 	AccessDeniedException denied(String action) {
-		return caller().emailVerified() ? new AccessDeniedException("Not allowed: " + action)
-				: new EmailNotVerifiedException();
+		return isEmailVerified() ? new AccessDeniedException("Not allowed: " + action) : new EmailNotVerifiedException();
 	}
 
 }

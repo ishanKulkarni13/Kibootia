@@ -2,7 +2,7 @@ package com.kibootia.backend.access.domain;
 
 import java.util.Set;
 
-import com.kibootia.backend.platform.authorization.Caller;
+import com.kibootia.backend.platform.authorization.Principal;
 
 /**
  * Where a caller's permissions come from: the roles stored in the database, read by one indexed query per call so a
@@ -10,6 +10,6 @@ import com.kibootia.backend.platform.authorization.Caller;
  */
 public interface PermissionSource {
 
-	Set<String> permissionsOf(Caller caller);
+	Set<String> permissionsOf(Principal.User user);
 
 }
