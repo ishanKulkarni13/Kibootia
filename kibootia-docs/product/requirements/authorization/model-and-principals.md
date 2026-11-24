@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-11
+- **Last updated:** 2026-11-25
 
 > **Implementation:** planned for most of it; role-based access with code-defined permissions and runtime-editable roles is verified. Per-requirement status: [traceability](traceability.md).
 
@@ -92,4 +92,4 @@ Conflict resolution is consistent:
 
 An application can define which policy combinations are permitted within the supported security model.
 
-> **Review note:** today nothing can express an explicit deny; every rule is an allow and absence means deny. "Deny takes precedence" therefore needs a deny rule to exist first. The recommended reading is: deny rules are an optional capability an application can switch on, and when they exist they always win (draft [ADR 0055](../../../decisions/0055-authorization-decision-contract.md)).
+> **Review note:** today nothing can express an explicit deny; every rule is an allow and absence means deny. "Deny takes precedence" therefore needs a deny rule to exist first. The recommended reading is: deny rules are an optional capability an application can switch on, and when they exist they always win ([ADR 0055](../../../decisions/0055-authorization-decision-contract.md)).

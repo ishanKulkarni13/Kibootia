@@ -4,13 +4,15 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-24
+- **Last updated:** 2026-11-25
 
 > **Implementation:** not applicable (list).
 
 Live list of unresolved decisions, deviations observed in the repository and checks that must pass before a decision is final. Remove an entry (and note it in the relevant document or ADR) when it is resolved. All entries are owned by ishanKulkarni13 until reassigned.
 
 Resolved on 2026-10-28 and removed: OQ-02, OQ-03, OQ-04, OQ-06, OQ-20, OQ-22, OQ-23, OQ-25, OQ-27, OQ-28, OQ-29, OQ-31 (versions aside) and OQ-34; see ADRs [0023](0023-template-fork-adoption-model.md) to [0038](0038-frontend-stack.md).
+
+Resolved on 2026-11-25 and removed, on the owner's delegation of that day (the owner asked that nothing wait on them; each follows the reviewer's recommendation): OQ-81, OQ-82 and OQ-83 (ADRs [0053](0053-adopt-authorization-requirements.md), [0054](0054-authorization-domain-model.md) and [0055](0055-authorization-decision-contract.md) are accepted; 0053 supersedes [0009](0009-role-based-authorization-first.md)); OQ-85 and OQ-89 (the order is 5.1, then 6, then 9: milestones 7 and 8 are built, and the first release tag should carry the new contract and stored model); OQ-88 ("SDK" in AUTH-037 means the in-repository Java contract and the OpenAPI-described administration API); OQ-67 (answered by [0064](0064-milestone-7-implementation-decisions.md): principal, action, resource reference, outcome, reason code and trace ID, no attribute values); OQ-44, OQ-45 and OQ-46 (the checks passed in CI: runs 42959703043, 42589726681 and 42589726681).
 
 Resolved on 2026-11-24 and removed: OQ-86 (the 31 end-to-end tests of milestone 5 passed in CI run 45354022559 on pull request #10, after three defects they found were fixed) and OQ-87 (403 when the caller holds no grant for the action, decided before the record is read; 404 alike for a missing record and one out of reach; draft [0064](0064-milestone-7-implementation-decisions.md)).
 
@@ -31,9 +33,6 @@ Each check runs in the milestone that first needs it. A failed check leads to th
 | ID | Check | Milestone | Fallback | Decision it gates |
 |---|---|---|---|---|
 | OQ-42 | OTLP log export wiring in the chosen Spring Boot version. Finding (2026-11-09, Boot 4.1.1): the `management.opentelemetry.logging.*` properties exist, but the exporter needs OpenTelemetry's Logback appender (`opentelemetry-logback-appender-1.0`, alpha-versioned), which `spring-boot-starter-opentelemetry` does not include. Not wired in milestone 1; Next.js logs also go to the console only. Traces and metrics are exported | 1 | Console JSON logs only until wired (in use) | [ADR 0030](0030-otlp-telemetry-and-local-lgtm.md) |
-| OQ-44 | The whole toolchain builds and tests on Java 25 (Spring Boot, Spring Modulith, ArchUnit, Testcontainers, Maven plugins, scanned image). Build and tests pass on Eclipse Temurin 25 in CI (2026-11-08, run 42477195261); the image scan passed for both images in CI (run 42959703043, 2026-11-11), so this check is complete and the row can be removed on the owner's say-so | 0 | Java 21 | [ADR 0048](0048-java-25-baseline-on-temurin.md) |
-| OQ-45 | In the `apps` Compose profile, Keycloak's fixed public hostname with an internal back channel works, and Spring validates the public issuer while fetching keys internally. Passes locally (a real sign-in through both containers and a unit-level test of the split in `ResourceServerIT`, 2026-11-09); the CI end-to-end job passed on 2026-11-09 (run 42589726681) | 1 | Applications on the host only | [ADR 0040](0040-local-development-topology-and-setup.md) |
-| OQ-46 | The OpenTofu Keycloak provider manages the pinned Keycloak version; Keycloak runs on the pinned PostgreSQL. Passes locally (Keycloak 26.8.2, provider 5.10.0, PostgreSQL 17.11: apply of 8 resources and an in-place change, 2026-11-09); passed in the CI end-to-end job (run 42589726681, 2026-11-09) | 1 | Pin earlier compatible versions | [ADR 0045](0045-keycloak-operations.md) |
 | OQ-47 | OpenTofu's native state locking works on the production S3 service recommended in the reference deployment | 6 | Root-only state file on the server | [ADR 0045](0045-keycloak-operations.md) |
 
 ## Undecided
@@ -50,12 +49,7 @@ Raised by the review of 2026-11-11 (`temp/authorization-review.md`). The recomme
 | ID | Question | Recommendation | Blocks |
 |---|---|---|---|
 | OQ-80 | Are the nine proposed requirements, AUTH-041 to AUTH-049, approved? ([requirements](../product/requirements/authorization/README.md)) | Approve 044, 045, 046, 048 and 049 as they refine established requirements; approve 041, 042, 043 and 047 when their milestone is scheduled | Milestones 10 to 15 of the [authorization roadmap](../product/roadmap/authorization-roadmap.md) |
-| OQ-81 | Is draft [ADR 0053](0053-adopt-authorization-requirements.md) accepted as written? It records the owner's choice of full commitment and supersedes ADR 0009 | Accept after reading its consequences | Everything below |
-| OQ-82 | Is draft [ADR 0054](0054-authorization-domain-model.md), the domain model, accepted? | Accept | [Milestone 7](../product/roadmap/milestone-7-authorization-contract.md) |
-| OQ-83 | Is draft [ADR 0055](0055-authorization-decision-contract.md), the decision contract, accepted? | Accept | Milestone 7 |
 | OQ-84 | The engine evaluation of draft [ADR 0056](0056-authorization-evaluation-engine.md): in-house on MySQL against OpenFGA and Cerbos on two reference scenarios, with measurements | Run it during milestone 7; decide before milestone 9 | Milestone 9 onward |
-| OQ-85 | Does [milestone 6](../product/roadmap/milestone-6-production-readiness.md) (production readiness and the first release tag) come before or after milestones 7 and 8? The owner said on 2026-11-11 that Kibootia has no forks and no users, so breaking changes are acceptable and the order is no longer forced | After milestone 8, so the first tag already carries the new contract; either order is safe | The order of work |
-| OQ-88 | What "SDK" means in AUTH-037, given that nothing is published as a library ([ADR 0023](0023-template-fork-adoption-model.md)). The owner did not answer this directly; it follows from authorization being an in-process module | The in-repository Java contract and the OpenAPI-described administration API; confirm the wording | AUTH-037 |
 
 ## Architecture assessment of 2026-11-24
 
@@ -63,7 +57,6 @@ Raised by the [architecture assessment](../architecture/architecture-assessment.
 
 | ID | Question | Recommendation | Blocks |
 |---|---|---|---|
-| OQ-89 | Is [milestone 5.1](../product/roadmap/milestone-5-1-architecture-hardening.md) (architecture hardening) done before milestone 7, and is the order 5.1, 7, then 6 or 8 (see OQ-85)? | Yes: 5.1 first, because the later phases add tables and rules on top of what it fixes. Then 6 before 8, so deployment gaps surface before the stored model grows | The order of work |
 | OQ-90 | Is the PostgreSQL evaluation of [ADR 0062](0062-reassess-the-application-database-before-multi-tenancy.md) run, and when? | Run it in milestone 5.1, two days, and decide before milestone 8 adds tables | Milestone 8, milestone 16 |
 | OQ-91 | Are ADRs [0057](0057-consumer-owned-ports-and-declared-module-dependencies.md), [0058](0058-no-external-call-inside-a-database-transaction.md), [0059](0059-data-integrity-in-the-database.md), [0060](0060-implementation-status-in-one-place.md), [0061](0061-ci-quality-and-supply-chain-gates.md) and [0063](0063-bff-and-edge-hardening.md) accepted as written? | Accept after reading the consequences. Items 1 of 0057 and 0060 are already applied on branch `m-5-1` and are reverted by git if rejected | Milestone 5.1 |
 | OQ-92 | The new rule makes assigning a role require holding its permissions. Should **removing** a role from someone also require holding it, so a user with `access.roles.assign` cannot strip roles they could not give? | Not now: removal reduces access and is audited, and the last-administrator rule already protects the one role whose loss locks everyone out. Revisit with scoped assignments in milestone 9 | Milestone 9 |
@@ -91,7 +84,6 @@ Section 27 of `temp/authz-new-srs.md`, unchanged in meaning. Each is answered by
 | OQ-64 | How are policy conflicts shown to administrators? | At validation, before publication, naming the conflicting grants | Milestone 15 |
 | OQ-65 | What audit retention periods are required? | Keep 365 days for changes (ADR 0046); a shorter default for decision records | Milestone 15 |
 | OQ-66 | Which audit records must be immutable? | All of them: append-only, removed only by the retention purge | Milestone 15 |
-| OQ-67 | How much detail of a decision is stored? | Principal, action, resource reference, outcome, reason code, trace ID; no attribute values | Milestone 7 |
 | OQ-68 | What consistency is required after a revocation? | The next request, as today | Milestone 17 |
 | OQ-69 | What happens when an external authorization dependency is unavailable? | Deny; with no external engine by default the case does not arise | Milestone 9 |
 | OQ-70 | Decision latency targets? | Measure today's baseline in milestone 7 and set the target from it | Milestone 9 |

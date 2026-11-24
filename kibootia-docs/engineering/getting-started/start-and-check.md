@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-10
+- **Last updated:** 2026-11-25
 
 > **Implementation:** the container route below (`pnpm apps:up`) was run on a Windows machine on 2026-11-10 from freshly reset volumes, and the checks in section 4 passed there and in CI (run 42780048416, pull request #5). The host route (`pnpm dev`) was last run for milestone 1 and is not re-run for milestone 3. Not run on macOS or Linux. The photo checks (steps 16 to 18) describe milestone 4. Their automated counterpart, the avatar end-to-end story, passed against the full stack in CI (run 42873216224, pull request #6); nobody has walked through the steps by hand yet.
 
@@ -31,7 +31,7 @@ Milestones 0 to 5 are built ([roadmap](../../product/roadmap/README.md), [implem
 | Rate limiting | Invitations, verification mail and administrative actions are limited per user, answering 429 with `Retry-After` | 3 |
 | Avatars and object storage | Upload, replace and remove a photo on your profile (JPEG, PNG or WebP, up to 5 MB). The server stores a square 64 and 256 pixel copy and drops everything else in the file, such as the camera's location. Others see your photo only with the permission to see profiles. The files live in RustFS, an S3-compatible server; the module can be switched off | 4 |
 | Module removal | The example feature is deleted with one script and the application still builds; files and telemetry export can be switched off with one setting each. [Recipes](../../recipes/README.md) | 5 |
-| Quality gates | Architecture rules shown to fire, 404 backend tests, 196 frontend tests, 31 end-to-end tests with accessibility checks, container image scan and secret scan, and the module-removal job. In CI for milestone 4 (run 42873216224). For milestone 5 the backend and frontend tests passed locally, the end-to-end story is written and has not run, and there is no CI run yet | 0 to 5 |
+| Quality gates | Architecture rules shown to fire, 404 backend tests, 196 frontend tests, 31 end-to-end tests with accessibility checks, container image scan and secret scan, and the module-removal job. In CI for milestone 4 (run 42873216224). For milestone 5 the backend, frontend, image scan, secret scan and module-removal jobs passed in run 42959703043 and the 31 end-to-end tests in run 45354022559 | 0 to 5 |
 
 **Not built yet:**
 

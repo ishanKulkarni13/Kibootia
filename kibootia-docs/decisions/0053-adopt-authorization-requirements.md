@@ -2,9 +2,9 @@
 
 - **Type:** adr
 - **Module:** platform
-- **Status:** draft
+- **Status:** accepted
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-11
+- **Last updated:** 2026-11-25
 
 > **Implementation:** planned. The requirements exist as documents; of 51, 4 are fully met by today's code, 21 partly and 25 not at all ([traceability](../product/requirements/authorization/traceability.md)).
 
@@ -53,7 +53,7 @@ What follows:
 
 ## Status
 
-draft. Records the owner's choice of 2026-11-11; the text awaits the owner's confirmation (OQ-81). On acceptance it supersedes [ADR 0009](0009-role-based-authorization-first.md).
+accepted on the owner's delegation of 2026-11-25. Records the owner's choice of 2026-11-11. Supersedes [ADR 0009](0009-role-based-authorization-first.md). OQ-81 is closed.
 
 ## Related
 

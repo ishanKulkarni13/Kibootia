@@ -2,15 +2,15 @@
 
 - **Type:** adr
 - **Module:** platform
-- **Status:** draft
+- **Status:** accepted
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-24
+- **Last updated:** 2026-11-25
 
 > **Implementation:** observed on branch `m-7` (verified, CI run 45354823982, 2026-11-24). Recorded in [implementation status](../product/roadmap/implementation-status.md).
 
 ## Context
 
-[Milestone 7](../product/roadmap/milestone-7-authorization-contract.md) builds points 1 to 4 and 6 of the decision contract of draft [ADR 0055](0055-authorization-decision-contract.md). The owner asked on 2026-11-24 for the documented authorization work to be implemented end to end; ADRs 0053 to 0055 are still drafts awaiting acceptance (OQ-81 to OQ-83), so this ADR is a draft too and records what was decided while building, for the owner to confirm. Several choices were left open by ADR 0055 and the milestone, and one existing test changed its expected outcome.
+[Milestone 7](../product/roadmap/milestone-7-authorization-contract.md) builds points 1 to 4 and 6 of the decision contract of [ADR 0055](0055-authorization-decision-contract.md). The owner asked on 2026-11-24 for the documented authorization work to be implemented end to end; ADRs 0053 to 0055 were still drafts then; the owner accepted them, and this ADR, on 2026-11-25 (delegation). This ADR records what was decided while building. Several choices were left open by ADR 0055 and the milestone, and one existing test changed its expected outcome.
 
 ## Decision
 
@@ -54,7 +54,7 @@ The permissions marked sensitive: `identity.users.delete`, `identity.users.erase
 
 ## Status
 
-draft. Awaiting the owner, together with ADRs 0053 to 0055. Resolves OQ-87.
+accepted on the owner's delegation of 2026-11-25. Built and verified in CI (run 45354823982). Resolves OQ-87.
 
 ## Related
 

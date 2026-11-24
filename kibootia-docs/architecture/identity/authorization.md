@@ -4,13 +4,13 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-24
+- **Last updated:** 2026-11-25
 
 > **Implementation:** stored roles, the editable role model, email verification and the safeguards are verified (CI run 42780048416, 2026-11-10). Contract version 2 (decisions with reasons, access filters, narrowing rules, decision records) is observed on branch `m-7` (verified, CI run 45354823982, 2026-11-24).
 
 Decisions: [ADR 0009](../../decisions/0009-role-based-authorization-first.md), [ADR 0025](../../decisions/0025-identity-and-authorization-data-split.md), [ADR 0027](../../decisions/0027-central-authorization-decision-point.md), [ADR 0041](../../decisions/0041-user-lifecycle-and-account-model.md), [ADR 0044](../../decisions/0044-authorization-enforcement-conventions.md).
 
-This document describes authorization **as it is built today**. What it must become is in the [authorization requirements](../../product/requirements/authorization/README.md); how far the code is from them is in their [traceability](../../product/requirements/authorization/traceability.md); the contract below is draft [ADR 0055](../../decisions/0055-authorization-decision-contract.md), built on the owner's instruction of 2026-11-24 and awaiting acceptance; the grant model of draft [ADR 0054](../../decisions/0054-authorization-domain-model.md) is next.
+This document describes authorization **as it is built today**. What it must become is in the [authorization requirements](../../product/requirements/authorization/README.md); how far the code is from them is in their [traceability](../../product/requirements/authorization/traceability.md); the contract below is [ADR 0055](../../decisions/0055-authorization-decision-contract.md), accepted and built (milestone 7); the grant model of [ADR 0054](../../decisions/0054-authorization-domain-model.md) is built too (milestone 8); scoped assignments are next (milestone 9).
 
 ## Principles (owner decisions)
 

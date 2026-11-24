@@ -4,9 +4,9 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-08
+- **Last updated:** 2026-11-25
 
-> **Implementation:** built and passing local runs on 2026-11-09; **not complete**, because by the [verification standard](../../engineering/testing/verification-standard.md) nothing counts until CI has run green. Locally: 27 backend tests (14 for the resource server, one for trace IDs in logs), 83 frontend unit tests, lint, type check and build, and a 4-test Playwright sign-in suite against real Keycloak, once with the applications on the host and once in the `apps` containers. The CI jobs for the frontend, the image build and scan, and the end-to-end test are written but have never run (the end-to-end job runs on pull requests labelled `e2e`, nightly and on demand). Windows only; macOS and Linux are untested. Gaps and deviations are listed under "Status against the criteria". See [implementation status](implementation-status.md).
+> **Implementation:** built and verified. The CI jobs for the frontend, the image build and scan, and the end-to-end sign-in passed on pull request #4 (runs 42589726681 and 42605511477, 2026-11-09), and have passed in every run since. Locally: 27 backend tests (14 for the resource server, one for trace IDs in logs), 83 frontend unit tests, lint, type check and build, and a 4-test Playwright sign-in suite against real Keycloak, once with the applications on the host and once in the `apps` containers. The end-to-end job runs on pull requests labelled `e2e`, nightly and on demand. Developed on Windows; macOS and Linux are untested. Gaps and deviations are listed under "Status against the criteria". See [implementation status](implementation-status.md).
 
 ## Scope
 

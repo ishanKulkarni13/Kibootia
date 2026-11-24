@@ -2,11 +2,11 @@
 
 - **Type:** adr
 - **Module:** platform
-- **Status:** draft
+- **Status:** accepted
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-24
+- **Last updated:** 2026-11-25
 
-> **Implementation:** observed on branch `m-policy` (local run, 2026-11-24; CI run pending). Recorded in [implementation status](../product/roadmap/implementation-status.md).
+> **Implementation:** verified (CI run 45385703846, 2026-11-24, pull request #14). Recorded in [implementation status](../product/roadmap/implementation-status.md).
 
 ## Context
 
@@ -42,7 +42,7 @@ The owner asked on 2026-11-24 for OPA to be used "if it fits". It fits in a diff
 
 ## Status
 
-draft. Awaiting the owner.
+accepted on the owner's delegation of 2026-11-25. Built and verified in CI (run 45385703846).
 
 ## Related
 

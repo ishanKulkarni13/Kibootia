@@ -4,9 +4,9 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-08
+- **Last updated:** 2026-11-25
 
-> **Implementation:** partly observed. The hardcoded password is removed, `.env` is ignored, `.env.example` and `pnpm bootstrap` exist, and a missing required setting stops startup with a message. Credentials that were ever committed are not yet rotated (owner task); see Known limitations.
+> **Implementation:** partly observed. The hardcoded password is removed, `.env` is ignored, `.env.example` and `pnpm bootstrap` exist, and a missing required setting stops startup with a message. The owner rotated the credentials that were committed to git history (reported 2026-11-08); see Known limitations.
 
 Decisions: [ADR 0015](../../decisions/0015-vault-for-production-secrets.md) (accepted, partly superseded), [ADR 0016](../../decisions/0016-platform-injected-secrets.md) (accepted), [ADR 0032](../../decisions/0032-secrets-from-environment-and-files.md) (accepted).
 

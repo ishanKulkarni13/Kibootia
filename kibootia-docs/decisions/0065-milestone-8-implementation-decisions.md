@@ -2,15 +2,15 @@
 
 - **Type:** adr
 - **Module:** platform
-- **Status:** draft
+- **Status:** accepted
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-24
+- **Last updated:** 2026-11-25
 
-> **Implementation:** observed on branch `m-8` (local run, 2026-11-24; CI run pending). Recorded in [implementation status](../product/roadmap/implementation-status.md).
+> **Implementation:** verified (CI run 45384428905, 2026-11-24, pull request #13). Recorded in [implementation status](../product/roadmap/implementation-status.md).
 
 ## Context
 
-[Milestone 8](../product/roadmap/milestone-8-grant-model.md) replaces "a role is a list of permission names, where `-any` means every record" with the grant model of draft [ADR 0054](0054-authorization-domain-model.md), and point 5 of draft [ADR 0055](0055-authorization-decision-contract.md). It was built on the owner's instruction of 2026-11-24, while ADRs 0053 to 0055 still await acceptance. The milestone left several things open, and one of its steps could not be built as written.
+[Milestone 8](../product/roadmap/milestone-8-grant-model.md) replaces "a role is a list of permission names, where `-any` means every record" with the grant model of [ADR 0054](0054-authorization-domain-model.md), and point 5 of [ADR 0055](0055-authorization-decision-contract.md). It was built on the owner's instruction of 2026-11-24, while ADRs 0053 to 0055 were still drafts; they were accepted on 2026-11-25 (delegation). The milestone left several things open, and one of its steps could not be built as written.
 
 ## Decision
 
@@ -55,7 +55,7 @@
 
 ## Status
 
-draft. Awaiting the owner, together with ADRs 0053 to 0055.
+accepted on the owner's delegation of 2026-11-25. Built and verified in CI (run 45384428905).
 
 ## Related
 

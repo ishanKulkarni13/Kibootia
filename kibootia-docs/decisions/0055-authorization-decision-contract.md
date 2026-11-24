@@ -2,11 +2,11 @@
 
 - **Type:** adr
 - **Module:** platform
-- **Status:** draft
+- **Status:** accepted
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-11
+- **Last updated:** 2026-11-25
 
-> **Implementation:** points 1 to 4 and 6 observed on branch `m-7` (verified, CI run 45354823982, 2026-11-24), with the choices made while building in draft [ADR 0064](0064-milestone-7-implementation-decisions.md). Point 5 (actions on the collection and on a record; `@RequiresPermission` refused on the latter) is observed on branch `m-8` ([ADR 0065](0065-milestone-8-implementation-decisions.md)). Point 7 is milestone 12.
+> **Implementation:** points 1 to 4 and 6 observed on branch `m-7` (verified, CI run 45354823982, 2026-11-24), with the choices made while building in [ADR 0064](0064-milestone-7-implementation-decisions.md). Point 5 (actions on the collection and on a record; `@RequiresPermission` refused on the latter) is observed on branch `m-8` ([ADR 0065](0065-milestone-8-implementation-decisions.md)). Point 7 is milestone 12.
 
 ## Context
 
@@ -73,7 +73,7 @@ The port and its placement stay. The contract becomes:
 
 ## Status
 
-draft. A recommendation of the 2026-11-11 review, awaiting the owner's confirmation (OQ-83). On acceptance it replaces the contract shape in [ADR 0027](0027-central-authorization-decision-point.md) and the list-scope and machine-client paragraphs of [ADR 0044](0044-authorization-enforcement-conventions.md); both stay accepted otherwise.
+accepted on the owner's delegation of 2026-11-25. Replaces the contract shape in [ADR 0027](0027-central-authorization-decision-point.md) and the list-scope and machine-client paragraphs of [ADR 0044](0044-authorization-enforcement-conventions.md); both stay accepted otherwise. Milestone 7 was built on it and passed CI (run 45354823982). OQ-83 is closed.
 
 ## Related
 

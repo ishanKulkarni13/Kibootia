@@ -4,11 +4,11 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-24
+- **Last updated:** 2026-11-25
 
-> **Implementation:** observed on branch `m-7` (verified, CI run 45354823982, 2026-11-24), built on the owner's instruction of 2026-11-24 while ADRs 0053 to 0055 await acceptance. What was decided while building is draft [ADR 0064](../../decisions/0064-milestone-7-implementation-decisions.md). The query baseline of acceptance criterion 4 was measured on branch `m-8` by `DecisionQueryCountIT`, which counts the SQL statements a decision sends on the calling thread: exactly one, for a check on the collection, on a record, for a list's access filter and for a refusal.
+> **Implementation:** verified (CI run 45354823982, 2026-11-24, pull request #12), built on the owner's instruction of 2026-11-24; ADRs 0053 to 0055 were accepted on 2026-11-25 (delegation). What was decided while building is [ADR 0064](../../decisions/0064-milestone-7-implementation-decisions.md). The query baseline of acceptance criterion 4 was measured on branch `m-8` by `DecisionQueryCountIT`, which counts the SQL statements a decision sends on the calling thread: exactly one, for a check on the collection, on a record, for a list's access filter and for a refusal.
 
-The first phase of the [authorization roadmap](authorization-roadmap.md). Decisions: draft [ADR 0053](../../decisions/0053-adopt-authorization-requirements.md), [ADR 0054](../../decisions/0054-authorization-domain-model.md) and [ADR 0055](../../decisions/0055-authorization-decision-contract.md). It does not start until all three are accepted and the owner authorizes implementation.
+The first phase of the [authorization roadmap](authorization-roadmap.md). Decisions: [ADR 0053](../../decisions/0053-adopt-authorization-requirements.md), [ADR 0054](../../decisions/0054-authorization-domain-model.md) and [ADR 0055](../../decisions/0055-authorization-decision-contract.md). It does not start until all three are accepted and the owner authorizes implementation.
 
 ## 1. Objective
 

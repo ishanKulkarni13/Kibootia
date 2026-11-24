@@ -2,11 +2,11 @@
 
 - **Type:** adr
 - **Module:** platform
-- **Status:** draft
+- **Status:** accepted
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-11
+- **Last updated:** 2026-11-25
 
-> **Implementation:** grants with a reach (`all`, `relation:owner`), deny grants behind a switch, declared resource types and actions, the explicit administrator and rule 7 ("only what you hold", including reach) are observed on branch `m-8` (local run, 2026-11-24; CI run pending), with the choices made while building in draft [ADR 0065](0065-milestone-8-implementation-decisions.md). Scope nodes, relationships beyond `owner`, groups, conditions and assignment validity are later milestones.
+> **Implementation:** grants with a reach (`all`, `relation:owner`), deny grants behind a switch, declared resource types and actions, the explicit administrator and rule 7 ("only what you hold", including reach) are verified (CI run 45384428905, 2026-11-24), with the choices made while building in [ADR 0065](0065-milestone-8-implementation-decisions.md). Scope nodes, relationships beyond `owner`, groups, conditions and assignment validity are later milestones.
 
 ## Context
 
@@ -85,7 +85,7 @@ Kibootia uses one model in which a **grant** is the only thing that allows acces
 
 ## Status
 
-draft. A recommendation of the 2026-11-11 review, awaiting the owner's confirmation (OQ-82). On acceptance it replaces the ownership-by-name convention of [ADR 0049](0049-milestone-2-implementation-decisions.md) and the permission-name paragraph of [ADR 0044](0044-authorization-enforcement-conventions.md), which otherwise stay accepted.
+accepted on the owner's delegation of 2026-11-25. Replaces the ownership-by-name convention of [ADR 0049](0049-milestone-2-implementation-decisions.md) and the permission-name paragraph of [ADR 0044](0044-authorization-enforcement-conventions.md), which otherwise stay accepted. Milestones 7 and 8 were built on it and passed CI. OQ-82 is closed.
 
 ## Related
 

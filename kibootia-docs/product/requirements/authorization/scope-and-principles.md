@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-11
+- **Last updated:** 2026-11-25
 
 > **Implementation:** not applicable (scope statement). Per-requirement status: [traceability](traceability.md).
 
@@ -81,7 +81,7 @@ Examples:
 
 ## Terms
 
-These are the terms as the requirements use them. The design vocabulary, which fixes how they relate in code and data, is decided in draft [ADR 0054](../../../decisions/0054-authorization-domain-model.md).
+These are the terms as the requirements use them. The design vocabulary, which fixes how they relate in code and data, is decided in [ADR 0054](../../../decisions/0054-authorization-domain-model.md).
 
 | Term | Meaning |
 |---|---|

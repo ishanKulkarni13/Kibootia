@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-24
+- **Last updated:** 2026-11-25
 
 > **Implementation:** not applicable (analysis). Snapshot of commit `4cea34f` on 2026-11-11, from reading the code; nothing was run. Whether a requirement works today is in [traceability](traceability.md); this document says what it would take.
 
@@ -86,7 +86,7 @@ Most gaps trace back to three shapes in today's code. They are stated once here 
 | AUTH-022 | **A**. The audit table is written inside business transactions and sized for changes (ADR 0046) | A decision with a reason code (M7); denial records in the structured log (M7); a stored decision log with a viewer and retention (M15) | AUTH-034; an ADR extending 0046 | Records carry no attribute values. High volume: default is denials and sensitive allows only |
 | AUTH-023 | Not applicable | Deferred | AUTH-030 | Deferred |
 | AUTH-027 | Screens exist for users, roles and the audit log only | A screen with each phase that adds an administrable thing; unified in M15 | Every functional requirement | The screen is never the control; each endpoint keeps allowed and denied tests |
-| AUTH-028 | One implicit all-powerful administrator role (`StoredPermissionSource`); the assignment rule (assigner must hold the role's permissions) was added on branch `m-5-1` | The administrator as an explicit role (M8); administration actions granted at scope nodes (M15); tenant and platform levels (M16) | AUTH-004, 017 | S1 is closed (branch `m-5-1`). The last-administrator safeguard must be redefined per scope when scoped administrators exist |
+| AUTH-028 | The administrator is an explicit role (milestone 8); the assignment rule (assigner must hold the role's permissions) was added on branch `m-5-1` | Administration actions granted at scope nodes (M15); tenant and platform levels (M16) | AUTH-004, 017 | S1 is closed (branch `m-5-1`). The last-administrator safeguard must be redefined per scope when scoped administrators exist |
 | AUTH-029 | No pending-change concept | One fixed pattern: a change waits for a configured number of approvers other than the requester | AUTH-030 | The approver must hold the right to make the change; self-approval of one's own change is refused |
 | AUTH-030 | Roles are edited in place with an optimistic version | Versioned definitions with draft, validation, publication and rollback; operational data stays immediate | AUTH-025 | Rollback must never restore an assignment (review note on AUTH-030) |
 | AUTH-044 | One log-wide permission | A per-record history action decided through the decision point | AUTH-005, 022 | Proposed. Reading history is itself recorded |

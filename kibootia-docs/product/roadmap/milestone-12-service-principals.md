@@ -4,11 +4,11 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-11
+- **Last updated:** 2026-11-25
 
 > **Implementation:** planned. Nothing of this milestone exists. Machine tokens are refused today by decision ([ADR 0044](../../decisions/0044-authorization-enforcement-conventions.md)).
 
-A phase of the [authorization roadmap](authorization-roadmap.md). Decision: draft [ADR 0055](../../decisions/0055-authorization-decision-contract.md) (point 7); an ADR on service principals, which replaces the machine-client paragraph of ADR 0044, is written when the phase starts.
+A phase of the [authorization roadmap](authorization-roadmap.md). Decision: [ADR 0055](../../decisions/0055-authorization-decision-contract.md) (point 7); an ADR on service principals, which replaces the machine-client paragraph of ADR 0044, is written when the phase starts.
 
 ## 1. Objective
 
