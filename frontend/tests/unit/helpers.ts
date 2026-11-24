@@ -15,8 +15,13 @@ export const config: Config = {
   internalIssuer: "http://keycloak:8080/realms/kibootia",
   clientId: "kibootia-web",
   clientSecret: "client-secret-for-tests",
-  sessionSecret: "0123456789abcdef0123456789abcdef0123456789",
+  sessionSecret: ["0123456789abcdef0123456789abcdef0123456789"],
   apiBaseUrl: "http://api.internal:8080",
+  proxyTimeoutMs: 30_000,
+  proxyUploadTimeoutMs: 120_000,
+  proxyMaxBodyBytes: 6 * 1024 * 1024,
+  trustedProxyHops: 0,
+  cspMode: "report-only",
 };
 
 export const freshTokens: Tokens = {
