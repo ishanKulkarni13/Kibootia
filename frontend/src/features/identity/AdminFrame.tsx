@@ -27,6 +27,11 @@ export function AdminFrame({ children }: { children: React.ReactNode }) {
     );
   }
 
+  // A user who may see some sections but not this one is told so, instead of getting the API's 403 as an error box
+  // (finding S13). The section is the first part of the path, so a user's own page and a role's page are covered too.
+  const here = ADMIN_SECTIONS.find((section) => pathname === section.href || pathname.startsWith(`${section.href}/`));
+  const refused = here !== undefined && !has(here.permission);
+
   return (
     <div className="grid gap-8 md:grid-cols-[12rem_1fr]">
       <nav aria-label="Administration" className="flex gap-1 md:flex-col">
@@ -47,7 +52,20 @@ export function AdminFrame({ children }: { children: React.ReactNode }) {
           );
         })}
       </nav>
-      <div>{children}</div>
+      <div>
+        {refused ? (
+          <section aria-labelledby="no-section-heading">
+            <h1 id="no-section-heading" className="text-2xl font-semibold tracking-tight">
+              You do not have access to {here.label.toLowerCase()}
+            </h1>
+            <p className="mt-2 text-muted-foreground">
+              Choose a section you may see, or ask an administrator for a role that includes this one.
+            </p>
+          </section>
+        ) : (
+          children
+        )}
+      </div>
     </div>
   );
 }
