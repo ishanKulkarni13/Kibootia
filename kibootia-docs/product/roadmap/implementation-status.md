@@ -156,6 +156,17 @@ The Level column was added on 2026-11-09.
 | Documentation check: relative links resolve and the decision index agrees with each ADR (`scripts/check-docs.mjs`, shown to fire on a broken link and on a wrong status) | [ADR 0060](../../decisions/0060-implementation-status-in-one-place.md), ADR 0061 | 5.1 | observed (local run 2026-11-25: 203 files, 66 decision records; CI run pending) |
 | Spring Java Format | ADR 0061 item 8 | 5.1 | not adopted: 285 files fail it because the code is written to about 120 columns (recorded in ADR 0061) |
 
+## Capabilities added on branch `m-5-1-data` (2026-11-25)
+
+| Capability | Decision | Milestone | Level |
+|---|---|---|---|
+| Foreign keys from `role_permission` and `role_assignment` to `role`, with a migration that removes rows of roles that are gone | [ADR 0059](../../decisions/0059-data-integrity-in-the-database.md) item 1 | 5.1 | observed (`RoleForeignKeysIT`, which runs the migration script against orphan rows; branch `m-5-1-data`; CI run pending) |
+| A schema version on every event, a golden file per event type that the current code must read, and the rule for changing an event | ADR 0059 item 3 | 5.1 | observed (`EventSchemaCompatibilityIT`, `DurableEventsIT`; CI run pending) |
+| `event_publication.serialized_event` is `TEXT`; a 6,000-character event is stored and delivered | ADR 0059 item 4 | 5.1 | observed (`DurableEventsIT`, and Hibernate validation at every startup; CI run pending) |
+| Failed events whose retries are exhausted are removed after 90 days, audited; a gauge counts failed events | ADR 0059 item 5 | 5.1 | observed (`FailedEventRetentionIT`, `DurableEventsIT`; CI run pending) |
+| A warning and a health detail when files are switched off while stored files remain | ADR 0059 item 6 | 5.1 | observed (`FilesDisabledIT`; CI run pending) |
+| A unique email key on `user_profile` | ADR 0059 item 2 | 5.1 | not built, with the reason recorded in the ADR: Keycloak already refuses a second account with an address, and a unique key on the refreshed copy would fail sign-ins |
+
 ## Deviations the owner has called out
 
 - Reference feature: a backend-only `notes` module ([ADR 0049](../../decisions/0049-milestone-2-implementation-decisions.md)); completed in milestone 5 with a picture, screens, a copy guide and removal recipes.

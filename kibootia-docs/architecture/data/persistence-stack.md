@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-09
+- **Last updated:** 2026-11-25
 
 > **Implementation:** verified (CI run 42605511477, 2026-11-09). Spring Data JPA, Hibernate 7.4, Flyway and MySQL 8.4 are in use. `BaseEntity` and `SoftDeletableEntity` (package `platform.persistence`) give every table a UUIDv7 key in `BINARY(16)`, the tenant, audit columns and a version; `notes` is the reference table. `PersistenceConventionsIT` runs the conventions on a real MySQL. Decisions made while building: [ADR 0049](../../decisions/0049-milestone-2-implementation-decisions.md).
 
@@ -34,7 +34,8 @@ Decisions: [ADR 0011](../../decisions/0011-mysql-jpa-hibernate-persistence.md), 
 | Audit columns | `created_at`, `created_by`, `updated_at`, `updated_by`, filled by Spring Data auditing |
 | Concurrent edits | A `version` column (optimistic locking); a conflict returns `409 Conflict` |
 | Deletion | Soft delete on business and domain tables with restore and a retention purge; technical and append-only tables (audit log, event publication registry, job locks, Flyway history) are excluded. Unique keys include an active-marker column |
-| Events | Recorded by Spring Modulith's event publication registry (the outbox) in the same transaction; its table is created by a Flyway migration ([ADR 0031](../../decisions/0031-transactional-outbox-and-locked-jobs.md), [ADR 0039](../../decisions/0039-spring-modulith-module-boundaries-and-outbox.md)) |
+| Foreign keys | Inside a module's own tables, a foreign key is kept: a child names a parent that exists. No key crosses a module boundary: a link to another module's record is a plain ID, because a removable module must not leave a constraint behind in another module's table ([ADR 0059](../../decisions/0059-data-integrity-in-the-database.md)). A migration that adds a key first removes rows that would break it, and says so |
+| Events | Recorded by Spring Modulith's event publication registry (the outbox) in the same transaction; its table is created by a Flyway migration ([ADR 0031](../../decisions/0031-transactional-outbox-and-locked-jobs.md), [ADR 0039](../../decisions/0039-spring-modulith-module-boundaries-and-outbox.md)). The payload column is `TEXT`; an event record only ever adds optional components, and each type has a golden file that the current code must read ([ADR 0059](../../decisions/0059-data-integrity-in-the-database.md)) |
 | Audit entries | Written in the same transaction as the change, people referenced by ID only ([audit log](../audit-log.md)) |
 | Pagination | Offset paging with a maximum page size by default; keyset paging documented for large tables |
 | Seed data | A migration location loaded only in the local profile; production refuses to start with it |

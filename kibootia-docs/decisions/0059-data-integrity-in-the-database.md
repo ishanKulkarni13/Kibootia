@@ -2,11 +2,11 @@
 
 - **Type:** adr
 - **Module:** platform
-- **Status:** draft
+- **Status:** accepted
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-24
+- **Last updated:** 2026-11-25
 
-> **Implementation:** planned. Nothing here is built. Observed: no foreign key exists in any migration, and `user_profile` has a non-unique index on `(tenant_id, email)`.
+> **Implementation:** items 1 and 3 to 6 built on branch `m-5-1-data` (observed; CI run pending); item 2 is not built, and why is under Status. Observed in `V202611250900__access_role_foreign_keys.sql`, `V202611250910__platform_event_publication_text.sql`, `EventContext`, `FailedEventRetention`, `FailedEventsMetrics` and `FilesDisabledHealthIndicator`.
 
 ## Context
 
@@ -36,9 +36,16 @@ Each module owns its tables, and the code keeps to that. Integrity rules, howeve
 - Soft delete and foreign keys interact: a soft-deleted `role` row still exists, so its children stay until the purge.
 - Hibernate `ddl-auto=validate` is unaffected by foreign keys.
 
-## Status
+accepted on the owner's delegation of 2026-11-25. Delivered in [milestone 5.1](../product/roadmap/milestone-5-1-architecture-hardening.md).
 
-draft. Awaiting the owner. Delivered in [milestone 5.1](../product/roadmap/milestone-5-1-architecture-hardening.md).
+**Changes made while building** (2026-11-25):
+
+- **Item 1.** `role_grant` already had its key (milestone 8). The migration adds the two that were missing, on `role_permission` and `role_assignment`, and first removes rows whose role no longer exists: they grant nothing, because every read joins the role. `RoleForeignKeysIT` runs the migration's own script against such rows.
+- **Item 2 is not built.** The profile's email is a copy that is refreshed from the token when its owner next signs in. Keycloak refuses a second account with an address another account holds (the realm sets `duplicate_emails_allowed = false`), so the invitation race the item names is already closed where the account is created: the second request gets `EmailInUse`, which the application turns into 409. The copies can differ for a while, though: if A changes their address and B then takes the old one, B's profile is written with an address A's profile still holds until A signs in again. A unique key would turn that ordinary moment into a failed sign-in or a failed profile creation, and handling it (leaving the copy stale, or clearing another person's copy) adds risk to the sign-in path for no gain over the check that exists. The check in `UserAdministration` stays as a courtesy to the person inviting.
+- **Item 3.** `EventContext.schemaVersion` is 1 for a new event and 0 for one queued before versions existed, which a handler reads as version 1. The component is an `Integer`, not an `int`: Jackson 3 (Spring Boot 4) refuses a missing value for a primitive component, which the test below showed on its first run, and every event queued before this change would have failed to be read. `EventSchemaCompatibilityIT` finds every event type in the application, requires a golden file named after the class in `src/test/resources/events`, and requires that the current code reads every component of it. The rule for changing an event is in the Javadoc of `DomainEvent`.
+- **Item 4.** `serialized_event` is `TEXT`. Hibernate's validation at startup accepts it (every integration test starts the application), and `DurableEventsIT` publishes a 6,000-character event.
+- **Item 5.** The purge is `FailedEventRetention` in the `audit` module, because the platform cannot write an audit entry. It removes events with status FAILED whose attempts are at least `kibootia.events.max-attempts` and which were published more than `kibootia.events.failed-retention-days` ago (default 90), in the current tenant, and records `audit.failed-events.purged` with the number removed. It has its own permission, `audit.failed-events.purge`. The gauge is `kibootia.events.failed`: every event that has failed and not been delivered since, in every tenant, because an alert is not per tenant.
+- **Item 6.** `FilesDisabledHealthIndicator` exists only while `kibootia.files.enabled=false`. It logs a warning at startup and reports `storedFiles` and a warning in the health details when `stored_file` has rows. Health stays UP: the application works, it only keeps what it can no longer clean up. Whether the details are visible depends on the management endpoint's `show-details` setting.
 
 ## Related
 

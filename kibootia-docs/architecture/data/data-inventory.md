@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-24
+- **Last updated:** 2026-11-25
 
 > **Implementation:** observed. Read from the migrations, `compose.yaml` and the code at commit `75b2091` (2026-11-24). Not machine-checked: a new table, store or retention rule must be added here in the same change.
 
@@ -41,7 +41,7 @@ Every table has `tenant_id` unless the last column says otherwise. "Soft" means 
 | `audit_entry` | `audit` | Actor ID, action, target, outcome, trace ID, change summary (at most 4000 characters) | User IDs only; a name or an `@` is rejected | None; append-only | 365 days |
 | `stored_file` | `files` | Owner ID, category, content type, rendition names | Owner ID | Soft | 30 days; also removed on `UserErased` |
 | `note` | `notes` | Owner ID, title (120), body (4000), `attachment_file_id` | Yes: user-written content | Soft | 30 days; hard-deleted on `UserErased` |
-| `event_publication` | `platform` | Serialised events awaiting or finished delivery (`VARCHAR(4000)`). **No `tenant_id` column**; the tenant is inside the JSON | Event payloads: user and note IDs | Completed ones purged | Completed 7 days; **failed ones are never purged** |
+| `event_publication` | `platform` | Serialised events awaiting or finished delivery (`TEXT`). **No `tenant_id` column**; the tenant is inside the JSON | Event payloads: user and note IDs | Completed ones purged | Completed 7 days; failed ones whose retries are exhausted 90 days, audited (`kibootia.events.failed-retention-days`) |
 | `processed_event` | `platform` | Idempotency marks: event ID and handler name | No | Purged | 30 days |
 | `shedlock` | `platform` | Job locks. No `tenant_id` | No | None | Permanent |
 
