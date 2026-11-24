@@ -41,7 +41,6 @@ const MODULES = {
     // Shared files that carry `module:notes` tags.
     tagged: [
       "frontend/src/modules.ts",
-      "frontend/src/proxy.ts",
       "frontend/src/lib/api/problem.ts",
       "frontend/src/features/audit/AuditScreen.tsx",
     ],
