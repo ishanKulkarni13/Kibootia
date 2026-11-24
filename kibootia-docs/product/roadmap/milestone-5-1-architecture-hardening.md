@@ -20,7 +20,7 @@ Close the structural, data and operational gaps found in the [architecture asses
 | C-3 | R-02 declared module dependencies | **Done**, [ADR 0057](../../decisions/0057-consumer-owned-ports-and-declared-module-dependencies.md) item 1 |
 | Q-6 | R-16 repository files | **Done** except the licence (OQ-48) |
 | C-1, C-2, E-1 | R-03 consumer-owned ports, rate-limit registry | ADR 0057 |
-| T-1, T-2, T-3 | R-05, R-06 no external call in a transaction; Keycloak retry | [ADR 0058](../../decisions/0058-no-external-call-inside-a-database-transaction.md) |
+| T-1, T-2, T-3 | R-05, R-06 no external call in a transaction; Keycloak retry | [ADR 0058](../../decisions/0058-no-external-call-inside-a-database-transaction.md): **built** except the sweep of orphan Keycloak accounts, which is replaced by a durable cleanup event (reason in the ADR) |
 | D-1 to D-5, T-6 | R-07 constraints, event versioning, failed-event retention, files-off guard | [ADR 0059](../../decisions/0059-data-integrity-in-the-database.md): **built** except the unique email key, which is not built and why is in the ADR |
 | P-1, P-2 | R-08 one place for status | [ADR 0060](../../decisions/0060-implementation-status-in-one-place.md) |
 | Q-1, Q-2, Q-5 | R-09 CI gates | [ADR 0061](../../decisions/0061-ci-quality-and-supply-chain-gates.md): **built** except signing (milestone 6) and the Java formatter (not adopted) |

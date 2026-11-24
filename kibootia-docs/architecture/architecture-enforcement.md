@@ -4,9 +4,9 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-24
+- **Last updated:** 2026-11-25
 
-> **Implementation:** verified for rules 1 to 11 (`ModularityTest`, `ArchitectureTest` and `ArchitectureRulesFireTest` in the backend CI job, run 42959703043, 2026-11-11). Rule 12 is observed (verified, CI run 45354022559, 2026-11-24). Rule 13 is proposed ([ADR 0058](../decisions/0058-no-external-call-inside-a-database-transaction.md), draft).
+> **Implementation:** verified for rules 1 to 11 (`ModularityTest`, `ArchitectureTest` and `ArchitectureRulesFireTest` in the backend CI job, run 42959703043, 2026-11-11). Rule 12 is observed (verified, CI run 45354022559, 2026-11-24). Rule 13 is observed on branch `m-5-1-tx` ([ADR 0058](../decisions/0058-no-external-call-inside-a-database-transaction.md); `ExternalCallRulesTest`, `ArchitectureTest`; CI run pending).
 
 Decisions: [ADR 0013](../decisions/0013-archunit-architecture-enforcement.md), [ADR 0039](../decisions/0039-spring-modulith-module-boundaries-and-outbox.md), [ADR 0044](../decisions/0044-authorization-enforcement-conventions.md).
 
@@ -38,7 +38,7 @@ Decided rules. Rules 1 and 4 to 11 are implemented in `ArchitectureTest` (rule 7
 | 11 | A `@DurableEventListener` method takes a `DomainEvent` as its first parameter, because the tenant and trace are restored from the event's context |
 | 12 | Every module declares `allowedDependencies`, and Spring Modulith fails the build on a dependency that is not listed, so the graph between business modules is a reviewed artefact ([ADR 0057](../decisions/0057-consumer-owned-ports-and-declared-module-dependencies.md)). Implemented by the `package-info.java` of each module and `ModularityTest`; shown to fire by adding an undeclared edge in a scratch copy (2026-11-24) |
 | 14 | Hand-written SQL never forgets the tenant (finding S7): a literal naming a table with `tenant_id` carries a `tenant_id` condition (an insert names the column); an open `where` is allowed only after a builder that starts with the tenant; a deliberate all-tenant statement carries the marker `// sql: every tenant` with a reason. `TenantSqlRules`, shown to fire in `TenantSqlRulesTest` (branch `m-8`, local run 2026-11-24, CI run 45384428905). It reads source text, so SQL assembled from constants in other files is out of its reach |
-| 13 | Proposed: a class that depends on `IdentityProviderAdmin` or `ObjectStorage` has no `@Transactional` method, so no database transaction is open while an external system is called ([ADR 0058](../decisions/0058-no-external-call-inside-a-database-transaction.md)). Not implemented |
+| 13 | No database transaction is open while another system is called ([ADR 0058](../decisions/0058-no-external-call-inside-a-database-transaction.md)). Two checks in `ExternalCallRules`: a `@Transactional` method, or a method of a `@Transactional` class, does not call `IdentityProviderAdmin` or `ObjectStorage`; and a `@DurableEventListener` in a class that holds either declares `transactional = false`. A call that reaches a port through another method is not seen (as with rule 7); the test fakes record every call made while a transaction is open, and every integration test that extends `AdminApiTest` fails if one was. Shown to fire by `ExternalCallRulesTest` |
 
 ## Beyond ArchUnit
 

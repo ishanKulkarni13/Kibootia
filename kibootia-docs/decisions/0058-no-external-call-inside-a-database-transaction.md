@@ -2,11 +2,11 @@
 
 - **Type:** adr
 - **Module:** platform
-- **Status:** draft
+- **Status:** accepted
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-24
+- **Last updated:** 2026-11-25
 
-> **Implementation:** planned. Nothing here is built. The behaviour it changes is observed in `FileRetention.java`, `DurableEventInterceptor.java` and `UserEvents.java`.
+> **Implementation:** built on branch `m-5-1-tx` (observed; CI run pending). Observed in `DurableEventListener` (`transactional = false`), `DurableEventInterceptor`, `RetentionPurgeable.ownsTransactions`, `UserEvents`, `FileEvents`, `FileRetention`, `KeycloakAdminAdapter` and `ExternalCallRules`.
 
 ## Context
 
@@ -41,9 +41,16 @@ The cost is not theoretical: a slow Keycloak or storage server holds database co
 - `DurableEventInterceptor` has two paths to test, and rule 11's tenant restoration applies to both.
 - The retention purge no longer rolls back as one unit. Each batch is its own commit, which is what `MAX_BATCHES` already assumes.
 
-## Status
+accepted on the owner's delegation of 2026-11-25. Delivered in [milestone 5.1](../product/roadmap/milestone-5-1-architecture-hardening.md).
 
-draft. Awaiting the owner. Delivered in [milestone 5.1](../product/roadmap/milestone-5-1-architecture-hardening.md).
+**Changes made while building** (2026-11-25):
+
+- **Item 1, the rule, is written about calls, not classes.** "A class that depends on `IdentityProviderAdmin` or `ObjectStorage` has no `@Transactional` method" would also flag `UserAdministration` and `ProfileService`, whose transactional methods only touch the database (the Keycloak calls happen in the handlers they raise events for). Rule 13 has two halves in `ExternalCallRules`: a `@Transactional` method, or a method of a `@Transactional` class, does not call either port; and a `@DurableEventListener` in a class that holds either port declares `transactional = false`. Both are shown to fire by `ExternalCallRulesTest`. Like rule 7, the first half does not see a call that reaches the port through another method. A new port is added to `ExternalCallRules.OTHER_SYSTEMS`.
+- **Item 1 is also checked at run time.** The test fakes for Keycloak and for storage record every call made while a transaction is open on the calling thread, and `AdminApiTest` fails any integration test in which that happened. This is how the rule's blind spot (indirect calls) is covered.
+- **Item 2.** `@DurableEventListener(transactional = false)` is built as described. The handler's own database work is done in short transactions it opens itself; `UserEvents.on(UserErased)` does the roles, the profile and the audit entry in one. `HandlerTransactionIT` shows, with the connection pool's own count, that such a handler holds no connection while it works and that a default handler holds one, that a failure leaves no mark and the retry runs it again, and that an event handled before is skipped. `UserEvents` and `FileEvents` use it.
+- **Item 3.** The retention job asked every purgeable to run inside one transaction, so removing `@Transactional` from `FileRetention` was not enough. `RetentionPurgeable.ownsTransactions()` (default false) lets a purge say it opens its own; `FileRetention` does, and the job then calls it with none open. The files store runs one self-contained statement at a time, so no further change was needed there.
+- **Item 4.** The retry uses `org.springframework.core.retry` in Spring Framework 7.0 (`RetryTemplate`, `RetryPolicy`), so no dependency was added. `find`, enabling or disabling, ending sessions and deleting an account are repeated after a connection error or a 5xx or 429 answer, `kibootia.identity.keycloak.retries` times (default 2) with a doubling wait from `retry-delay` (default 200 ms) and some jitter; a 404 is an answer and is not repeated. Creating an account and sending an email are never repeated, because a repeat would make a second one. `KeycloakAdminAdapterRetryTest` runs the adapter against a local HTTP server standing in for Keycloak.
+- **Item 5, the compensating delete, is built as an event, not as a sweep.** When an invitation fails after Keycloak created the account and removing it fails too, the removal is recorded as the durable event `InvitationAbandoned`, whose handler deletes the account unless a profile exists for it. A reconciliation job that removes Keycloak accounts "with no profile after a grace period" is **not built**: a person who registers by themselves has a Keycloak account and no profile until their first sign-in, so "no profile" does not identify an orphan and the job would delete real people. It can be built if invitation accounts are marked in Keycloak, which needs a user-profile attribute in the realm. What is left uncovered is the case where the database is down at the moment the account has to be taken back and Keycloak refuses the delete too: the log names the account and it must be removed in Keycloak by hand.
 
 ## Related
 
