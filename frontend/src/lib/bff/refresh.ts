@@ -31,7 +31,7 @@ export interface SessionOptions {
 export async function currentSession(cookieHeader: string | null, deps: Deps, options: SessionOptions = {}): Promise<SessionResult> {
   const { config } = deps;
   const secure = isSecure(config);
-  const session = await readSession(cookieHeader, config.sessionSecret);
+  const session = await readSession(cookieHeader, config.sessionSecret, secure);
   if (!session) {
     // An unreadable session (tampered, expired or from an old key) is cleared rather than left to fail every request.
     return { status: "none", setCookies: clearSessionCookies(cookieHeader, secure) };

@@ -2,7 +2,7 @@ import { checkCsrf } from "../csrf";
 import { expireCookie, parseCookies, serializeCookie } from "../cookies";
 import { logger } from "../logger";
 import { problem } from "../problem";
-import { LOGIN_COOKIE, newSession, readSession, seal, unseal, writeSession, clearSessionCookies } from "../session";
+import { cookieNames, newSession, readSession, seal, unseal, writeSession, clearSessionCookies } from "../session";
 import { isSecure, type Deps } from "./deps";
 import { currentSession } from "./refresh";
 
@@ -39,7 +39,8 @@ export async function login(request: Request, deps: Deps): Promise<Response> {
     config.sessionSecret,
     LOGIN_TTL_SECONDS,
   );
-  return redirect(attempt.url, [serializeCookie(LOGIN_COOKIE, sealed, { maxAge: LOGIN_TTL_SECONDS, secure: isSecure(config) })]);
+  const secure = isSecure(config);
+  return redirect(attempt.url, [serializeCookie(cookieNames(secure).login, sealed, { maxAge: LOGIN_TTL_SECONDS, secure })]);
 }
 
 /** GET /auth/callback: checks state, nonce and the PKCE verifier, exchanges the code and stores the session. */
@@ -47,9 +48,10 @@ export async function callback(request: Request, deps: Deps): Promise<Response> 
   const { config } = deps;
   const secure = isSecure(config);
   const cookieHeader = request.headers.get("cookie");
-  const clearLogin = expireCookie(LOGIN_COOKIE, secure);
+  const loginCookie = cookieNames(secure).login;
+  const clearLogin = expireCookie(loginCookie, secure);
 
-  const sealed = parseCookies(cookieHeader).get(LOGIN_COOKIE);
+  const sealed = parseCookies(cookieHeader).get(loginCookie);
   const attempt = sealed ? await unseal<LoginState>(sealed, config.sessionSecret) : null;
   if (!attempt) {
     return problem(400, "bff.login_expired", "The sign-in attempt expired or did not start here. Start again.", {
@@ -97,7 +99,7 @@ export async function logout(request: Request, deps: Deps): Promise<Response> {
   if (rejected) return rejected;
 
   const cookieHeader = request.headers.get("cookie");
-  const session = await readSession(cookieHeader, config.sessionSecret);
+  const session = await readSession(cookieHeader, config.sessionSecret, isSecure(config));
   const headers = new Headers({ "Content-Type": "application/json", "Cache-Control": "no-store" });
   for (const cookie of clearSessionCookies(cookieHeader, isSecure(config))) headers.append("Set-Cookie", cookie);
   logger.info("user signed out");
