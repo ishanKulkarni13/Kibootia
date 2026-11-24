@@ -4,6 +4,10 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 
 import com.kibootia.backend.AdminApiTest;
 import com.kibootia.backend.Await;
@@ -22,6 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * The audit log viewer (ADR 0046): only for those who may view it, newest first, filterable, with names looked up when an
  * entry is shown and a user who was erased shown as erased.
  */
+@ExtendWith(OutputCaptureExtension.class)
 class AuditViewerIT extends AdminApiTest {
 
 	@Test
@@ -36,6 +41,28 @@ class AuditViewerIT extends AdminApiTest {
 		String auditors = createRole("Auditors", "audit.entries.view");
 		setRoles(ALICE, builtInRoleId("USER"), auditors);
 		get(user(ALICE), "/api/v1/audit-entries").andExpect(status().isOk());
+	}
+
+	@Test
+	@DisplayName("every read of the log leaves a decision record naming who read it (finding S10)")
+	void readingIsRecorded(CapturedOutput output) throws Exception {
+		ensureAdmin();
+		signIn(ALICE);
+		setRoles(ALICE, builtInRoleId("USER"), createRole("Auditors", "audit.entries.view"));
+		long before = readsBy(output, ALICE);
+
+		get(user(ALICE), "/api/v1/audit-entries").andExpect(status().isOk());
+
+		org.assertj.core.api.Assertions.assertThat(readsBy(output, ALICE)).isEqualTo(before + 1);
+	}
+
+	/** Decision records of an allowed read of the audit log by the user. */
+	private static long readsBy(CapturedOutput output, UUID user) {
+		return output.getAll()
+			.lines()
+			.filter((line) -> line.contains("kibootia.authorization.decision") && line.contains("audit.entries.view")
+					&& line.contains("allow") && line.contains(user.toString()))
+			.count();
 	}
 
 	@Test
