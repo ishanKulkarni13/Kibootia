@@ -50,8 +50,10 @@ const schema = z.object({
     .max(80, "Use at most 80 characters")
     .regex(/^[A-Za-z0-9][A-Za-z0-9 ._-]*$/, "Use letters, digits, spaces, dots, dashes and underscores"),
   description: z.string().max(255, "Use at most 255 characters"),
-  // One allow per action, with how far it reaches (ADR 0054). Deny grants are not edited here; see `kept` below.
+  // One allow per action, with how far it reaches (ADR 0054).
   grants: z.array(z.object({ action: z.string(), reach: z.string() })),
+  // The actions this role denies. A deny always reaches every record (ADR 0065), so there is no reach to choose.
+  denies: z.array(z.string()),
 });
 
 type Values = z.input<typeof schema>;
@@ -86,7 +88,7 @@ export function RoleEditor({ roleId }: { roleId?: string }) {
   );
 }
 
-function RoleForm({ role, catalogue: { permissions: catalogue } }: { role?: Role; catalogue: PermissionCatalogue }) {
+function RoleForm({ role, catalogue: { permissions: catalogue, denyGrantsEnabled } }: { role?: Role; catalogue: PermissionCatalogue }) {
   const router = useRouter();
   const { has, reaches: heldReaches } = usePermissions();
   const create = useCreateRole();
@@ -102,10 +104,12 @@ function RoleForm({ role, catalogue: { permissions: catalogue } }: { role?: Role
       name: role?.name ?? "",
       description: role?.description ?? "",
       grants: (role?.grants ?? []).filter((grant) => grant.effect !== "DENY").map(({ action, reach }) => ({ action, reach })),
+      denies: (role?.grants ?? []).filter((grant) => grant.effect === "DENY").map(({ action }) => action),
     },
   });
-  // Deny grants, which this editor does not change, are sent back as they are so a save never drops one.
-  const kept = (role?.grants ?? []).filter((grant) => grant.effect === "DENY");
+  // With deny grants switched off, the ones a role already has cannot be changed and are sent back as they are, so that
+  // a save never drops one (ADR 0065). With them on, the editor changes them below.
+  const kept = denyGrantsEnabled ? [] : (role?.grants ?? []).filter((grant) => grant.effect === "DENY");
 
   /**
    * The reaches the editor may give for an action: only as far as their own grants reach (the "only what you hold" rule).
@@ -126,7 +130,8 @@ function RoleForm({ role, catalogue: { permissions: catalogue } }: { role?: Role
   const submit = form.handleSubmit(async (values) => {
     setFailure(null);
     const allows = values.grants.map((grant) => ({ ...grant, effect: "ALLOW" as const }));
-    const input = { name: values.name, description: values.description, grants: [...allows, ...kept] };
+    const denies = denyGrantsEnabled ? values.denies.map((action) => ({ action, reach: "all", effect: "DENY" as const })) : [];
+    const input = { name: values.name, description: values.description, grants: [...allows, ...denies, ...kept] };
     try {
       // Awaited, not given callbacks: saving refreshes the role, which starts this form again with the new version, and a
       // callback given to `mutate` is dropped for a form that has gone by then.
@@ -196,6 +201,7 @@ function RoleForm({ role, catalogue: { permissions: catalogue } }: { role?: Role
           <CardTitle>Permissions</CardTitle>
           <CardDescription>
             You can only give a role permissions you hold yourself, and only as far as yours reach.{" "}
+            {denyGrantsEnabled && "A permission you deny is taken away from everyone who holds this role, whatever their other roles give. "}
             {!has("access.roles.manage") && "You can look at this role but not change it."}
           </CardDescription>
         </CardHeader>
@@ -251,6 +257,34 @@ function RoleForm({ role, catalogue: { permissions: catalogue } }: { role?: Role
                               ))}
                             </select>
                           )}
+                          {denyGrantsEnabled && (
+                            <Controller
+                              control={form.control}
+                              name="denies"
+                              render={({ field: denies }) => {
+                                const denied = denies.value.includes(permission.name);
+                                return (
+                                  <div className="ml-auto flex items-center gap-2">
+                                    <Checkbox
+                                      id={`deny-${permission.name}`}
+                                      aria-label={`Deny: ${permission.description}`}
+                                      checked={denied}
+                                      // Only what the editor holds can be denied; a deny already there can be taken away.
+                                      disabled={readOnly || (!denied && !has(permission.name))}
+                                      onCheckedChange={(checked) =>
+                                        denies.onChange(
+                                          checked ? [...denies.value, permission.name] : denies.value.filter((action) => action !== permission.name),
+                                        )
+                                      }
+                                    />
+                                    <Label htmlFor={`deny-${permission.name}`} className="text-xs font-normal text-destructive">
+                                      Deny
+                                    </Label>
+                                  </div>
+                                );
+                              }}
+                            />
+                          )}
                         </div>
                       );
                     })}
@@ -262,7 +296,8 @@ function RoleForm({ role, catalogue: { permissions: catalogue } }: { role?: Role
           {kept.length > 0 && (
             <p className="mt-3 text-sm text-muted-foreground">
               This role also has {kept.length === 1 ? "a deny grant" : `${kept.length} deny grants`}, which take a permission away
-              whatever other roles give: {kept.map((grant) => grant.action).join(", ")}. They are kept as they are.
+              whatever other roles give: {kept.map((grant) => grant.action).join(", ")}. They are kept as they are; deny grants are
+              switched off, so they cannot be changed here.
             </p>
           )}
           {form.formState.errors.grants && (
