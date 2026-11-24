@@ -50,7 +50,7 @@ The permissions marked sensitive: `identity.users.delete`, `identity.users.erase
 
 - `Authorization.scopeFor` and `requireScope` are gone; lists use `filter` and `requireFilter`. The guide [add a feature](../engineering/guides/add-a-feature.md) shows the new calls.
 - Rule 7 of [architecture enforcement](../architecture/architecture-enforcement.md) still counts only a direct call to `Authorization`, so a use case must call `requireVisible` itself rather than through a private helper.
-- The number of queries per decision is unchanged by reading: one query for the caller's permissions per decision (`StoredPermissionSource`). It was not measured; the measured baseline asked for by the milestone is still open.
+- One decision is one SQL statement, the read of the caller's permissions (`StoredPermissionSource`), unchanged from version 1. It was measured on branch `m-8` by `DecisionQueryCountIT`, which counts the SQL statements a decision sends on the calling thread: exactly one, for a check on the collection, on a record, for a list's access filter and for a refusal.
 
 ## Status
 

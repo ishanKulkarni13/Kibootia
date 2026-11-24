@@ -51,7 +51,7 @@
 - No code path uses an `-any` permission any more. The name survives only in the conversion and its tests, which handle version 1 on purpose, and in comments and documents that say what the grant model replaced.
 - `role_permission` stays until a later migration drops it; installations must start once on this version first.
 - Frontend checks use `reachesAll(action)` where they used an `-any` name.
-- The number of queries per decision is unchanged by reading: one query for the user's grants.
+- One decision is one SQL statement, the read of the user's grants: `DecisionQueryCountIT`, which counts the SQL statements a decision sends on the calling thread: exactly one, for a check on the collection, on a record, for a list's access filter and for a refusal (`DecisionQueryCountIT`). That is the baseline of milestone 7 (criterion 6 of milestone 8).
 
 ## Status
 
