@@ -105,6 +105,28 @@ class UserAdministrationIT extends AdminApiTest {
 	}
 
 	@Test
+	@DisplayName("an inviter cannot give the invitee a role whose permissions they do not hold, and nothing is left behind")
+	void invitingCannotEscalate() throws Exception {
+		ensureAdmin();
+		signIn(ALICE);
+		String inviters = createRole("Inviters", "identity.users.invite", "access.roles.assign");
+		String managers = createRole("Role managers", "access.roles.manage");
+		String viewers = createRole("Viewers", "identity.profiles.view");
+		setRoles(ALICE, builtInRoleId("USER"), inviters);
+
+		post(user(ALICE), "/api/v1/users", "{\"email\":\"escalated@kibootia.test\",\"roleIds\":[\"" + managers + "\"]}")
+			.andExpect(status().isForbidden());
+		assertThat(count("select count(*) from user_profile where email = ?", "escalated@kibootia.test")).isZero();
+		assertThat(count("select count(*) from role_assignment where role_id = unhex(?)", managers.replace("-", "")))
+			.isZero();
+
+		// Alice does not hold identity.profiles.view either: a role she cannot give is refused for the same reason.
+		post(user(ALICE), "/api/v1/users", "{\"email\":\"escalated@kibootia.test\",\"roleIds\":[\"" + viewers + "\"]}")
+			.andExpect(status().isForbidden());
+		assertThat(count("select count(*) from user_profile where email = ?", "escalated@kibootia.test")).isZero();
+	}
+
+	@Test
 	@DisplayName("an address that is taken, malformed or blank is refused, and a Keycloak outage is 503 with nothing left behind")
 	void invitingRefusals() throws Exception {
 		ensureAdmin();

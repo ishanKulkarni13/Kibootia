@@ -107,6 +107,7 @@ public class RoleAssignmentService implements RoleAssignments {
 		if (added.contains(admin.id())) {
 			requireAdministrator();
 		}
+		requireHoldsWhatTheyGive(added.stream().map(wanted::get).toList());
 		if (removed.contains(admin.id())) {
 			ensureNotLastAdministrator(userId);
 		}
@@ -187,6 +188,7 @@ public class RoleAssignmentService implements RoleAssignments {
 		if (wanted.containsKey(admin.id())) {
 			requireAdministrator();
 		}
+		requireHoldsWhatTheyGive(wanted.values());
 		Set<UUID> current = this.roles.roleIdsOf(userId);
 		UUID actor = this.authorization.currentUserId();
 		for (Role role : wanted.values()) {
@@ -250,6 +252,25 @@ public class RoleAssignmentService implements RoleAssignments {
 		UUID caller = this.authorization.currentUserId();
 		if (!this.roles.roleIdsOf(caller).contains(this.builtIns.admin().id())) {
 			throw new AccessDeniedException("Only an administrator can give the administrator role");
+		}
+	}
+
+	/**
+	 * A caller can give a role only if they hold every permission it carries, the same rule that limits what a role
+	 * editor can put into a role ({@code RoleService}); without it, {@code access.roles.assign} alone would let someone
+	 * acquire any role. The administrator role is left to {@link #requireAdministrator}: its permissions are computed,
+	 * not stored.
+	 */
+	private void requireHoldsWhatTheyGive(Collection<Role> given) {
+		for (Role role : given) {
+			if (role.builtIn() == Role.BuiltIn.ADMIN) {
+				continue;
+			}
+			for (String permission : role.permissions()) {
+				if (this.registry.isRegistered(permission)) {
+					this.authorization.require(permission);
+				}
+			}
 		}
 	}
 

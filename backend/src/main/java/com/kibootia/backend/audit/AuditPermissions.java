@@ -11,7 +11,7 @@ import com.kibootia.backend.platform.authorization.PermissionProvider;
 @Component
 public class AuditPermissions implements PermissionProvider {
 
-	/** Read the audit log (the viewer arrives with milestone 3). */
+	/** Read the audit log. */
 	public static final String VIEW_ENTRIES = "audit.entries.view";
 
 	/** Remove entries older than the retention period. */

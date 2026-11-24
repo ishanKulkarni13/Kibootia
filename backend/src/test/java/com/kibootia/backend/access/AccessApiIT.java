@@ -298,6 +298,39 @@ class AccessApiIT extends AdminApiTest {
 		get(user(BOB), "/api/v1/me").andExpect(jsonPath("$.permissions", hasItem("access.roles.manage")));
 	}
 
+	@Test
+	@DisplayName("an assigner cannot give a role whose permissions they do not hold themselves")
+	void assigningCannotEscalate() throws Exception {
+		ensureAdmin();
+		signIn(ALICE);
+		signIn(BOB);
+		String userRole = builtInRoleId("USER");
+		String assigner = createRole("Assigners", "access.roles.view", "access.roles.assign");
+		String managers = createRole("Role managers", "access.roles.view", "access.roles.manage");
+		String viewers = createRole("Role viewers", "access.roles.view");
+		setRoles(ALICE, userRole, assigner);
+		int auditedBefore = count("select count(*) from audit_entry where action = 'access.role.assigned' and target_id = unhex(?)",
+				hex(BOB));
+
+		// Alice does not hold access.roles.manage, so she cannot hand it to Bob, nor take it herself.
+		put(user(ALICE), "/api/v1/users/" + BOB + "/roles", "{\"roleIds\":[\"" + userRole + "\",\"" + managers + "\"]}")
+			.andExpect(status().isForbidden());
+		put(user(ALICE), "/api/v1/users/" + ALICE + "/roles",
+				"{\"roleIds\":[\"" + userRole + "\",\"" + assigner + "\",\"" + managers + "\"]}")
+			.andExpect(status().isForbidden());
+		assertThat(count("select count(*) from role_assignment where user_id = unhex(?) and role_id = unhex(?)", hex(BOB),
+				managers.replace("-", ""))).isZero();
+		assertThat(count("select count(*) from role_assignment where user_id = unhex(?) and role_id = unhex(?)", hex(ALICE),
+				managers.replace("-", ""))).isZero();
+		assertThat(count("select count(*) from audit_entry where action = 'access.role.assigned' and target_id = unhex(?)",
+				hex(BOB))).isEqualTo(auditedBefore);
+
+		// A role made of permissions Alice does hold can be given.
+		put(user(ALICE), "/api/v1/users/" + BOB + "/roles", "{\"roleIds\":[\"" + userRole + "\",\"" + viewers + "\"]}")
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$[*].name", containsInAnyOrder("User", "Role viewers")));
+	}
+
 	// --- the last administrator ----------------------------------------------------------------------------------------
 
 	@Test
