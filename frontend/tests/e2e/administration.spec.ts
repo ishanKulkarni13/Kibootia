@@ -70,6 +70,7 @@ test("the bootstrap administrator signs in and finds the administration area, wh
   for (const [link, heading] of [
     ["Roles", "Roles"],
     ["Audit log", "Audit log"],
+    ["Failed events", "Failed events"],
   ] as const) {
     await admin.getByRole("navigation", { name: "Administration" }).getByRole("link", { name: link }).click();
     await expect(admin.getByRole("heading", { name: heading, level: 1 })).toBeVisible();

@@ -10,6 +10,7 @@ export const ADMIN_SECTIONS = [
   { href: "/admin/users", label: "Users", permission: "identity.profiles.view" },
   { href: "/admin/roles", label: "Roles", permission: "access.roles.view" },
   { href: "/admin/audit", label: "Audit log", permission: "audit.entries.view" },
+  { href: "/admin/failed-events", label: "Failed events", permission: "audit.failed-events.view" },
 ] as const;
 
 const linkClass =
