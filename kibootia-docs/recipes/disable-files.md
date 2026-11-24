@@ -4,9 +4,9 @@
 - **Module:** files
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-24
+- **Last updated:** 2026-11-25
 
-> **Implementation:** verified (CI run 42959703043, 2026-11-11). The `module-removal` rows "files (switched off)" and "all" start the application with the switch set through the environment and run the `startup` group; `FilesDisabledIT` and `NoteAttachmentFilesDisabledIT` cover the behaviour. Not covered: switching files off on a database that already holds files, where erasure of a user's files cannot run ([ADR 0059](../decisions/0059-data-integrity-in-the-database.md), draft).
+> **Implementation:** verified (CI run 42959703043, 2026-11-11). The `module-removal` rows "files (switched off)" and "all" start the application with the switch set through the environment and run the `startup` group; `FilesDisabledIT` and `NoteAttachmentFilesDisabledIT` cover the behaviour. Switching files off on a database that already holds files is unsupported, and the application says so: see "Security" below ([ADR 0059](../decisions/0059-data-integrity-in-the-database.md); `FilesDisabledIT`, observed on branch `m-5-1-data`, CI run pending).
 
 ## Problem
 
@@ -40,6 +40,8 @@ The storage keys (`KIBOOTIA_FILES_ACCESS_KEY`, `KIBOOTIA_FILES_SECRET_KEY`) are 
 ## Security
 
 With the module off there is no client, job, listener or permission of the module, and no file is written or served. Files stored earlier stay where they are and are not reachable.
+
+**Do not switch the module off while files exist.** With it off, nothing removes a user's files when the user is erased, and the purge of deleted files does not run, so personal data would stay in the object store. Remove the files first (let the retention purge empty `stored_file`, or delete them while the module is on), then switch it off. If it is off while files remain, the backend logs a warning at startup and its health reports `storedFiles` and a `warning` under `filesDisabled` (the details are visible when the management endpoint shows details). The application stays up.
 
 ## Testing and verification
 

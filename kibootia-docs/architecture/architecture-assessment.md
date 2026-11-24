@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-24
+- **Last updated:** 2026-11-25
 
 > **Implementation:** not applicable (a dated assessment of commit `e0dcc29`, plus the fixes of branch `m-5-1`). It describes what the code and documents were on that day. Nothing here is an owner decision: every recommendation is a proposal that becomes real only through the draft ADRs [0057](../decisions/0057-consumer-owned-ports-and-declared-module-dependencies.md) to [0063](../decisions/0063-bff-and-edge-hardening.md) and [milestone 5.1](../product/roadmap/milestone-5-1-architecture-hardening.md), once the owner accepts them.
 
@@ -155,7 +155,7 @@ The table keeps only what changes the design or the risk. "Where" names the prop
 | R-04 | _Withdrawn: `access` handling `UserErased` would create a module cycle (see C-4)._ | | | | |
 | R-05 | No external call inside a database transaction: external handlers run outside it; the files purge deletes objects first, then rows in a short transaction | T-1, T-2 | High | M | [ADR 0058](../decisions/0058-no-external-call-inside-a-database-transaction.md) |
 | R-06 | Timeouts, bounded retry and a circuit breaker for Keycloak; make the compensating delete durable | T-3 | Medium | M | ADR 0058 |
-| R-07 | Foreign keys inside a module; a database-enforced unique email; a versioned event envelope with a deserialization test; purge and measure failed events; erase files even when the module is off | D-1 to D-5, T-6 | Medium | M | [ADR 0059](../decisions/0059-data-integrity-in-the-database.md) |
+| R-07 | **Done on branch `m-5-1-data`** (2026-11-25; the unique email key was left out, see ADR 0059). Foreign keys inside a module; a database-enforced unique email; a versioned event envelope with a deserialization test; purge and measure failed events; erase files even when the module is off | D-1 to D-5, T-6 | Medium | M | [ADR 0059](../decisions/0059-data-integrity-in-the-database.md) |
 | R-08 | ADRs point to implementation status instead of repeating it; specs carry one accurate line; generate module documentation from Modulith; check links in CI | P-1, P-2 | Medium | S | [ADR 0060](../decisions/0060-implementation-status-in-one-place.md) |
 | R-09 | **Done on branch `m-5-1-ci`** (2026-11-25; the Java formatter was left out, see ADR 0061). Coverage reports then gates, CodeQL, dependency review, SBOM, actions pinned by SHA, `tofu validate` and `docker compose config` checks | Q-1, Q-2 | Medium | M | [ADR 0061](../decisions/0061-ci-quality-and-supply-chain-gates.md) |
 | R-10 | Custom metrics and alerts for failed events, denials, Keycloak calls, purge counts and rate-limit rejections | Q-3 | Medium | M | [Milestone 5.1](../product/roadmap/milestone-5-1-architecture-hardening.md) |
