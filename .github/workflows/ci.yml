@@ -17,8 +17,11 @@ permissions:
 
 # A newer push to a pull request cancels the older run. A run on `main` is never cancelled: its result is the record that
 # the verification standard asks for.
+#
+# A `labeled` event has a group of its own. A pull request created with a label gets `opened` and `labeled` a second
+# apart; sharing one group would let the label-only run (end-to-end job only) cancel the run of the commit.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.ref }}-${{ github.event.action == 'labeled' && 'label' || 'code' }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 # Every action is pinned by the commit SHA of an upstream release, with the release in the comment; Renovate keeps the
