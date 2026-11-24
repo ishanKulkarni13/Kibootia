@@ -30,6 +30,8 @@ const MODULES = {
       { directory: "frontend/tests/unit", prefix: "notes-" },
       { directory: "frontend/tests/unit", prefix: "note-" },
       { directory: "frontend/tests/e2e", prefix: "notes." },
+      // The golden files of the module's events (EventSchemaCompatibilityIT) are named after their classes.
+      { directory: "backend/src/test/resources/events", prefix: "com.kibootia.backend.notes." },
     ],
     // Literal text taken out of a file: [file, text].
     removals: [
