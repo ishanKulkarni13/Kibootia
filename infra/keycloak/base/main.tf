@@ -68,7 +68,7 @@ resource "keycloak_openid_client" "web" {
   service_accounts_enabled     = false
   pkce_code_challenge_method   = "S256"
 
-  root_url                        = var.public_base_url
+  root_url = var.public_base_url
   # The callback, and the front door that the links in Keycloak's invitation and verification emails return to.
   valid_redirect_uris             = ["${var.public_base_url}/auth/callback", "${var.public_base_url}/"]
   valid_post_logout_redirect_uris = [var.public_base_url]
