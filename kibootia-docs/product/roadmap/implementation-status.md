@@ -140,10 +140,10 @@ The Level column was added on 2026-11-09.
 
 | Capability | Decision | Milestone | Level |
 |---|---|---|---|
-| Module rules may refuse an action on the collection; an objection to a list's action refuses the list | [ADR 0066](../../decisions/0066-opa-as-a-narrowing-guardrail.md) (draft) | none | observed (`DefaultDecisionPointTest`; branch `m-policy`, local run 2026-11-24, CI pending) |
-| Optional `policy` module: an Open Policy Agent guardrail asked about the configured actions only, narrowing only, failing closed | ADR 0066 | none | observed (`OpaGuardrailIT` against OPA 1.22.2, `OpaUnreachableIT`, `PolicyConfigurationTest`; branch `m-policy`, local run 2026-11-24, CI pending) |
-| Shipped guardrail policy with its own tests; OPA in the Compose profile `policy` | ADR 0066 | none | observed (`opa test infra/opa`, 4 tests; branch `m-policy`, local run 2026-11-24, CI pending) |
-| Every read of the audit log leaves a decision record naming the reader (finding S10, in part) | [ADR 0064](../../decisions/0064-milestone-7-implementation-decisions.md) (sensitive permissions) | none | observed (`AuditViewerIT.readingIsRecorded`, with a negative control; branch `m-policy`, local run 2026-11-24, CI pending) |
+| Module rules may refuse an action on the collection; an objection to a list's action refuses the list | [ADR 0066](../../decisions/0066-opa-as-a-narrowing-guardrail.md) (draft) | none | observed (`DefaultDecisionPointTest`; branch `m-policy`, local run 2026-11-24, CI run 45385703846) |
+| Optional `policy` module: an Open Policy Agent guardrail asked about the configured actions only, narrowing only, failing closed | ADR 0066 | none | observed (`OpaGuardrailIT` against OPA 1.22.2, `OpaUnreachableIT`, `PolicyConfigurationTest`; branch `m-policy`, local run 2026-11-24, CI run 45385703846) |
+| Shipped guardrail policy with its own tests; OPA in the Compose profile `policy` | ADR 0066 | none | observed (`opa test infra/opa`, 4 tests; branch `m-policy`, local run 2026-11-24, CI run 45385703846) |
+| Every read of the audit log leaves a decision record naming the reader (finding S10, in part) | [ADR 0064](../../decisions/0064-milestone-7-implementation-decisions.md) (sensitive permissions) | none | observed (`AuditViewerIT.readingIsRecorded`, with a negative control; branch `m-policy`, local run 2026-11-24, CI run 45385703846) |
 
 ## Deviations the owner has called out
 
