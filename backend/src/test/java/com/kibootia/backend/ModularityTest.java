@@ -29,7 +29,7 @@ class ModularityTest {
 	@Test
 	void everyModuleIsKnown() {
 		List<String> names = MODULES.stream().map(module -> module.getIdentifier().toString()).sorted().toList();
-		assertThat(names).isSubsetOf("access", "audit", "files", "identity", "notes", "platform");
+		assertThat(names).isSubsetOf("access", "audit", "files", "identity", "notes", "platform", "policy");
 	}
 
 	@Test

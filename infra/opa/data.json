@@ -1,0 +1,6 @@
+{
+  "guardrails_config": {
+    "frozen_actions": [],
+    "blocked_principals": []
+  }
+}
