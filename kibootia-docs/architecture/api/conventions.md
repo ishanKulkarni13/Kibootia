@@ -57,8 +57,8 @@ RFC 9457 Problem Details with Kibootia extensions:
 |---|---|
 | Malformed request or failed validation | 400, with `errors` |
 | Missing or invalid token | 401 |
-| Authenticated but not allowed, including email not verified (`platform.email_not_verified`) and a disabled or deleted account (`identity.account_disabled`) | 403 |
-| Not found, or exists but the caller may not see it (another tenant, no view permission) | 404 |
+| Authenticated but not allowed, including email not verified (`platform.email_not_verified`), a disabled or deleted account (`identity.account_disabled`), and a caller who holds no grant for the action at all, which is decided before any record is read so it is the same for every ID ([ADR 0064](../../decisions/0064-milestone-7-implementation-decisions.md)) | 403 |
+| Not found, or exists but the caller's grants do not reach it (another tenant, someone else's record) | 404 |
 | Concurrent-edit conflict (`version` mismatch), duplicate, or a business-state rule such as removing the last administrator | 409 |
 | Upload too large / unsupported type | 413 / 415 |
 | Rate limited | 429 with `Retry-After` |
