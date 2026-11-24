@@ -136,6 +136,14 @@ The Level column was added on 2026-11-09.
 | Architecture rule 14: hand-written SQL names the tenant (closes S7 for the code as it is) | ADR 0065 | 8 | observed (`TenantSqlRulesTest`, with a negative control; branch `m-8`, local run 2026-11-24, CI pending) |
 | One decision is one SQL statement, measured: on the collection, on a record, a list filter and a refusal (the baseline of milestone 7, criterion 4) | [ADR 0065](../../decisions/0065-milestone-8-implementation-decisions.md) | 8 | observed (`DecisionQueryCountIT`; branch `m-8`, local run 2026-11-24, CI pending) |
 
+## Capabilities added on branch `m-policy` (2026-11-24)
+
+| Capability | Decision | Milestone | Level |
+|---|---|---|---|
+| Module rules may refuse an action on the collection; an objection to a list's action refuses the list | [ADR 0066](../../decisions/0066-opa-as-a-narrowing-guardrail.md) (draft) | none | observed (`DefaultDecisionPointTest`; branch `m-policy`, local run 2026-11-24, CI pending) |
+| Optional `policy` module: an Open Policy Agent guardrail asked about the configured actions only, narrowing only, failing closed | ADR 0066 | none | observed (`OpaGuardrailIT` against OPA 1.22.2, `OpaUnreachableIT`, `PolicyConfigurationTest`; branch `m-policy`, local run 2026-11-24, CI pending) |
+| Shipped guardrail policy with its own tests; OPA in the Compose profile `policy` | ADR 0066 | none | observed (`opa test infra/opa`, 4 tests; branch `m-policy`, local run 2026-11-24, CI pending) |
+
 ## Deviations the owner has called out
 
 - Reference feature: a backend-only `notes` module ([ADR 0049](../../decisions/0049-milestone-2-implementation-decisions.md)); completed in milestone 5 with a picture, screens, a copy guide and removal recipes.

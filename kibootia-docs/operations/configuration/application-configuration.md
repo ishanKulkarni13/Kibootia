@@ -101,6 +101,17 @@ Names only.
 |---|---|---|---|
 | `kibootia.access.deny-grants-enabled` (`KIBOOTIA_ACCESS_DENY_GRANTS_ENABLED`) | Backend | `false`. With `true`, roles may be given deny grants ([recipe](../../recipes/enable-deny-grants.md)). Switching it off stops new ones and keeps applying existing ones | No |
 
+## Settings added by the `policy` module (observed, branch `m-policy`)
+
+| Setting | Read by | Default and notes | Secret |
+|---|---|---|---|
+| `kibootia.policy.opa.enabled` (`KIBOOTIA_POLICY_OPA_ENABLED`) | Backend, Compose | `false`. With `true` the Open Policy Agent guardrail is consulted ([recipe](../../recipes/enable-opa-guardrails.md)) | No |
+| `kibootia.policy.opa.url` (`KIBOOTIA_POLICY_OPA_URL`) | Backend | `http://localhost:8181`; `http://opa:8181` in the `apps` profile. Required while on | No |
+| `kibootia.policy.opa.actions` (`KIBOOTIA_POLICY_OPA_ACTIONS`) | Backend, Compose | Empty. The actions OPA is asked about, comma-separated, `*` as a wildcard. At least one is required while on | No |
+| `kibootia.policy.opa.path` | Backend | `kibootia/guardrails/deny`: the policy rule whose value is the set of reasons to refuse | No |
+| `kibootia.policy.opa.connect-timeout`, `.read-timeout` | Backend | `PT0.5S`, `PT1S`. A slower OPA refuses its actions | No |
+| `COMPOSE_PROFILES` | Compose | Add `policy` to start OPA (`openpolicyagent/opa:1.22.2`, `127.0.0.1:8181`) | No |
+
 ## Naming (owner decision of 2026-11-08)
 
 - Kibootia's own settings are named `kibootia.<module>.<setting>` and bound to typed configuration classes with validation. A missing or invalid required setting stops startup with a message naming the setting.

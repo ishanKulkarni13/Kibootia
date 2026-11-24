@@ -66,6 +66,7 @@ None recorded yet. A combination is recorded here only after a passing CI run co
 | Adminer (pinned) | default-on | selected for local development only | Database browser | [0040](../decisions/0040-local-development-topology-and-setup.md) |
 | Swagger UI (bundled with springdoc) | default-on | selected; disabled in production by default | Interactive API documentation locally | [0043](../decisions/0043-http-api-conventions.md) |
 | Example feature ("Notes") | default-on, meant to be removed | selected | Shows how to add a feature | [0024](../decisions/0024-package-modules-with-infrastructure-toggles.md) |
+| Open Policy Agent 1.22.2 (guardrails) | optional | selected as a narrowing guardrail, off by default; not as the decision point | Policies owned outside the application that can refuse chosen actions above roles | [0066](../decisions/0066-opa-as-a-narrowing-guardrail.md) (draft) |
 | Docker Compose with a TLS reverse proxy (for example Caddy) | core | selected; proxy candidate | Local stack and single-server production | [0037](../decisions/0037-single-server-compose-reference-deployment.md), [0040](../decisions/0040-local-development-topology-and-setup.md) |
 | pnpm scripts with Node scripts | core | selected | Cross-platform setup, start and reset | [0040](../decisions/0040-local-development-topology-and-setup.md) |
 
@@ -104,7 +105,7 @@ Live multi-tenancy and service principals move from future to planned when draft
 | Common Expression Language (`dev.cel`) for administrator-written conditions | Not needed now: conditions are named conditions written in Java ([0054](../decisions/0054-authorization-domain-model.md), owner decision of 2026-11-11). The first candidate if administrators ever need to type conditions; Cedar is the alternative ([0056](../decisions/0056-authorization-evaluation-engine.md), draft) |
 | OpenFGA, SpiceDB or Cerbos as the default authorization store | Proposed not to be the default: a second copy of the data or an extra service, and list queries that cannot be filtered in the database. Recipe candidates, decided by a measured comparison ([0056](../decisions/0056-authorization-evaluation-engine.md), draft) |
 | Casbin, Keycloak Authorization Services, Spring Security ACL | A second definition of the model; ties authorization to the identity provider; per-object lists only ([0056](../decisions/0056-authorization-evaluation-engine.md), draft) |
-| OPA as a default component | Extra service, duplicate rules, outage denies everything ([0027](../decisions/0027-central-authorization-decision-point.md)) |
+| OPA as a default component or as the decision point | Extra service, duplicate rules, outage denies everything ([0027](../decisions/0027-central-authorization-decision-point.md)). It ships instead as an optional guardrail that can only refuse ([0066](../decisions/0066-opa-as-a-narrowing-guardrail.md), draft) |
 | Redis as a default component | Not needed for sessions or rate limiting at the start ([0026](../decisions/0026-nextjs-bff-session.md)) |
 | Spring Cloud Vault | Couples the application to Vault ([0032](../decisions/0032-secrets-from-environment-and-files.md)) |
 | Kubernetes and Helm as the reference deployment | Heavy operations cost ([0037](../decisions/0037-single-server-compose-reference-deployment.md)) |

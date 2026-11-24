@@ -16,5 +16,6 @@ Task-oriented guides for things a fork does on purpose: remove or switch off wha
 | [disable-files.md](disable-files.md) | Starts the application with the object storage module off | `module-removal`, row "files (switched off)" |
 | [disable-observability.md](disable-observability.md) | Starts the application with telemetry export off | `module-removal`, row "observability (switched off)" |
 | [enable-deny-grants.md](enable-deny-grants.md) | Lets roles take an action away whatever other roles give | `DenyGrantsIT` in the backend job |
+| [enable-opa-guardrails.md](enable-opa-guardrails.md) | Adds an Open Policy Agent policy that can refuse chosen actions above roles | `OpaGuardrailIT` in the backend job; the policy in the `policy` job |
 
 The row "notes, files and observability (all)" runs the three together.
