@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-25
 
-> **Implementation:** items 1 to 6 and 8 built on branch `m-5-1-edge` (observed; CI run pending); item 7 waits for milestone 6. Observed in `frontend/src/proxy.ts`, `lib/security-headers.ts`, `lib/session.ts`, `lib/config.ts` and `lib/bff/proxy.ts`.
+> **Implementation:** items 1 to 6 and 8 built and verified (CI run 45478941337, 2026-11-25); item 7 waits for milestone 6. Observed in `frontend/src/proxy.ts`, `lib/security-headers.ts`, `lib/session.ts`, `lib/config.ts` and `lib/bff/proxy.ts`.
 
 ## Context
 

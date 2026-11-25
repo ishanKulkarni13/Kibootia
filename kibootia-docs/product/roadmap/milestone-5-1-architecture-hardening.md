@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-25
 
-> **Implementation:** observed in part. The items marked "done" are on branch `m-5-1` (verified, CI run 45354022559, 2026-11-24). Everything else is planned. The remaining items are built one by one, and each ADR it relies on (0057 to 0059, 0061 to 0063) is accepted by the change that builds it, on the owner's delegation of 2026-11-25.
+> **Implementation:** built in large part and verified in CI on 2026-11-25. **Done:** R-01 (role assignment), R-02 (declared dependencies), R-05 and R-06 ([ADR 0058](../../decisions/0058-no-external-call-inside-a-database-transaction.md), CI run 45522177552), R-07 ([ADR 0059](../../decisions/0059-data-integrity-in-the-database.md), 45477165322), R-09 ([ADR 0061](../../decisions/0061-ci-quality-and-supply-chain-gates.md), 45473171226), R-10 (metrics, 45524869886), R-11 (decided in [ADR 0069](../../decisions/0069-stay-on-mysql-until-multi-tenancy.md)), R-12 ([ADR 0063](../../decisions/0063-bff-and-edge-hardening.md), 45478941337) and R-16. **Not done:** R-03 (consumer-owned ports, the rate-limit registry, the storage SPI and the configuration keys; [ADR 0057](../../decisions/0057-consumer-owned-ports-and-declared-module-dependencies.md) items 2 to 6, still a draft), R-08 beyond the single status document (items 2 to 6 of [ADR 0060](../../decisions/0060-implementation-status-in-one-place.md)), R-13 and R-14 (the split of `identity/application`, the frontend import cycle, generated permission constants), the request-throughput baseline of R-15, OTLP log export (OQ-42), and acceptance criterion 5 (each metric visible in Grafana: there is no dashboard). What each ADR changed while it was built is in its Status section.
 
 ## 1. Objective
 

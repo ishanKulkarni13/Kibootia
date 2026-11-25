@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-25
 
-> **Implementation:** items 1 to 7 built on branch `m-5-1-ci` (observed; CI run pending), except that image signing waits for milestone 6, the frontend coverage floor waits for two milestones of data, and item 8 is not adopted (see Status). Observed in `.github/workflows/ci.yml` and `codeql.yml`.
+> **Implementation:** items 1 to 7 built and verified (CI run 45473171226, 2026-11-25), except that image signing waits for milestone 6, the frontend coverage floor waits for two milestones of data, and item 8 is not adopted (see Status). Observed in `.github/workflows/ci.yml` and `codeql.yml`.
 
 ## Context
 

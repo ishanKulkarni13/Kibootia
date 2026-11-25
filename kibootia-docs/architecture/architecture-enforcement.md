@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-25
 
-> **Implementation:** verified for rules 1 to 11 (`ModularityTest`, `ArchitectureTest` and `ArchitectureRulesFireTest` in the backend CI job, run 42959703043, 2026-11-11). Rule 12 is observed (verified, CI run 45354022559, 2026-11-24). Rule 13 is observed on branch `m-5-1-tx` ([ADR 0058](../decisions/0058-no-external-call-inside-a-database-transaction.md); `ExternalCallRulesTest`, `ArchitectureTest`; CI run pending).
+> **Implementation:** verified for rules 1 to 11 (`ModularityTest`, `ArchitectureTest` and `ArchitectureRulesFireTest` in the backend CI job, run 42959703043, 2026-11-11). Rule 12 is observed (verified, CI run 45354022559, 2026-11-24). Rule 13 is verified (CI run 45522177552, 2026-11-25) ([ADR 0058](../decisions/0058-no-external-call-inside-a-database-transaction.md); `ExternalCallRulesTest`, `ArchitectureTest`).
 
 Decisions: [ADR 0013](../decisions/0013-archunit-architecture-enforcement.md), [ADR 0039](../decisions/0039-spring-modulith-module-boundaries-and-outbox.md), [ADR 0044](../decisions/0044-authorization-enforcement-conventions.md).
 

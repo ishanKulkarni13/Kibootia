@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-25
 
-> **Implementation:** items 1 and 3 to 6 built on branch `m-5-1-data` (observed; CI run pending); item 2 is not built, and why is under Status. Observed in `V202611250900__access_role_foreign_keys.sql`, `V202611250910__platform_event_publication_text.sql`, `EventContext`, `FailedEventRetention`, `FailedEventsMetrics` and `FilesDisabledHealthIndicator`.
+> **Implementation:** items 1 and 3 to 6 built and verified (CI run 45477165322, 2026-11-25); item 2 is not built, and why is under Status. Observed in `V202611250900__access_role_foreign_keys.sql`, `V202611250910__platform_event_publication_text.sql`, `EventContext`, `FailedEventRetention`, `FailedEventsMetrics` and `FilesDisabledHealthIndicator`.
 
 ## Context
 
