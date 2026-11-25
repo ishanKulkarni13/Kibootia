@@ -213,6 +213,14 @@ The Level column was added on 2026-11-09.
 |---|---|---|---|
 | Custom metrics: Keycloak call duration by operation and outcome, storage errors by action, rate-limit refusals by category, retention rows removed and runs failed by purge | assessment R-10; [ADR 0061](../../decisions/0061-ci-quality-and-supply-chain-gates.md) | 5.1 | verified (`KeycloakAdminAdapterRetryTest`, `S3ObjectStorageMetricsTest`, `RateLimiterTest`, `RetentionPurgeJobIT`; local run 2026-11-25; CI run 45524869886). The failed-event gauge and the decision counter were verified earlier. Not seen in Grafana: no dashboard or alert exists |
 
+## Capabilities added on branch `m-5-1-upgrade` (2026-11-25)
+
+| Capability | Decision | Milestone | Level |
+|---|---|---|---|
+| An upgrade test with a database of its own: every migration applies on top of the one before it, version by version, and an installation with data, including rows the new foreign keys would refuse and a 3,800-character event, upgrades across the migrations of 2026-11-25 | roadmap rule 2 ("migrates from the schema of the phase before"); assessment R-15 | 5.1 | observed (`MigrationUpgradeIT`, 2 tests, local run 2026-11-25; with the orphan clean-up taken out of the migration the data test fails on the foreign key and the empty-database test does not; CI run pending). When a migration changes existing data, add its case to the second test |
+| An event-compatibility test (golden files) | ADR 0059 | 5.1 | verified earlier (`EventSchemaCompatibilityIT`, CI run 45477165322) |
+| A request-throughput baseline | assessment R-15 | 5.1 | not built |
+
 ## Deviations the owner has called out
 
 - Reference feature: a backend-only `notes` module ([ADR 0049](../../decisions/0049-milestone-2-implementation-decisions.md)); completed in milestone 5 with a picture, screens, a copy guide and removal recipes.
