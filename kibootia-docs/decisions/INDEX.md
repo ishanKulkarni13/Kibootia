@@ -80,5 +80,6 @@ Accepted does not mean implemented: see [implementation status](../product/roadm
 | 0064 | Milestone 7 implementation decisions | platform | accepted | 2026-11-24 | [0064](0064-milestone-7-implementation-decisions.md) |
 | 0065 | Milestone 8 implementation decisions | platform | accepted | 2026-11-24 | [0065](0065-milestone-8-implementation-decisions.md) |
 | 0066 | Open Policy Agent as a narrowing guardrail | platform | accepted | 2026-11-24 | [0066](0066-opa-as-a-narrowing-guardrail.md) |
+| 0067 | Actions only the system performs | platform | accepted | 2026-11-25 | [0067](0067-actions-only-the-system-performs.md) |
 
 Module-scoped ADRs will be listed here too once modules exist.

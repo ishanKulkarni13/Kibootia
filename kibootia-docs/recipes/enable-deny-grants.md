@@ -23,7 +23,7 @@ Milestone 8 or later.
 ## Steps
 
 1. Set `kibootia.access.deny-grants-enabled=true` (environment `KIBOOTIA_ACCESS_DENY_GRANTS_ENABLED=true`) and restart the backend. `GET /api/v1/permissions` then answers `"denyGrantsEnabled": true`.
-2. Create or edit a role through the API with a grant whose `effect` is `DENY`, for example `{"action":"notes.notes.delete","reach":"all","effect":"DENY"}`. The role editor shows a role's deny grants and keeps them on save; it does not add them.
+2. Create or edit a role through the API with a grant whose `effect` is `DENY`, for example `{"action":"notes.notes.delete","reach":"all","effect":"DENY"}`. In the role editor, with the switch on, each permission you hold has a Deny tick (a deny always reaches every record, and you can deny only what you hold yourself); with the switch off the editor shows a role's existing denies, keeps them on save and cannot change them.
 3. Assign the role. From the next request on, the action is refused to its holders, with reason `authorization.denied_by_grant`.
 
 ## Configuration and secrets

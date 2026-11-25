@@ -47,4 +47,4 @@ The conventions every module relies on, each proven by a test: persistence, tena
 - The reference example is backend only (owner decision of 2026-11-09). Its screen, attachment, removal recipe and copy guide are [milestone 5](milestone-5-example-feature.md).
 - The `user` role is defined in code; no real user holds an administrative permission until [milestone 3](milestone-3-identity-and-access-administration.md) stores roles. Restore, failed-event and purge operations are proven by tests that grant permissions.
 - Rule 7 does not see a check made inside a lambda or a helper class.
-- The failed-event view is an API without a screen.
+- The failed-event view was an API without a screen; the administration screen "Failed events" was added on 2026-11-25 (`audit.failed-events.view` shows it, `audit.failed-events.retry` adds the retry button).

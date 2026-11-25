@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-24
+- **Last updated:** 2026-11-25
 
 > **Implementation:** verified for the backend and the frontend unit tests (CI run 42959703043, 2026-11-11). The notes end-to-end story passed in CI run 45354022559 (2026-11-24), so the browser path of the example is verified too ([verification standard](../testing/verification-standard.md)).
 
@@ -26,7 +26,7 @@ A feature module is **default-on and removable** ([ADR 0024](../../decisions/002
 
 ### 2. Permissions and who may do what
 
-Declare actions and resource types in a `PermissionProvider` bean (`NotesPermissions`, [ADR 0065](../../decisions/0065-milestone-8-implementation-decisions.md)). Name actions `<module>.<resource>.<action>` and types `<module>.<resource>`. For records owned by a user, declare the type with the `owner` relation (`ResourceType.of(NOTE, "A note", ResourceRef.OWNER)`) and the actions on those records with `Permission.onRecord(VIEW, NOTE, ...)`: a role can then grant each either for every record or for the holder's own. Actions decided without a record (create, restore, purge, anything administrative) are `Permission.onCollection(...)`. Offer an action to every user with `.forEveryUser()`, or `.forEveryUser(Reach.owner())` for their own records only; the rest are granted through roles.
+Declare actions and resource types in a `PermissionProvider` bean (`NotesPermissions`, [ADR 0065](../../decisions/0065-milestone-8-implementation-decisions.md)). A retention purge a job runs is declared `.forSystemOnly()`, so it is checked like any action but no role is offered it ([ADR 0067](../../decisions/0067-actions-only-the-system-performs.md)). Name actions `<module>.<resource>.<action>` and types `<module>.<resource>`. For records owned by a user, declare the type with the `owner` relation (`ResourceType.of(NOTE, "A note", ResourceRef.OWNER)`) and the actions on those records with `Permission.onRecord(VIEW, NOTE, ...)`: a role can then grant each either for every record or for the holder's own. Actions decided without a record (create, restore, purge, anything administrative) are `Permission.onCollection(...)`. Offer an action to every user with `.forEveryUser()`, or `.forEveryUser(Reach.owner())` for their own records only; the rest are granted through roles.
 
 In the use cases (`NoteService`):
 
