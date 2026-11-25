@@ -7,11 +7,14 @@ import java.util.UUID;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.ConsumptionProbe;
 
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 
 import com.kibootia.backend.platform.authorization.Authorization;
@@ -35,10 +38,16 @@ public class RateLimiter {
 
 	private final Authorization authorization;
 
+	/** Requests the limiter refused, by category (ADR 0061). A rise says someone is using up an allowance. */
+	static final String REJECTIONS = "kibootia.ratelimit.rejections";
+
 	private final Map<RateLimitCategory, Limiter> limiters = new EnumMap<>(RateLimitCategory.class);
 
-	RateLimiter(Authorization authorization, RateLimitProperties properties) {
+	private final ObjectProvider<MeterRegistry> meters;
+
+	RateLimiter(Authorization authorization, RateLimitProperties properties, ObjectProvider<MeterRegistry> meters) {
 		this.authorization = authorization;
+		this.meters = meters;
 		properties.effective().forEach((category, limit) -> this.limiters.put(category,
 				new Limiter(limit.capacity(), limit.period())));
 	}
@@ -56,6 +65,14 @@ public class RateLimiter {
 	public void acquire(RateLimitCategory category, UUID user) {
 		ConsumptionProbe probe = this.limiters.get(category).bucketOf(user).tryConsumeAndReturnRemaining(1);
 		if (!probe.isConsumed()) {
+			MeterRegistry registry = this.meters.getIfAvailable();
+			if (registry != null) {
+				Counter.builder(REJECTIONS)
+					.description("Requests refused by the rate limiter, by category")
+					.tag("category", category.name().toLowerCase(java.util.Locale.ROOT))
+					.register(registry)
+					.increment();
+			}
 			throw ApiException.tooManyRequests("Too many requests. Wait a moment and try again.",
 					Duration.ofNanos(probe.getNanosToWaitForRefill()));
 		}

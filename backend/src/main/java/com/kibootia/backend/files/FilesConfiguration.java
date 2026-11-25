@@ -1,5 +1,7 @@
 package com.kibootia.backend.files;
 
+import org.springframework.beans.factory.ObjectProvider;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,8 +29,8 @@ class FilesConfiguration {
 	private static final Logger log = LoggerFactory.getLogger(FilesConfiguration.class);
 
 	@Bean(destroyMethod = "close")
-	S3ObjectStorage s3ObjectStorage(FilesProperties properties) {
-		return new S3ObjectStorage(properties);
+	S3ObjectStorage s3ObjectStorage(FilesProperties properties, ObjectProvider<MeterRegistry> meters) {
+		return new S3ObjectStorage(properties, meters.getIfAvailable());
 	}
 
 	/** Accepts every upload; a deployment replaces it to scan for malware (a recipe, ADR 0029). */

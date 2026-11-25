@@ -1,5 +1,7 @@
 package com.kibootia.backend.files.s3;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.net.URI;
 import java.net.URL;
 import java.time.Duration;
@@ -56,7 +58,18 @@ public class S3ObjectStorage implements ObjectStorage, AutoCloseable {
 
 	private final String bucket;
 
+	/** Calls to the storage server that failed, by what was being done (ADR 0061). */
+	public static final String ERRORS = "kibootia.storage.errors";
+
+	/** Null when metrics are not available, for example in a test that builds the adapter by hand. */
+	private final MeterRegistry meters;
+
 	public S3ObjectStorage(FilesProperties properties) {
+		this(properties, null);
+	}
+
+	public S3ObjectStorage(FilesProperties properties, MeterRegistry meters) {
+		this.meters = meters;
 		this.bucket = properties.bucket();
 		AwsBasicCredentials credentials = AwsBasicCredentials.create(properties.accessKey(), properties.secretKey());
 		URI endpoint = URI.create(properties.endpoint());
@@ -229,7 +242,14 @@ public class S3ObjectStorage implements ObjectStorage, AutoCloseable {
 	}
 
 	/** The SDK's message can name the endpoint and request IDs but never a secret; the credentials are not part of it. */
-	private static Unavailable unavailable(String action, SdkException cause) {
+	private Unavailable unavailable(String action, SdkException cause) {
+		if (this.meters != null) {
+			Counter.builder(ERRORS)
+				.description("Calls to the storage server that failed, by what was being done")
+				.tag("action", action)
+				.register(this.meters)
+				.increment();
+		}
 		return new Unavailable("The storage server could not " + action + ": " + cause.getClass().getSimpleName(), cause);
 	}
 
