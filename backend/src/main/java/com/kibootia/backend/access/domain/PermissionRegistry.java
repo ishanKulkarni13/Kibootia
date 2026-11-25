@@ -88,12 +88,23 @@ public final class PermissionRegistry {
 		return Collections.unmodifiableCollection(this.byName.values());
 	}
 
+	/** The actions a role can be given: every declared one except those only the system performs. */
+	public Collection<Permission> grantable() {
+		return this.byName.values().stream().filter(Permission::isGrantable).toList();
+	}
+
 	public Collection<ResourceType> resourceTypes() {
 		return Collections.unmodifiableCollection(this.types.values());
 	}
 
 	public boolean isRegistered(String name) {
 		return this.byName.containsKey(name);
+	}
+
+	/** Whether the action is declared and a role can be given it; false for one only the system performs. */
+	public boolean isGrantable(String name) {
+		Permission permission = this.byName.get(name);
+		return permission != null && permission.isGrantable();
 	}
 
 	public Optional<Permission> find(String name) {
@@ -110,10 +121,13 @@ public final class PermissionRegistry {
 		return Collections.unmodifiableSet(grants);
 	}
 
-	/** The grants of the built-in administrator role: every declared action, for every record (ADR 0054). */
+	/**
+	 * The grants of the built-in administrator role: every action a role can be given, for every record (ADR 0054). Not the
+	 * actions only the system performs: nobody holds those, the administrator included.
+	 */
 	public Set<Grant> administratorGrants() {
 		Set<Grant> grants = new LinkedHashSet<>();
-		this.byName.keySet().forEach((name) -> grants.add(Grant.allow(name, Reach.ALL)));
+		grantable().forEach((permission) -> grants.add(Grant.allow(permission.name(), Reach.ALL)));
 		return Collections.unmodifiableSet(grants);
 	}
 
@@ -136,13 +150,13 @@ public final class PermissionRegistry {
 	}
 
 	/**
-	 * Whether the grant fits the declarations: a declared action, a reach its resource type offers, and, for a deny, the
-	 * reach {@code all} (a deny that removes only some records would need a filter that excludes, which lists cannot
-	 * apply yet).
+	 * Whether the grant fits the declarations: a declared action that a role can be given, a reach its resource type
+	 * offers, and, for a deny, the reach {@code all} (a deny that removes only some records would need a filter that
+	 * excludes, which lists cannot apply yet).
 	 */
 	public boolean isValid(Grant grant) {
 		Permission permission = this.byName.get(grant.action());
-		if (permission == null || !reachesOf(permission).contains(grant.reach())) {
+		if (permission == null || !permission.isGrantable() || !reachesOf(permission).contains(grant.reach())) {
 			return false;
 		}
 		return grant.allows() || grant.reach() instanceof Reach.All;

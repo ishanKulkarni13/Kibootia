@@ -36,7 +36,7 @@ class RoleRetention implements RetentionPurgeable {
 
 	@Override
 	@Transactional
-	@RequiresPermission(AccessPermissions.MANAGE_ROLES)
+	@RequiresPermission(AccessPermissions.PURGE_ROLES)
 	public int purge() {
 		return this.roles.purgeDeletedBefore(
 				this.clock.instant().minus(Duration.ofDays(this.properties.softDeleteRetentionDays())));
