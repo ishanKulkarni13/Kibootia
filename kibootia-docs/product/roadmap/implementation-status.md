@@ -108,7 +108,7 @@ The Level column was added on 2026-11-09.
 |---|---|---|---|
 | Role assignment requires the caller to hold the permissions of each role they add (closes S1 of the [security review](../../temp/authorization-security-review.md)) | [assessment](../../architecture/architecture-assessment.md) S-1 | [5.1](milestone-5-1-architecture-hardening.md) | verified (`AccessApiIT.assigningCannotEscalate`, `UserAdministrationIT.invitingCannotEscalate`; both fail with 200 and 201 when the check is removed; full backend run 135 fast and 271 integration tests, CI run 45354022559, 2026-11-24) |
 | `allowedDependencies` declared for `access`, `audit`, `files`, `identity` and `notes`; architecture rule 12 | [ADR 0057](../../decisions/0057-consumer-owned-ports-and-declared-module-dependencies.md) item 1 (draft) | 5.1 | verified (`ModularityTest`; an undeclared edge fails it; CI run 45354022559, 2026-11-24) |
-| Root README, SECURITY, CODEOWNERS, pull request template, `.editorconfig`, `.nvmrc` | assessment R-16 | 5.1 | observed (files exist; the licence waits for OQ-48) |
+| Root README, SECURITY, CODEOWNERS, pull request template, `.editorconfig`, `.nvmrc` | assessment R-16 | 5.1 | observed (files exist; the licence is Apache-2.0, ADR 0068) |
 | [Module catalogue](../../architecture/module-catalogue.md), [data inventory](../../architecture/data/data-inventory.md), [architecture assessment](../../architecture/architecture-assessment.md) | none | 5.1 | observed (documentation, read from the code; not machine-checked) |
 | Implementation banners of ADRs 0001 to 0052 replaced by a fixed pointer to this document | [ADR 0060](../../decisions/0060-implementation-status-in-one-place.md) | 5.1 | observed (documentation) |
 
@@ -200,6 +200,12 @@ The Level column was added on 2026-11-09.
 | The policy module is removable in CI (a row of the `module-removal` job; the "all" row removes both removable modules), and rule 8 names it | [ADR 0066](../../decisions/0066-opa-as-a-narrowing-guardrail.md) | none | observed (removal and build run locally on a copy; CI run pending) |
 | The policy that ships in `infra/opa` is tested against a real OPA and the real guardrail | ADR 0066 | none | observed (`ShippedGuardrailPolicyIT`, 4 tests, local run; CI run pending) |
 | Unit tests for the pager, the error alert and the roles and users lists | none | none | observed (`shared-components.test.tsx`, `roles-and-users-screens.test.tsx`; CI run pending) |
+
+## Capabilities added on branch `m-6-licence` (2026-11-25)
+
+| Capability | Decision | Milestone | Level |
+|---|---|---|---|
+| Apache-2.0: `LICENSE`, `NOTICE`, the licence in `pom.xml` and the `package.json` files, a changelog | [ADR 0068](../../decisions/0068-apache-2-0-licence.md) | 6 | observed (files in the repository; the build ran with the new `pom.xml`; CI run pending) |
 
 ## Deviations the owner has called out
 

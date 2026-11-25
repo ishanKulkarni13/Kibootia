@@ -12,19 +12,25 @@
 	<artifactId>backend</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>Kibootia Backend</name>
-	<description/>
-	<url/>
+	<description>The Spring Boot backend of Kibootia, a reusable application starter</description>
+	<url>https://github.com/ishanKulkarni13/Kibootia</url>
 	<licenses>
-		<license/>
+		<license>
+			<name>Apache License, Version 2.0</name>
+			<url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+			<distribution>repo</distribution>
+		</license>
 	</licenses>
 	<developers>
-		<developer/>
+		<developer>
+			<id>ishanKulkarni13</id>
+		</developer>
 	</developers>
 	<scm>
-		<connection/>
-		<developerConnection/>
-		<tag/>
-		<url/>
+		<connection>scm:git:https://github.com/ishanKulkarni13/Kibootia.git</connection>
+		<developerConnection>scm:git:https://github.com/ishanKulkarni13/Kibootia.git</developerConnection>
+		<tag>HEAD</tag>
+		<url>https://github.com/ishanKulkarni13/Kibootia</url>
 	</scm>
 	<properties>
 		<java.version>25</java.version>

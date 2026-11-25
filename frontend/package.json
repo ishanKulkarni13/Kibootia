@@ -2,6 +2,7 @@
   "name": "kibootia-frontend",
   "version": "0.0.0",
   "private": true,
+  "license": "Apache-2.0",
   "description": "Kibootia web application: Next.js server with the backend-for-frontend session and API proxy.",
   "scripts": {
     "dev": "next dev --port 3470",
