@@ -207,6 +207,12 @@ The Level column was added on 2026-11-09.
 |---|---|---|---|
 | Apache-2.0: `LICENSE`, `NOTICE`, the licence in `pom.xml` and the `package.json` files, a changelog | [ADR 0068](../../decisions/0068-apache-2-0-licence.md) | 6 | observed (files in the repository; the build ran with the new `pom.xml`; CI run pending) |
 
+## Capabilities added on branch `m-5-1-metrics` (2026-11-25)
+
+| Capability | Decision | Milestone | Level |
+|---|---|---|---|
+| Custom metrics: Keycloak call duration by operation and outcome, storage errors by action, rate-limit refusals by category, retention rows removed and runs failed by purge | assessment R-10; [ADR 0061](../../decisions/0061-ci-quality-and-supply-chain-gates.md) | 5.1 | observed (`KeycloakAdminAdapterRetryTest`, `S3ObjectStorageMetricsTest`, `RateLimiterTest`, `RetentionPurgeJobIT`; local run 2026-11-25; CI run pending). The failed-event gauge and the decision counter were verified earlier. Not seen in Grafana: no dashboard or alert exists |
+
 ## Deviations the owner has called out
 
 - Reference feature: a backend-only `notes` module ([ADR 0049](../../decisions/0049-milestone-2-implementation-decisions.md)); completed in milestone 5 with a picture, screens, a copy guide and removal recipes.

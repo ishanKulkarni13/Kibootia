@@ -14,6 +14,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -115,11 +117,15 @@ class KeycloakAdminAdapterRetryTest {
 	}
 
 	private KeycloakAdminAdapter adapter(int retries) {
+		return adapter(retries, null);
+	}
+
+	private KeycloakAdminAdapter adapter(int retries, MeterRegistry meters) {
 		IdentityProperties properties = new IdentityProperties(null, "http://localhost:3470", Duration.ofDays(1),
 				new IdentityProperties.Keycloak("http://localhost:" + this.server.getAddress().getPort(), "kibootia",
 						"kibootia-web", "kibootia-admin", "secret", Duration.ofSeconds(2), Duration.ofSeconds(5), retries,
 						Duration.ofMillis(1)));
-		return new KeycloakAdminAdapter(properties, Clock.systemUTC());
+		return new KeycloakAdminAdapter(properties, Clock.systemUTC(), meters);
 	}
 
 	@Test
@@ -196,6 +202,25 @@ class KeycloakAdminAdapterRetryTest {
 		this.server.stop(0);
 
 		assertThatThrownBy(() -> adapter.find(ACCOUNT)).isInstanceOf(IdentityProviderAdmin.Unavailable.class);
+	}
+
+	@Test
+	@DisplayName("every call is timed by operation and outcome, a repeat each time, and a 404 counts as an answer (ADR 0061)")
+	void callsAreTimed() {
+		SimpleMeterRegistry meters = new SimpleMeterRegistry();
+		this.reads.addAll(List.of(503, 503));
+		KeycloakAdminAdapter adapter = adapter(2, meters);
+
+		adapter.find(ACCOUNT);
+		this.reads.add(404);
+		adapter.find(ACCOUNT);
+
+		assertThat(meters.get(KeycloakAdminAdapter.CALLS).tag("operation", "find user").tag("outcome", "failure").timer().count())
+			.isEqualTo(2);
+		assertThat(meters.get(KeycloakAdminAdapter.CALLS).tag("operation", "find user").tag("outcome", "success").timer().count())
+			.isEqualTo(1);
+		assertThat(meters.get(KeycloakAdminAdapter.CALLS).tag("operation", "find user").tag("outcome", "answered").timer().count())
+			.isEqualTo(1);
 	}
 
 }
