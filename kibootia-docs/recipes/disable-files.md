@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-25
 
-> **Implementation:** verified (CI run 42959703043, 2026-11-11). The `module-removal` rows "files (switched off)" and "all" start the application with the switch set through the environment and run the `startup` group; `FilesDisabledIT` and `NoteAttachmentFilesDisabledIT` cover the behaviour. Switching files off on a database that already holds files is unsupported, and the application says so: see "Security" below ([ADR 0059](../decisions/0059-data-integrity-in-the-database.md); `FilesDisabledIT`, observed on branch `m-5-1-data`, CI run pending).
+> **Implementation:** verified (CI run 42959703043, 2026-11-11). The `module-removal` rows "files (switched off)" and "all" start the application with the switch set through the environment and run the `startup` group; `FilesDisabledIT` and `NoteAttachmentFilesDisabledIT` cover the behaviour. Switching files off on a database that already holds files is unsupported, and the application says so: see "Security" below ([ADR 0059](../decisions/0059-data-integrity-in-the-database.md); `FilesDisabledIT`, verified in CI run 45477165322).
 
 ## Problem
 

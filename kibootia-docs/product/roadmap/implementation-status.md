@@ -149,69 +149,69 @@ The Level column was added on 2026-11-09.
 
 | Capability | Decision | Milestone | Level |
 |---|---|---|---|
-| Coverage reports: JaCoCo for the backend (instructions and branches in the run summary) and Vitest for the frontend (68% of statements on 2026-11-25), kept as artifacts, no threshold | [ADR 0061](../../decisions/0061-ci-quality-and-supply-chain-gates.md) item 1 | 5.1 | observed (local run 2026-11-25: `DefaultDecisionPointTest` covers 435 of 444 instructions of its class; frontend 207 tests; CI run pending) |
-| CodeQL for Java and TypeScript; dependency review on pull requests; `pnpm audit --prod` | ADR 0061 items 2 and 3 | 5.1 | observed (workflows written and linted with actionlint; CI run pending) |
-| A CycloneDX bill of materials per image; every action pinned by upstream commit SHA (the Trivy pin that was not an upstream commit is replaced); job timeouts; no cancelling on `main`; a label other than `e2e` runs nothing | ADR 0061 items 4, 5 and 6 | 5.1 | observed (actionlint; CI run pending) |
-| Infrastructure checks: `tofu fmt -check` and `validate`, `docker compose config` with every profile, hadolint | ADR 0061 item 7 | 5.1 | observed (each run locally on 2026-11-25; one formatting fix in `infra/keycloak/base/main.tf`; CI run pending) |
-| Documentation check: relative links resolve and the decision index agrees with each ADR (`scripts/check-docs.mjs`, shown to fire on a broken link and on a wrong status) | [ADR 0060](../../decisions/0060-implementation-status-in-one-place.md), ADR 0061 | 5.1 | observed (local run 2026-11-25: 203 files, 66 decision records; CI run pending) |
+| Coverage reports: JaCoCo for the backend (instructions and branches in the run summary) and Vitest for the frontend (68% of statements on 2026-11-25), kept as artifacts, no threshold | [ADR 0061](../../decisions/0061-ci-quality-and-supply-chain-gates.md) item 1 | 5.1 | verified (CI run 45473171226: both reports were kept as artifacts; backend 95.7% of instructions and 82.4% of branches, frontend 68.2% of statements and 69.7% of branches, read from them on 2026-11-25. No threshold) |
+| CodeQL for Java and TypeScript; dependency review on pull requests; `pnpm audit --prod` | ADR 0061 items 2 and 3 | 5.1 | verified for CodeQL, which analysed Java and TypeScript, and for `pnpm audit --prod`, which passed (CI run 45473171226). The dependency review has **not** run: the dependency graph is off for the repository, so the job warns and skips it, and it becomes a gate when the owner turns the graph on |
+| A CycloneDX bill of materials per image; every action pinned by upstream commit SHA (the Trivy pin that was not an upstream commit is replaced); job timeouts; no cancelling on `main`; a label other than `e2e` runs nothing | ADR 0061 items 4, 5 and 6 | 5.1 | verified (CI run 45473171226: the images job kept an artifact `sbom` with two CycloneDX 1.6 files, 315 and 121 components; every job ran with its timeout and every action at its pinned commit, the replaced Trivy action included) |
+| Infrastructure checks: `tofu fmt -check` and `validate`, `docker compose config` with every profile, hadolint | ADR 0061 item 7 | 5.1 | verified (the job "Infrastructure files" passed in CI run 45473171226, after one formatting fix in `infra/keycloak/base/main.tf`) |
+| Documentation check: relative links resolve and the decision index agrees with each ADR (`scripts/check-docs.mjs`, shown to fire on a broken link and on a wrong status) | [ADR 0060](../../decisions/0060-implementation-status-in-one-place.md), ADR 0061 | 5.1 | verified (the job "Documentation check" passed in CI run 45473171226; shown to fire on a broken link and on a wrong status) |
 | Spring Java Format | ADR 0061 item 8 | 5.1 | not adopted: 285 files fail it because the code is written to about 120 columns (recorded in ADR 0061) |
 
 ## Capabilities added on branch `m-5-1-data` (2026-11-25)
 
 | Capability | Decision | Milestone | Level |
 |---|---|---|---|
-| Foreign keys from `role_permission` and `role_assignment` to `role`, with a migration that removes rows of roles that are gone | [ADR 0059](../../decisions/0059-data-integrity-in-the-database.md) item 1 | 5.1 | observed (`RoleForeignKeysIT`, which runs the migration script against orphan rows; branch `m-5-1-data`; CI run pending) |
-| A schema version on every event, a golden file per event type that the current code must read, and the rule for changing an event | ADR 0059 item 3 | 5.1 | observed (`EventSchemaCompatibilityIT`, `DurableEventsIT`; CI run pending) |
-| `event_publication.serialized_event` is `TEXT`; a 6,000-character event is stored and delivered | ADR 0059 item 4 | 5.1 | observed (`DurableEventsIT`, and Hibernate validation at every startup; CI run pending) |
-| Failed events whose retries are exhausted are removed after 90 days, audited; a gauge counts failed events | ADR 0059 item 5 | 5.1 | observed (`FailedEventRetentionIT`, `DurableEventsIT`; CI run pending) |
-| A warning and a health detail when files are switched off while stored files remain | ADR 0059 item 6 | 5.1 | observed (`FilesDisabledIT`; CI run pending) |
+| Foreign keys from `role_permission` and `role_assignment` to `role`, with a migration that removes rows of roles that are gone | [ADR 0059](../../decisions/0059-data-integrity-in-the-database.md) item 1 | 5.1 | verified (`RoleForeignKeysIT`, which runs the migration script against orphan rows; branch `m-5-1-data`; CI run 45477165322) |
+| A schema version on every event, a golden file per event type that the current code must read, and the rule for changing an event | ADR 0059 item 3 | 5.1 | verified (`EventSchemaCompatibilityIT`, `DurableEventsIT`; CI run 45477165322) |
+| `event_publication.serialized_event` is `TEXT`; a 6,000-character event is stored and delivered | ADR 0059 item 4 | 5.1 | verified (`DurableEventsIT`, and Hibernate validation at every startup; CI run 45477165322) |
+| Failed events whose retries are exhausted are removed after 90 days, audited; a gauge counts failed events | ADR 0059 item 5 | 5.1 | verified (`FailedEventRetentionIT`, `DurableEventsIT`; CI run 45477165322) |
+| A warning and a health detail when files are switched off while stored files remain | ADR 0059 item 6 | 5.1 | verified (`FilesDisabledIT`; CI run 45477165322) |
 | A unique email key on `user_profile` | ADR 0059 item 2 | 5.1 | not built, with the reason recorded in the ADR: Keycloak already refuses a second account with an address, and a unique key on the refreshed copy would fail sign-ins |
 
 ## Capabilities added on branch `m-5-1-edge` (2026-11-25)
 
 | Capability | Decision | Milestone | Level |
 |---|---|---|---|
-| Content-Security-Policy with a nonce per page (report-only by default, `CSP_MODE`), HSTS over https and Cross-Origin-Opener-Policy, on every page | [ADR 0063](../../decisions/0063-bff-and-edge-hardening.md) item 1 | 5.1 | observed (`security-headers.test.ts`; branch `m-5-1-edge`; CI run pending). Also seen on a local production build with `curl` on 2026-11-25: the policy and the opener policy on pages, none on `/healthz`, and the header's nonce equal to the nonce on the page's scripts (15 of its 16 script tags carry one). No browser has loaded the page, and no end-to-end test reads the headers, so what a browser would report is not known |
-| `__Host-` cookie names over https; a session is read only from the cookie of its own mode | ADR 0063 item 2 | 5.1 | observed (`session-keys.test.ts`; CI run pending) |
-| A timeout (504) and a size limit (413) on the `/api` proxy; an allow-list of request headers | ADR 0063 items 3 and 4 | 5.1 | observed (`proxy-hardening.test.ts`; CI run pending) |
-| The client's address passed on only from trusted proxies (`TRUSTED_PROXY_HOPS`) | ADR 0063 item 5 | 5.1 | observed in the frontend (`proxy-hardening.test.ts`); the backend does not read it yet (recorded in the ADR) |
-| A session key ring: the first key seals, every key opens, a key identifier in the header; existing sessions stay readable | ADR 0063 item 6 | 5.1 | observed (`session-keys.test.ts`, including a token sealed as the old code did; CI run pending) |
-| The server refuses to start in production without its addresses and secrets | ADR 0063 item 8 | 5.1 | observed (`config.test.ts`; CI run pending) |
+| Content-Security-Policy with a nonce per page (report-only by default, `CSP_MODE`), HSTS over https and Cross-Origin-Opener-Policy, on every page | [ADR 0063](../../decisions/0063-bff-and-edge-hardening.md) item 1 | 5.1 | verified (`security-headers.test.ts`; branch `m-5-1-edge`; CI run 45478941337). Also seen on a local production build with `curl` on 2026-11-25: the policy and the opener policy on pages, none on `/healthz`, and the header's nonce equal to the nonce on the page's scripts (15 of its 16 script tags carry one). No browser has loaded the page, and no end-to-end test reads the headers, so what a browser would report is not known |
+| `__Host-` cookie names over https; a session is read only from the cookie of its own mode | ADR 0063 item 2 | 5.1 | verified (`session-keys.test.ts`; CI run 45478941337) |
+| A timeout (504) and a size limit (413) on the `/api` proxy; an allow-list of request headers | ADR 0063 items 3 and 4 | 5.1 | verified (`proxy-hardening.test.ts`; CI run 45478941337) |
+| The client's address passed on only from trusted proxies (`TRUSTED_PROXY_HOPS`) | ADR 0063 item 5 | 5.1 | verified in the frontend (CI run 45478941337) (`proxy-hardening.test.ts`); the backend does not read it yet (recorded in the ADR) |
+| A session key ring: the first key seals, every key opens, a key identifier in the header; existing sessions stay readable | ADR 0063 item 6 | 5.1 | verified (`session-keys.test.ts`, including a token sealed as the old code did; CI run 45478941337) |
+| The server refuses to start in production without its addresses and secrets | ADR 0063 item 8 | 5.1 | verified (`config.test.ts`; CI run 45478941337) |
 | Back-channel logout | ADR 0063 item 7 | 6 | planned: it needs a server-side session store |
 
 ## Capabilities added on branch `m-5-1-tx` (2026-11-25)
 
 | Capability | Decision | Milestone | Level |
 |---|---|---|---|
-| `@DurableEventListener(transactional = false)`: a handler that calls another system holds no database connection while it works; the mark is read and written in short transactions; `UserEvents` and `FileEvents` use it | [ADR 0058](../../decisions/0058-no-external-call-inside-a-database-transaction.md) item 2 | 5.1 | observed (`HandlerTransactionIT` counts the pool's connections; branch `m-5-1-tx`; CI run pending) |
-| A purge can run without the job's transaction (`RetentionPurgeable.ownsTransactions`); the purge of deleted files deletes objects with none open | ADR 0058 item 3 | 5.1 | observed (`FileJobsIT`, and every integration test through the fakes' record; CI run pending) |
-| Bounded retry of the Keycloak calls that are safe to repeat (find, enable or disable, end sessions, delete) with Spring Framework 7's retry support | ADR 0058 item 4 | 5.1 | observed (`KeycloakAdminAdapterRetryTest`, 7 tests against a local HTTP server; CI run pending) |
-| A failed invitation whose account could not be taken back is cleaned up later, as a durable event | ADR 0058 item 5 | 5.1 | observed (`UserAdministrationIT`; CI run pending) |
-| Architecture rule 13, in two halves, shown to fire; every integration test fails if Keycloak or storage was called while a transaction was open | ADR 0058 item 1 | 5.1 | observed (`ExternalCallRulesTest`, `ArchitectureTest`, `AdminApiTest`; CI run pending) |
+| `@DurableEventListener(transactional = false)`: a handler that calls another system holds no database connection while it works; the mark is read and written in short transactions; `UserEvents` and `FileEvents` use it | [ADR 0058](../../decisions/0058-no-external-call-inside-a-database-transaction.md) item 2 | 5.1 | verified (`HandlerTransactionIT` counts the pool's connections; branch `m-5-1-tx`; CI run 45522177552) |
+| A purge can run without the job's transaction (`RetentionPurgeable.ownsTransactions`); the purge of deleted files deletes objects with none open | ADR 0058 item 3 | 5.1 | verified (`FileJobsIT`, and every integration test through the fakes' record; CI run 45522177552) |
+| Bounded retry of the Keycloak calls that are safe to repeat (find, enable or disable, end sessions, delete) with Spring Framework 7's retry support | ADR 0058 item 4 | 5.1 | verified (`KeycloakAdminAdapterRetryTest`, 7 tests against a local HTTP server; CI run 45522177552) |
+| A failed invitation whose account could not be taken back is cleaned up later, as a durable event | ADR 0058 item 5 | 5.1 | verified (`UserAdministrationIT`; CI run 45522177552) |
+| Architecture rule 13, in two halves, shown to fire; every integration test fails if Keycloak or storage was called while a transaction was open | ADR 0058 item 1 | 5.1 | verified (`ExternalCallRulesTest`, `ArchitectureTest`, `AdminApiTest`; CI run 45522177552) |
 | A reconciliation job that removes Keycloak accounts that have no profile | ADR 0058 item 5 | 5.1 | not built: a self-registered person has no profile until they first sign in, so such a job would delete real people (recorded in the ADR) |
 
 ## Capabilities added on branch `feat/admin-gaps` (2026-11-25)
 
 | Capability | Decision | Milestone | Level |
 |---|---|---|---|
-| An administration screen for failed events: which event failed in which handler, how often, whether it needs a person, and a retry button for `audit.failed-events.retry` | [ADR 0031](../../decisions/0031-transactional-outbox-and-locked-jobs.md) | none | observed (`failed-events-screen.test.tsx`, 8 tests; the Playwright admin story visits it; CI run pending) |
-| Deny grants can be added and removed in the role editor while deny grants are on, for what the editor holds and for every record | [ADR 0065](../../decisions/0065-milestone-8-implementation-decisions.md) | none | observed (`role-editor.test.tsx`, 7 new tests; CI run pending). Not covered by a Playwright story |
-| Actions only the system performs (the purges): not offered, not grantable, not held by the administrator role; the role and user purges have actions of their own | [ADR 0067](../../decisions/0067-actions-only-the-system-performs.md) | none | observed (`SystemOnlyPermissionTest`, `GrantsApiIT`; full local backend run 171 fast and 313 integration tests, one new test fixed and re-run; CI run pending) |
-| The policy module is removable in CI (a row of the `module-removal` job; the "all" row removes both removable modules), and rule 8 names it | [ADR 0066](../../decisions/0066-opa-as-a-narrowing-guardrail.md) | none | observed (removal and build run locally on a copy; CI run pending) |
-| The policy that ships in `infra/opa` is tested against a real OPA and the real guardrail | ADR 0066 | none | observed (`ShippedGuardrailPolicyIT`, 4 tests, local run; CI run pending) |
-| Unit tests for the pager, the error alert and the roles and users lists | none | none | observed (`shared-components.test.tsx`, `roles-and-users-screens.test.tsx`; CI run pending) |
+| An administration screen for failed events: which event failed in which handler, how often, whether it needs a person, and a retry button for `audit.failed-events.retry` | [ADR 0031](../../decisions/0031-transactional-outbox-and-locked-jobs.md) | none | verified (`failed-events-screen.test.tsx`, 8 tests; the Playwright admin story visits it; CI run 45523321048) |
+| Deny grants can be added and removed in the role editor while deny grants are on, for what the editor holds and for every record | [ADR 0065](../../decisions/0065-milestone-8-implementation-decisions.md) | none | verified (`role-editor.test.tsx`, 7 new tests; CI run 45523321048). Not covered by a Playwright story |
+| Actions only the system performs (the purges): not offered, not grantable, not held by the administrator role; the role and user purges have actions of their own | [ADR 0067](../../decisions/0067-actions-only-the-system-performs.md) | none | verified (`SystemOnlyPermissionTest`, `GrantsApiIT`; full local backend run 171 fast and 313 integration tests, one new test fixed and re-run; CI run 45523321048) |
+| The policy module is removable in CI (a row of the `module-removal` job; the "all" row removes both removable modules), and rule 8 names it | [ADR 0066](../../decisions/0066-opa-as-a-narrowing-guardrail.md) | none | verified (CI run 45523321048: the rows "policy (removed)" and "notes, policy, files and observability (all)" of the `module-removal` job passed) |
+| The policy that ships in `infra/opa` is tested against a real OPA and the real guardrail | ADR 0066 | none | verified (`ShippedGuardrailPolicyIT`, 4 tests, local run; CI run 45523321048) |
+| Unit tests for the pager, the error alert and the roles and users lists | none | none | verified (`shared-components.test.tsx`, `roles-and-users-screens.test.tsx`; CI run 45523321048) |
 
 ## Capabilities added on branch `m-6-licence` (2026-11-25)
 
 | Capability | Decision | Milestone | Level |
 |---|---|---|---|
-| Apache-2.0: `LICENSE`, `NOTICE`, the licence in `pom.xml` and the `package.json` files, a changelog | [ADR 0068](../../decisions/0068-apache-2-0-licence.md) | 6 | observed (files in the repository; the build ran with the new `pom.xml`; CI run pending) |
+| Apache-2.0: `LICENSE`, `NOTICE`, the licence in `pom.xml` and the `package.json` files, a changelog | [ADR 0068](../../decisions/0068-apache-2-0-licence.md) | 6 | verified (files in the repository; the build ran with the new `pom.xml`; CI run 45522538466) |
 
 ## Capabilities added on branch `m-5-1-metrics` (2026-11-25)
 
 | Capability | Decision | Milestone | Level |
 |---|---|---|---|
-| Custom metrics: Keycloak call duration by operation and outcome, storage errors by action, rate-limit refusals by category, retention rows removed and runs failed by purge | assessment R-10; [ADR 0061](../../decisions/0061-ci-quality-and-supply-chain-gates.md) | 5.1 | observed (`KeycloakAdminAdapterRetryTest`, `S3ObjectStorageMetricsTest`, `RateLimiterTest`, `RetentionPurgeJobIT`; local run 2026-11-25; CI run pending). The failed-event gauge and the decision counter were verified earlier. Not seen in Grafana: no dashboard or alert exists |
+| Custom metrics: Keycloak call duration by operation and outcome, storage errors by action, rate-limit refusals by category, retention rows removed and runs failed by purge | assessment R-10; [ADR 0061](../../decisions/0061-ci-quality-and-supply-chain-gates.md) | 5.1 | verified (`KeycloakAdminAdapterRetryTest`, `S3ObjectStorageMetricsTest`, `RateLimiterTest`, `RetentionPurgeJobIT`; local run 2026-11-25; CI run 45524869886). The failed-event gauge and the decision counter were verified earlier. Not seen in Grafana: no dashboard or alert exists |
 
 ## Deviations the owner has called out
 

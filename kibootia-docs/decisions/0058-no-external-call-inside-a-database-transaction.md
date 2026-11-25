@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-25
 
-> **Implementation:** built on branch `m-5-1-tx` (observed; CI run pending). Observed in `DurableEventListener` (`transactional = false`), `DurableEventInterceptor`, `RetentionPurgeable.ownsTransactions`, `UserEvents`, `FileEvents`, `FileRetention`, `KeycloakAdminAdapter` and `ExternalCallRules`.
+> **Implementation:** built and verified (CI run 45522177552, 2026-11-25). Observed in `DurableEventListener` (`transactional = false`), `DurableEventInterceptor`, `RetentionPurgeable.ownsTransactions`, `UserEvents`, `FileEvents`, `FileRetention`, `KeycloakAdminAdapter` and `ExternalCallRules`.
 
 ## Context
 

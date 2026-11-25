@@ -6,7 +6,7 @@
 - **Owner:** ishanKulkarni13
 - **Last updated:** 2026-11-25
 
-> **Implementation:** observed on branch `feat/admin-gaps` (`SystemOnlyPermissionTest`, `GrantsApiIT`; local run 2026-11-25; CI run pending). Recorded in [implementation status](../product/roadmap/implementation-status.md).
+> **Implementation:** verified (`SystemOnlyPermissionTest`, `GrantsApiIT`; CI run 45523321048, 2026-11-25). Recorded in [implementation status](../product/roadmap/implementation-status.md).
 
 ## Context
 
