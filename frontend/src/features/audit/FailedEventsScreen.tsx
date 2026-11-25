@@ -15,7 +15,7 @@ import { Can } from "@/features/identity/permissions";
 /** The part of a class name people recognise: `com.kibootia.backend.notes.NotePurged` is shown as `NotePurged`. */
 function shortName(name: string): string {
   const afterPackage = name.slice(name.lastIndexOf(".") + 1);
-  return afterPackage.replace("$", ".");
+  return afterPackage.split("$").join(".");
 }
 
 /**
