@@ -217,7 +217,7 @@ The Level column was added on 2026-11-09.
 
 | Capability | Decision | Milestone | Level |
 |---|---|---|---|
-| An upgrade test with a database of its own: every migration applies on top of the one before it, version by version, and an installation with data, including rows the new foreign keys would refuse and a 3,800-character event, upgrades across the migrations of 2026-11-25 | roadmap rule 2 ("migrates from the schema of the phase before"); assessment R-15 | 5.1 | observed (`MigrationUpgradeIT`, 2 tests, local run 2026-11-25; with the orphan clean-up taken out of the migration the data test fails on the foreign key and the empty-database test does not; CI run pending). When a migration changes existing data, add its case to the second test |
+| An upgrade test with a database of its own: every migration applies on top of the one before it, version by version, and an installation with data, including rows the new foreign keys would refuse and a 3,800-character event, upgrades across the migrations of 2026-11-25 | roadmap rule 2 ("migrates from the schema of the phase before"); assessment R-15 | 5.1 | verified (`MigrationUpgradeIT`, 2 tests, CI run 45527981935, 2026-11-25; with the orphan clean-up taken out of the migration the data test fails on the foreign key and the empty-database test does not). When a migration changes existing data, add its case to the second test |
 | An event-compatibility test (golden files) | ADR 0059 | 5.1 | verified earlier (`EventSchemaCompatibilityIT`, CI run 45477165322) |
 | A request-throughput baseline | assessment R-15 | 5.1 | not built |
 
