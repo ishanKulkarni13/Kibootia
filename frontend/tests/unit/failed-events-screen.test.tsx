@@ -27,7 +27,7 @@ const events = [
   },
   {
     id: PENDING,
-    eventType: "com.kibootia.backend.notes.NotePurged",
+    eventType: "com.example.reports.ReportPurged",
     listener: "com.kibootia.backend.files.application.FileEvents#on",
     publishedAt: "2026-11-24T09:00:00Z",
     attempts: 1,
@@ -51,7 +51,7 @@ describe("the failed events screen (ADR 0031)", () => {
     expect(within(rows[0]!).getByText("UserEvents#on")).toBeInTheDocument();
     expect(within(rows[0]!).getByText("5")).toBeInTheDocument();
     expect(within(rows[0]!).getByText("Needs a retry")).toBeInTheDocument();
-    expect(within(rows[1]!).getByText("NotePurged")).toBeInTheDocument();
+    expect(within(rows[1]!).getByText("ReportPurged")).toBeInTheDocument();
     expect(within(rows[1]!).getByText("Will be retried")).toBeInTheDocument();
   });
 
