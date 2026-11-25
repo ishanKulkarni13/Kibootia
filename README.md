@@ -45,6 +45,6 @@ Tests: `./mvnw verify` in `backend/` (needs Docker); `pnpm --filter kibootia-fro
 
 ## Status and licence
 
-Milestones 0 to 5, 7 and 8 are built and verified in CI, with part of the architecture hardening of milestone 5.1 and an optional Open Policy Agent guardrail; production readiness and the first release are not. The licence has not been chosen yet ([OQ-48](kibootia-docs/decisions/open-questions.md)), so until then no licence is granted. [Implementation status](kibootia-docs/product/roadmap/implementation-status.md) is the single reference.
+Milestones 0 to 5, 7 and 8 are built and verified in CI, with part of the architecture hardening of milestone 5.1 and an optional Open Policy Agent guardrail; production readiness and the first release are not. Kibootia is licensed under the [Apache License, Version 2.0](LICENSE) ([ADR 0068](kibootia-docs/decisions/0068-apache-2-0-licence.md)); the changes of each version are in the [changelog](CHANGELOG.md). [Implementation status](kibootia-docs/product/roadmap/implementation-status.md) is the single reference.
 
 Security reports: see [SECURITY.md](SECURITY.md).

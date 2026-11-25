@@ -1,6 +1,7 @@
 {
   "name": "kibootia",
   "private": true,
+  "license": "Apache-2.0",
   "description": "Root scripts for local development of Kibootia.",
   "scripts": {
     "bootstrap": "node scripts/bootstrap.mjs",

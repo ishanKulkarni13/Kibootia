@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-24
+- **Last updated:** 2026-11-25
 
 > **Implementation:** planned. Only the first Dockerfiles of milestone 1 exist by then; no deployment configuration exists today.
 
@@ -20,6 +20,6 @@ The reference production deployment, the production guards, the first recipes an
 - Production startup fails when development defaults are detected (demo realm, demo passwords, development client secrets, seed data).
 - The threat model is complete for every shipped capability.
 - The first recipes exist and are marked documented or verified: policy engine (OPA), Vault Agent, RabbitMQ, self-hosted S3 (SeaweedFS), malware scanning, a production telemetry backend, a server-side session store, and production Keycloak email settings.
-- The licence is chosen and recorded (OQ-48), and Keycloak's production SMTP guidance is written (OQ-36).
+- The licence is chosen and recorded (OQ-48: **done**, Apache-2.0, [ADR 0068](../../decisions/0068-apache-2-0-licence.md)), and Keycloak's production SMTP guidance is written (OQ-36).
 - Nightly end-to-end tests pass, a release tag exists, and the changelog carries upgrade and security notes ([ADR 0023](../../decisions/0023-template-fork-adoption-model.md)).
 - All of the above pass in CI ([verification standard](../../engineering/testing/verification-standard.md)).
