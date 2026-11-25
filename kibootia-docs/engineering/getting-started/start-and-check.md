@@ -38,7 +38,6 @@ Milestones 0 to 5 are built ([roadmap](../../product/roadmap/README.md), [implem
 - Files other than avatars: the storage module is generic, but only the avatar uses it so far. An administrator cannot remove someone else's photo.
 - Several pictures per note, other kinds of files (documents), and names instead of short IDs for the writers in the notes list.
 - The production deployment, the production start-up guards and the first release ([milestone 6](../../product/roadmap/milestone-6-production-readiness.md)).
-- A screen for failed events (the API exists: `GET /api/v1/failed-events`).
 - Changing your name, email or password inside Kibootia: those stay in Keycloak's account console, which the profile page links to.
 
 ## 1. Prerequisites

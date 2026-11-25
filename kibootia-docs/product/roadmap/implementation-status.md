@@ -190,6 +190,17 @@ The Level column was added on 2026-11-09.
 | Architecture rule 13, in two halves, shown to fire; every integration test fails if Keycloak or storage was called while a transaction was open | ADR 0058 item 1 | 5.1 | observed (`ExternalCallRulesTest`, `ArchitectureTest`, `AdminApiTest`; CI run pending) |
 | A reconciliation job that removes Keycloak accounts that have no profile | ADR 0058 item 5 | 5.1 | not built: a self-registered person has no profile until they first sign in, so such a job would delete real people (recorded in the ADR) |
 
+## Capabilities added on branch `feat/admin-gaps` (2026-11-25)
+
+| Capability | Decision | Milestone | Level |
+|---|---|---|---|
+| An administration screen for failed events: which event failed in which handler, how often, whether it needs a person, and a retry button for `audit.failed-events.retry` | [ADR 0031](../../decisions/0031-transactional-outbox-and-locked-jobs.md) | none | observed (`failed-events-screen.test.tsx`, 8 tests; the Playwright admin story visits it; CI run pending) |
+| Deny grants can be added and removed in the role editor while deny grants are on, for what the editor holds and for every record | [ADR 0065](../../decisions/0065-milestone-8-implementation-decisions.md) | none | observed (`role-editor.test.tsx`, 7 new tests; CI run pending). Not covered by a Playwright story |
+| Actions only the system performs (the purges): not offered, not grantable, not held by the administrator role; the role and user purges have actions of their own | [ADR 0067](../../decisions/0067-actions-only-the-system-performs.md) | none | observed (`SystemOnlyPermissionTest`, `GrantsApiIT`; full local backend run 171 fast and 313 integration tests, one new test fixed and re-run; CI run pending) |
+| The policy module is removable in CI (a row of the `module-removal` job; the "all" row removes both removable modules), and rule 8 names it | [ADR 0066](../../decisions/0066-opa-as-a-narrowing-guardrail.md) | none | observed (removal and build run locally on a copy; CI run pending) |
+| The policy that ships in `infra/opa` is tested against a real OPA and the real guardrail | ADR 0066 | none | observed (`ShippedGuardrailPolicyIT`, 4 tests, local run; CI run pending) |
+| Unit tests for the pager, the error alert and the roles and users lists | none | none | observed (`shared-components.test.tsx`, `roles-and-users-screens.test.tsx`; CI run pending) |
+
 ## Deviations the owner has called out
 
 - Reference feature: a backend-only `notes` module ([ADR 0049](../../decisions/0049-milestone-2-implementation-decisions.md)); completed in milestone 5 with a picture, screens, a copy guide and removal recipes.

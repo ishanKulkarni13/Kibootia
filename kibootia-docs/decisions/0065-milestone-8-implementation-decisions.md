@@ -34,7 +34,7 @@
 
 **The API.** A role has `grants: [{action, reach, effect}]` instead of `permissions`. `GET /api/v1/permissions` returns `{permissions, denyGrantsEnabled}`, each action with its `resourceType`, the `reaches` a grant of it can have, the `userRoleReach` and `sensitive`. `GET /api/v1/me` adds `reaches`: for each held action, how far it reaches; `permissions` stays as the list of held actions. A malformed reach is a 400 with a field error, never a server error.
 
-**The role editor** shows a reach selector beside each permission with more than one reach, offers only the reaches the editor holds, keeps a reach already in the role visible, and shows and keeps the role's deny grants without editing them.
+**The role editor** shows a reach selector beside each permission with more than one reach, offers only the reaches the editor holds, keeps a reach already in the role visible, and shows and keeps the role's deny grants without editing them. (Since 2026-11-25, with deny grants switched on, the editor also adds and removes them; the recipe says how.)
 
 ## Alternatives considered
 
