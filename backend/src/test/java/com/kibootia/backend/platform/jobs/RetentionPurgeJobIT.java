@@ -3,6 +3,8 @@ package com.kibootia.backend.platform.jobs;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -51,6 +53,9 @@ class RetentionPurgeJobIT {
 
 	@Autowired
 	JdbcTemplate jdbc;
+
+	@Autowired
+	MeterRegistry meters;
 
 	@BeforeEach
 	void clean() {
@@ -135,6 +140,26 @@ class RetentionPurgeJobIT {
 
 		assertThat(job.runOnce()).isEqualTo(1);
 		assertThat(job.runOnce()).isZero();
+	}
+
+	private double counted(String metric, String purge) {
+		Counter counter = this.meters.find(metric).tag("purge", purge).counter();
+		return (counter != null) ? counter.count() : 0;
+	}
+
+	@Test
+	@DisplayName("counts the rows each purge removed and the runs of a purge that failed (ADR 0061)")
+	void purgesAreCounted() {
+		double removedBefore = counted(RetentionPurgeJob.REMOVED, "audit-entries");
+		double failuresBefore = counted(RetentionPurgeJob.FAILURES, "always-fails");
+		auditEntry(TenantContext.DEFAULT_TENANT, 400);
+		auditEntry(TenantContext.DEFAULT_TENANT, 400);
+
+		job.runOnce();
+
+		assertThat(counted(RetentionPurgeJob.REMOVED, "audit-entries") - removedBefore).isEqualTo(2.0);
+		assertThat(counted(RetentionPurgeJob.FAILURES, "always-fails") - failuresBefore).isEqualTo(1.0);
+		assertThat(counted(RetentionPurgeJob.REMOVED, "always-fails")).as("a failed purge removed nothing").isZero();
 	}
 
 }

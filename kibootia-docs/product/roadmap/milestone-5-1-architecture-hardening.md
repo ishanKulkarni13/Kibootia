@@ -24,7 +24,7 @@ Close the structural, data and operational gaps found in the [architecture asses
 | D-1 to D-5, T-6 | R-07 constraints, event versioning, failed-event retention, files-off guard | [ADR 0059](../../decisions/0059-data-integrity-in-the-database.md): **built** except the unique email key, which is not built and why is in the ADR |
 | P-1, P-2 | R-08 one place for status | [ADR 0060](../../decisions/0060-implementation-status-in-one-place.md) |
 | Q-1, Q-2, Q-5 | R-09 CI gates | [ADR 0061](../../decisions/0061-ci-quality-and-supply-chain-gates.md): **built** except signing (milestone 6) and the Java formatter (not adopted) |
-| Q-3 | R-10 custom metrics | none needed |
+| Q-3 | R-10 custom metrics | none needed: **built**; acceptance criterion 5 (each metric visible in Grafana) is not met, because no dashboard exists |
 | D-8, D-9 | R-11 database evaluation | [ADR 0062](../../decisions/0062-reassess-the-application-database-before-multi-tenancy.md): **decided** in [ADR 0069](../../decisions/0069-stay-on-mysql-until-multi-tenancy.md) (stay on MySQL; the evaluation is run before milestone 16; only the cost criterion was measured) |
 | B-1 to B-3, E-3 | R-12 edge hardening | [ADR 0063](../../decisions/0063-bff-and-edge-hardening.md): **built** except back-channel logout (milestone 6) and the backend's reading of the client address |
 | C-6, C-7, C-8, Q-4, T-4 | R-13 to R-15 cohesion, frontend structure, tests | none needed |

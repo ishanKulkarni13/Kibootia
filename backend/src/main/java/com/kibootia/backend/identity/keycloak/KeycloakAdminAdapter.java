@@ -10,9 +10,13 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.retry.RetryPolicy;
 import org.springframework.core.retry.RetryTemplate;
@@ -61,7 +65,23 @@ class KeycloakAdminAdapter implements IdentityProviderAdmin {
 
 	private volatile CachedToken token;
 
+	/** Calls to the Keycloak Admin API, timed by operation and outcome (ADR 0061). */
+	public static final String CALLS = "kibootia.keycloak.calls";
+
+	/** Null when metrics are not available, for example in a test that builds the adapter by hand. */
+	private final MeterRegistry meters;
+
 	KeycloakAdminAdapter(IdentityProperties properties, Clock clock) {
+		this(properties, clock, (MeterRegistry) null);
+	}
+
+	@Autowired
+	KeycloakAdminAdapter(IdentityProperties properties, Clock clock, ObjectProvider<MeterRegistry> meters) {
+		this(properties, clock, meters.getIfAvailable());
+	}
+
+	KeycloakAdminAdapter(IdentityProperties properties, Clock clock, MeterRegistry meters) {
+		this.meters = meters;
 		this.properties = properties;
 		this.clock = clock;
 		IdentityProperties.Keycloak settings = properties.keycloak();
@@ -88,7 +108,7 @@ class KeycloakAdminAdapter implements IdentityProviderAdmin {
 		user.put("emailVerified", emailVerified);
 		user.put("requiredActions", requiredActions);
 		try {
-			URI location = authorized((bearer) -> this.http.post()
+			URI location = authorized("create user", (bearer) -> this.http.post()
 				.uri("/admin/realms/{realm}/users", realm())
 				.headers((headers) -> headers.setBearerAuth(bearer))
 				.contentType(MediaType.APPLICATION_JSON)
@@ -111,7 +131,7 @@ class KeycloakAdminAdapter implements IdentityProviderAdmin {
 	@Override
 	public Optional<Account> find(UUID id) {
 		try {
-			Map<String, Object> user = idempotent((bearer) -> this.http.get()
+			Map<String, Object> user = idempotent("find user", (bearer) -> this.http.get()
 				.uri("/admin/realms/{realm}/users/{id}", realm(), id)
 				.headers((headers) -> headers.setBearerAuth(bearer))
 				.retrieve()
@@ -134,7 +154,7 @@ class KeycloakAdminAdapter implements IdentityProviderAdmin {
 	@Override
 	public void setEnabled(UUID id, boolean enabled) {
 		try {
-			Map<String, Object> user = idempotent((bearer) -> this.http.get()
+			Map<String, Object> user = idempotent("read user", (bearer) -> this.http.get()
 				.uri("/admin/realms/{realm}/users/{id}", realm(), id)
 				.headers((headers) -> headers.setBearerAuth(bearer))
 				.retrieve()
@@ -143,7 +163,7 @@ class KeycloakAdminAdapter implements IdentityProviderAdmin {
 				return;
 			}
 			user.put("enabled", enabled);
-			idempotent((bearer) -> this.http.put()
+			idempotent("set enabled", (bearer) -> this.http.put()
 				.uri("/admin/realms/{realm}/users/{id}", realm(), id)
 				.headers((headers) -> headers.setBearerAuth(bearer))
 				.contentType(MediaType.APPLICATION_JSON)
@@ -162,7 +182,7 @@ class KeycloakAdminAdapter implements IdentityProviderAdmin {
 	@Override
 	public void endSessions(UUID id) {
 		try {
-			idempotent((bearer) -> this.http.post()
+			idempotent("end sessions", (bearer) -> this.http.post()
 				.uri("/admin/realms/{realm}/users/{id}/logout", realm(), id)
 				.headers((headers) -> headers.setBearerAuth(bearer))
 				.retrieve()
@@ -182,7 +202,7 @@ class KeycloakAdminAdapter implements IdentityProviderAdmin {
 	@Override
 	public void sendVerificationEmail(UUID id) {
 		try {
-			authorized((bearer) -> this.http.put()
+			authorized("send verification email", (bearer) -> this.http.put()
 				.uri((uri) -> uri.path("/admin/realms/{realm}/users/{id}/send-verify-email")
 					.queryParam("client_id", this.properties.keycloak().webClientId())
 					.queryParam("redirect_uri", returnAddress())
@@ -200,7 +220,7 @@ class KeycloakAdminAdapter implements IdentityProviderAdmin {
 	@Override
 	public void delete(UUID id) {
 		try {
-			idempotent((bearer) -> this.http.delete()
+			idempotent("delete user", (bearer) -> this.http.delete()
 				.uri("/admin/realms/{realm}/users/{id}", realm(), id)
 				.headers((headers) -> headers.setBearerAuth(bearer))
 				.retrieve()
@@ -215,7 +235,7 @@ class KeycloakAdminAdapter implements IdentityProviderAdmin {
 
 	private void executeActionsEmail(UUID id, List<String> actions) {
 		try {
-			authorized((bearer) -> this.http.put()
+			authorized("send actions email", (bearer) -> this.http.put()
 				.uri((uri) -> uri.path("/admin/realms/{realm}/users/{id}/execute-actions-email")
 					.queryParam("client_id", this.properties.keycloak().webClientId())
 					.queryParam("redirect_uri", returnAddress())
@@ -247,8 +267,8 @@ class KeycloakAdminAdapter implements IdentityProviderAdmin {
 	 * answer is tried again a few times before it is reported (ADR 0058). A 404 is an answer, not a failure, and is never
 	 * repeated. Emails are not sent through this: a repeat would send a second one.
 	 */
-	private <T> T idempotent(Function<String, T> call) {
-		return this.retries.invoke(() -> authorized(call));
+	private <T> T idempotent(String operation, Function<String, T> call) {
+		return this.retries.invoke(() -> authorized(operation, call));
 	}
 
 	/** Whether a failure may be gone a moment later: the server could not be reached, or it answered 5xx or 429. */
@@ -266,7 +286,41 @@ class KeycloakAdminAdapter implements IdentityProviderAdmin {
 	 * made once more. Anything else that goes wrong becomes {@link Unavailable}, except the client errors the callers
 	 * handle themselves (404, 409), which pass through as they are.
 	 */
-	private <T> T authorized(Function<String, T> call) {
+	private <T> T authorized(String operation, Function<String, T> call) {
+		return measured(operation, () -> authorizedCall(call));
+	}
+
+	/**
+	 * Times one call to Keycloak (ADR 0061): its operation and how it ended, with a 404 or a 409 counted as an answer and
+	 * not as a failure. A call that is repeated is timed each time it is made.
+	 */
+	private <T> T measured(String operation, java.util.function.Supplier<T> call) {
+		long started = System.nanoTime();
+		String outcome = "success";
+		try {
+			return call.get();
+		}
+		catch (HttpClientErrorException.NotFound | HttpClientErrorException.Conflict ex) {
+			outcome = "answered";
+			throw ex;
+		}
+		catch (RuntimeException ex) {
+			outcome = "failure";
+			throw ex;
+		}
+		finally {
+			if (this.meters != null) {
+				Timer.builder(CALLS)
+					.description("Calls to the Keycloak Admin API, by operation and outcome")
+					.tag("operation", operation)
+					.tag("outcome", outcome)
+					.register(this.meters)
+					.record(System.nanoTime() - started, java.util.concurrent.TimeUnit.NANOSECONDS);
+			}
+		}
+	}
+
+	private <T> T authorizedCall(Function<String, T> call) {
 		try {
 			try {
 				return call.apply(bearer(false));

@@ -1,11 +1,14 @@
 package com.kibootia.backend.platform.jobs;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.List;
 import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -31,10 +34,18 @@ public class RetentionPurgeJob {
 
 	private final TransactionTemplate transactions;
 
+	/** Rows removed by each purge, and runs of it that failed (ADR 0061). */
+	static final String REMOVED = "kibootia.retention.removed";
+
+	static final String FAILURES = "kibootia.retention.failures";
+
+	private final ObjectProvider<MeterRegistry> meters;
+
 	RetentionPurgeJob(List<RetentionPurgeable> purgeables, Authorization authorization,
-			PlatformTransactionManager transactionManager) {
+			PlatformTransactionManager transactionManager, ObjectProvider<MeterRegistry> meters) {
 		this.purgeables = purgeables;
 		this.authorization = authorization;
+		this.meters = meters;
 		this.transactions = new TransactionTemplate(transactionManager);
 	}
 
@@ -49,6 +60,17 @@ public class RetentionPurgeJob {
 		return total;
 	}
 
+	private void count(String metric, RetentionPurgeable purgeable, double amount) {
+		MeterRegistry registry = this.meters.getIfAvailable();
+		if (registry != null) {
+			Counter.builder(metric)
+				.description(REMOVED.equals(metric) ? "Rows removed by a retention purge" : "Runs of a retention purge that failed")
+				.tag("purge", purgeable.name())
+				.register(registry)
+				.increment(amount);
+		}
+	}
+
 	private int purgeInOwnTransaction(UUID tenant, RetentionPurgeable purgeable) {
 		try {
 			// The tenant is bound before the transaction starts, because Hibernate reads it when the session opens.
@@ -57,10 +79,12 @@ public class RetentionPurgeJob {
 							: this.transactions.execute((status) -> purgeable.purge())));
 			int count = (removed != null) ? removed : 0;
 			log.info("Retention purge {} removed {} rows", purgeable.name(), count);
+			count(REMOVED, purgeable, count);
 			return count;
 		}
 		catch (RuntimeException ex) {
 			log.error("Retention purge {} failed; the other purges continue", purgeable.name(), ex);
+			count(FAILURES, purgeable, 1);
 			return 0;
 		}
 	}
