@@ -11,7 +11,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 /**
  * Marks a use-case method that needs a permission and nothing about the record (ADR 0044). The check runs before the
  * method, through Spring Security's method security and the decision point. For a rule that needs the loaded record,
- * call {@link Authorization#require(String, Object)} in the method instead.
+ * call {@link Authorization#require(String, Resource)} in the method instead.
  *
  * <pre>{@code
  * @RequiresPermission(NotesPermissions.CREATE)

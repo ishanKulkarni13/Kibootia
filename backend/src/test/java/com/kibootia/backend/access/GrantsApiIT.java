@@ -1,5 +1,7 @@
 package com.kibootia.backend.access;
 
+import java.util.List;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -108,6 +110,30 @@ class GrantsApiIT extends AdminApiTest {
 		get(user(ALICE), "/api/v1/me")
 			.andExpect(jsonPath("$.reaches['widgets.widgets.view']", contains("all")))
 			.andExpect(jsonPath("$.reaches['widgets.widgets.view']", hasSize(1)));
+	}
+
+	@Test
+	@DisplayName("an action only the system performs is neither offered nor accepted, and not even the administrator role holds it")
+	void actionsOnlyTheSystemPerformsCannotBeGranted() throws Exception {
+		ensureAdmin();
+		List<String> systemOnly = List.of("audit.entries.purge", "audit.failed-events.purge", "files.files.purge",
+				"files.files.reconcile", "access.roles.purge", "identity.users.purge");
+
+		get(admin(), "/api/v1/permissions").andExpect(status().isOk());
+		String catalogue = get(admin(), "/api/v1/permissions").andReturn().getResponse().getContentAsString();
+		for (String action : systemOnly) {
+			org.assertj.core.api.Assertions.assertThat(catalogue).as("the catalogue lists " + action).doesNotContain(action);
+			post(admin(), "/api/v1/roles", role("Purger " + action, grants(action))).andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.errors[0].code").value("unknown_permission"));
+		}
+
+		// The administrator role holds every action a role can be given, and none of these.
+		String roles = get(admin(), "/api/v1/roles").andReturn().getResponse().getContentAsString();
+		for (String action : systemOnly) {
+			org.assertj.core.api.Assertions.assertThat(roles).as("the administrator role holds " + action).doesNotContain(action);
+		}
+		org.assertj.core.api.Assertions.assertThat(roles).contains("access.roles.manage");
+		get(admin(), "/api/v1/me").andExpect(jsonPath("$.permissions", org.hamcrest.Matchers.not(org.hamcrest.Matchers.hasItem("audit.entries.purge"))));
 	}
 
 	private void assertCount(String sql, int expected) {

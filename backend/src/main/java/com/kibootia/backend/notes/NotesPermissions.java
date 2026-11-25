@@ -40,7 +40,7 @@ public class NotesPermissions implements PermissionProvider {
 				Permission.onRecord(UPDATE, NOTE, "Change notes").forEveryUser(Reach.owner()),
 				Permission.onRecord(DELETE, NOTE, "Delete notes").forEveryUser(Reach.owner()),
 				Permission.onCollection(RESTORE, "Restore deleted notes"),
-				Permission.onCollection(PURGE, "Permanently remove notes whose retention period has passed").asSensitive());
+				Permission.onCollection(PURGE, "Permanently remove notes whose retention period has passed").asSensitive().forSystemOnly());
 	}
 
 	@Override

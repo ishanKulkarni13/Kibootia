@@ -23,11 +23,17 @@ public class AccessPermissions implements PermissionProvider {
 	/** Give users roles and take them away. Only an administrator can give the administrator role. */
 	public static final String ASSIGN_ROLES = "access.roles.assign";
 
+	/** Remove roles whose retention period has passed. Only the retention job does it. */
+	public static final String PURGE_ROLES = "access.roles.purge";
+
 	@Override
 	public List<Permission> permissions() {
 		return List.of(Permission.onCollection(VIEW_ROLES, "View roles, their permissions and who holds them"),
 				Permission.onCollection(MANAGE_ROLES, "Create, change and delete roles").asSensitive(),
-				Permission.onCollection(ASSIGN_ROLES, "Give users roles and take them away").asSensitive());
+				Permission.onCollection(ASSIGN_ROLES, "Give users roles and take them away").asSensitive(),
+				Permission.onCollection(PURGE_ROLES, "Permanently remove roles whose retention period has passed")
+					.asSensitive()
+					.forSystemOnly());
 	}
 
 }

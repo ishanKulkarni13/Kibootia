@@ -14,7 +14,7 @@ public class AuditPermissions implements PermissionProvider {
 	/** Read the audit log. */
 	public static final String VIEW_ENTRIES = "audit.entries.view";
 
-	/** Remove entries older than the retention period. */
+	/** Remove entries older than the retention period. Only the retention job does it. */
 	public static final String PURGE_ENTRIES = "audit.entries.purge";
 
 	/** See events whose delivery keeps failing. */
@@ -23,17 +23,18 @@ public class AuditPermissions implements PermissionProvider {
 	/** Retry a failed event. */
 	public static final String RETRY_FAILED_EVENTS = "audit.failed-events.retry";
 
-	/** Remove failed events whose retries are exhausted and that are older than the retention period. */
+	/** Remove failed events whose retries are exhausted and that are older than the retention period. Only the job does it. */
 	public static final String PURGE_FAILED_EVENTS = "audit.failed-events.purge";
 
 	@Override
 	public List<Permission> permissions() {
 		return List.of(Permission.onCollection(VIEW_ENTRIES, "View the audit log").asSensitive(),
-				Permission.onCollection(PURGE_ENTRIES, "Remove audit entries older than the retention period").asSensitive(),
+				Permission.onCollection(PURGE_ENTRIES, "Remove audit entries older than the retention period").asSensitive().forSystemOnly(),
 				Permission.onCollection(VIEW_FAILED_EVENTS, "View events whose delivery keeps failing"),
 				Permission.onCollection(RETRY_FAILED_EVENTS, "Retry a failed event").asSensitive(),
 				Permission.onCollection(PURGE_FAILED_EVENTS, "Remove failed events older than the retention period")
-					.asSensitive());
+					.asSensitive()
+					.forSystemOnly());
 	}
 
 }

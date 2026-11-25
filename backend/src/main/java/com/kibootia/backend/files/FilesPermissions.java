@@ -25,8 +25,8 @@ public class FilesPermissions implements PermissionProvider {
 
 	@Override
 	public List<Permission> permissions() {
-		return List.of(Permission.onCollection(PURGE, "Permanently remove files whose retention period has passed").asSensitive(),
-				Permission.onCollection(RECONCILE, "Remove stored objects that nothing refers to").asSensitive());
+		return List.of(Permission.onCollection(PURGE, "Permanently remove files whose retention period has passed").asSensitive().forSystemOnly(),
+				Permission.onCollection(RECONCILE, "Remove stored objects that nothing refers to").asSensitive().forSystemOnly());
 	}
 
 }

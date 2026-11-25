@@ -70,10 +70,13 @@ public class RoleService {
 		this.properties = properties;
 	}
 
-	/** Every action the modules declare, with the reaches a grant of it can have, for the role editor. */
+	/**
+	 * Every action a role can be given, with the reaches a grant of it can have, for the role editor. The actions only the
+	 * system performs are not offered.
+	 */
 	@RequiresPermission(AccessPermissions.VIEW_ROLES)
 	public List<GrantableAction> permissions() {
-		return this.registry.all()
+		return this.registry.grantable()
 			.stream()
 			.map((permission) -> new GrantableAction(permission, this.registry.reachesOf(permission.name())))
 			.toList();
@@ -178,6 +181,10 @@ public class RoleService {
 		for (Grant grant : (requested == null) ? Set.<Grant>of() : requested) {
 			if (!this.registry.isRegistered(grant.action())) {
 				errors.add(new ApiFieldError("grants", "unknown_permission", "'" + grant.action() + "' is not a permission"));
+			}
+			else if (!this.registry.isGrantable(grant.action())) {
+				errors.add(new ApiFieldError("grants", "unknown_permission",
+						"'" + grant.action() + "' is only ever done by the system and cannot be given to a role"));
 			}
 			else if (!this.registry.isValid(grant)) {
 				errors.add(new ApiFieldError("grants", "invalid_reach",

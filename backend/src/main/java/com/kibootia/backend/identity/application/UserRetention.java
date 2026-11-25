@@ -44,7 +44,7 @@ class UserRetention implements RetentionPurgeable {
 
 	@Override
 	@Transactional
-	@RequiresPermission(IdentityPermissions.ERASE_USERS)
+	@RequiresPermission(IdentityPermissions.PURGE_USERS)
 	public int purge() {
 		List<UserProfile> expired = this.profiles.findExpiredDeleted(
 				this.clock.instant().minus(Duration.ofDays(this.properties.softDeleteRetentionDays())));

@@ -30,8 +30,11 @@ public class IdentityPermissions implements PermissionProvider {
 	/** Bring a deleted account back. */
 	public static final String RESTORE_USERS = "identity.users.restore";
 
-	/** Erase a deleted account for good, on a privacy request, or let the retention job do it. */
+	/** Erase a deleted account for good, on a privacy request. */
 	public static final String ERASE_USERS = "identity.users.erase";
+
+	/** Start erasing the accounts whose retention period has passed. Only the retention job does it. */
+	public static final String PURGE_USERS = "identity.users.purge";
 
 	@Override
 	public List<Permission> permissions() {
@@ -40,7 +43,10 @@ public class IdentityPermissions implements PermissionProvider {
 				Permission.onCollection(DISABLE_USERS, "Disable and enable accounts"),
 				Permission.onCollection(DELETE_USERS, "Delete accounts").asSensitive(),
 				Permission.onCollection(RESTORE_USERS, "Restore deleted accounts"),
-				Permission.onCollection(ERASE_USERS, "Erase deleted accounts for good").asSensitive());
+				Permission.onCollection(ERASE_USERS, "Erase deleted accounts for good").asSensitive(),
+				Permission.onCollection(PURGE_USERS, "Start erasing accounts whose retention period has passed")
+					.asSensitive()
+					.forSystemOnly());
 	}
 
 }
