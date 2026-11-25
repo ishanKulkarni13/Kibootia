@@ -36,9 +36,13 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class MigrationUpgradeIT {
 
-	private static final String[] LOCATIONS = { "classpath:db/migration/platform", "classpath:db/migration/audit",
-			"classpath:db/migration/access", "classpath:db/migration/identity", "classpath:db/migration/files",
-			"classpath:db/migration/notes" };
+	/** The modules that have migrations. A module a fork removed has no folder, and is left out. */
+	private static final List<String> MODULES = List.of("platform", "audit", "access", "identity", "files", "notes");
+
+	private static final String[] LOCATIONS = MODULES.stream()
+		.filter((module) -> MigrationUpgradeIT.class.getClassLoader().getResource("db/migration/" + module) != null)
+		.map((module) -> "classpath:db/migration/" + module)
+		.toArray(String[]::new);
 
 	/** The last migration before the foreign keys and the {@code TEXT} event column were added. */
 	private static final String BEFORE_INTEGRITY = "202611241000";
@@ -100,7 +104,7 @@ class MigrationUpgradeIT {
 		for (MigrationInfo migration : all.info().pending()) {
 			versions.add(migration.getVersion().getVersion());
 		}
-		assertThat(versions).as("the versions Flyway found").hasSizeGreaterThanOrEqualTo(10).isSorted();
+		assertThat(versions).as("the versions Flyway found").hasSizeGreaterThanOrEqualTo(8).isSorted();
 
 		for (String version : versions) {
 			Flyway step = flyway("upgrade_stepwise", version);
@@ -135,9 +139,9 @@ class MigrationUpgradeIT {
 				role.executeUpdate();
 			}
 			// What a running installation of that version holds: a held role, and rows of a role that no longer exists.
-			insertPermission(connection, tenant, editor, "notes.notes.view");
-			insertPermission(connection, tenant, gone, "notes.notes.view");
-			insertPermission(connection, tenant, gone, "notes.notes.update");
+			insertPermission(connection, tenant, editor, "example.things.view");
+			insertPermission(connection, tenant, gone, "example.things.view");
+			insertPermission(connection, tenant, gone, "example.things.update");
 			insertAssignment(connection, tenant, alice, editor);
 			insertAssignment(connection, tenant, bob, gone);
 			try (PreparedStatement event = connection.prepareStatement(
