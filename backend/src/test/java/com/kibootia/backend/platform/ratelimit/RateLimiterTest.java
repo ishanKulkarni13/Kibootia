@@ -4,8 +4,13 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.UUID;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.support.StaticListableBeanFactory;
 
 import com.kibootia.backend.platform.errors.ApiException;
 import com.kibootia.backend.platform.ratelimit.RateLimitProperties.Limit;
@@ -20,9 +25,12 @@ class RateLimiterTest {
 
 	static final UUID BOB = UUID.fromString("22222222-2222-7222-8222-222222222222");
 
+	/** No registry: the limiter must work without metrics. */
+	static final ObjectProvider<MeterRegistry> METERS = new StaticListableBeanFactory().getBeanProvider(MeterRegistry.class);
+
 	static RateLimiter limiter(Map<RateLimitCategory, Limit> limits) {
 		// The overload that names the user does not need the current caller.
-		return new RateLimiter(null, new RateLimitProperties(limits));
+		return new RateLimiter(null, new RateLimitProperties(limits), METERS);
 	}
 
 	@Test
@@ -83,6 +91,24 @@ class RateLimiterTest {
 			.hasMessageContaining("uploads");
 		assertThatThrownBy(() -> limiter(Map.of(RateLimitCategory.UPLOADS, new Limit(5, Duration.ZERO))))
 			.isInstanceOf(IllegalStateException.class);
+	}
+
+	@Test
+	@DisplayName("counts every refusal by category, and nothing that was allowed (ADR 0061)")
+	void refusalsAreCounted() {
+		SimpleMeterRegistry meters = new SimpleMeterRegistry();
+		StaticListableBeanFactory beans = new StaticListableBeanFactory();
+		beans.addBean("meters", meters);
+		RateLimiter limiter = new RateLimiter(null,
+				new RateLimitProperties(Map.of(RateLimitCategory.INVITATIONS, new Limit(1, Duration.ofHours(1)))),
+				beans.getBeanProvider(MeterRegistry.class));
+
+		limiter.acquire(RateLimitCategory.INVITATIONS, ALICE);
+		assertThat(meters.find(RateLimiter.REJECTIONS).counter()).as("an allowed request is not counted").isNull();
+		assertThatThrownBy(() -> limiter.acquire(RateLimitCategory.INVITATIONS, ALICE)).isInstanceOf(ApiException.class);
+		assertThatThrownBy(() -> limiter.acquire(RateLimitCategory.INVITATIONS, ALICE)).isInstanceOf(ApiException.class);
+
+		assertThat(meters.get(RateLimiter.REJECTIONS).tag("category", "invitations").counter().count()).isEqualTo(2.0);
 	}
 
 }
