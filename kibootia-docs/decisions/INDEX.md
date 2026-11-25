@@ -75,11 +75,13 @@ Accepted does not mean implemented: see [implementation status](../product/roadm
 | 0059 | Data integrity in the database | platform | accepted | 2026-11-24 | [0059](0059-data-integrity-in-the-database.md) |
 | 0060 | Implementation status in one place | platform | accepted | 2026-11-24 | [0060](0060-implementation-status-in-one-place.md) |
 | 0061 | CI quality and supply-chain gates | platform | accepted | 2026-11-24 | [0061](0061-ci-quality-and-supply-chain-gates.md) |
-| 0062 | Reassess the application database before multi-tenancy | platform | draft | 2026-11-24 | [0062](0062-reassess-the-application-database-before-multi-tenancy.md) |
+| 0062 | Reassess the application database before multi-tenancy | platform | accepted | 2026-11-24 | [0062](0062-reassess-the-application-database-before-multi-tenancy.md) |
 | 0063 | BFF and edge hardening | platform | accepted | 2026-11-24 | [0063](0063-bff-and-edge-hardening.md) |
 | 0064 | Milestone 7 implementation decisions | platform | accepted | 2026-11-24 | [0064](0064-milestone-7-implementation-decisions.md) |
 | 0065 | Milestone 8 implementation decisions | platform | accepted | 2026-11-24 | [0065](0065-milestone-8-implementation-decisions.md) |
 | 0066 | Open Policy Agent as a narrowing guardrail | platform | accepted | 2026-11-24 | [0066](0066-opa-as-a-narrowing-guardrail.md) |
 | 0067 | Actions only the system performs | platform | accepted | 2026-11-25 | [0067](0067-actions-only-the-system-performs.md) |
+
+| 0069 | Stay on MySQL until live multi-tenancy | platform | accepted | 2026-11-25 | [0069](0069-stay-on-mysql-until-multi-tenancy.md) |
 
 Module-scoped ADRs will be listed here too once modules exist.
