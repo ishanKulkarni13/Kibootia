@@ -2,11 +2,11 @@
 
 - **Type:** adr
 - **Module:** platform
-- **Status:** draft
+- **Status:** accepted
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-24
+- **Last updated:** 2026-11-25
 
-> **Implementation:** planned. This is an evaluation ADR: it decides how the question will be answered, not the answer. Observed today: MySQL 8.4 for the application, PostgreSQL 17 for Keycloak only.
+> **Implementation:** not applicable (an evaluation ADR). Its outcome is [ADR 0069](0069-stay-on-mysql-until-multi-tenancy.md): the application stays on MySQL, the evaluation is deferred to before milestone 16, and the cost criterion was measured by a scan of the code.
 
 ## Context
 
@@ -48,7 +48,7 @@ Run a time-boxed evaluation (two working days, in [milestone 5.1](../product/roa
 
 ## Status
 
-draft. Awaiting the owner. OQ-90 in [open questions](open-questions.md).
+accepted on the owner's delegation of 2026-11-25. The outcome is [ADR 0069](0069-stay-on-mysql-until-multi-tenancy.md); OQ-90 is closed.
 
 ## Related
 

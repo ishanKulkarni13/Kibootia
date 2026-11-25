@@ -4,7 +4,7 @@
 - **Module:** platform
 - **Status:** draft
 - **Owner:** ishanKulkarni13
-- **Last updated:** 2026-11-11
+- **Last updated:** 2026-11-25
 
 > **Implementation:** planned. Nothing of this milestone exists. The schema is tenant-ready with one default tenant ([ADR 0028](../../decisions/0028-tenant-ready-schema.md)), and the tenant filter and cross-tenant tests are verified.
 
@@ -44,6 +44,8 @@ AUTH-017, AUTH-028 (tenant level). Security finding S7. No reference scenario: b
 `platform` (tenancy, jobs), `access`, `identity`, `files`, `audit`, `notes`, the frontend shell and the administration screens, and the Keycloak configuration if the claim strategy is chosen.
 
 ## 6. Dependencies
+
+**First task:** run the PostgreSQL evaluation of [ADR 0062](../../decisions/0062-reassess-the-application-database-before-multi-tenancy.md) that [ADR 0069](../../decisions/0069-stay-on-mysql-until-multi-tenancy.md) deferred to here, before any table of this milestone is written.
 
 Milestone 15, because tenant administrators and platform authority are administrator-hierarchy work, and the definition lifecycle must be per tenant from the start.
 
